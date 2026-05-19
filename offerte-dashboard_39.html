@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Line Offerte Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--white:#ffffff;--border:#e2e0d8;--border2:#cccac0;
+  --text:#111110;--muted:#444440;--hint:#888880;
+  --accent:#1a5c3a;--accent-bg:#eef5f0;--accent-border:#b8d4c2;
+  --red:#c0392b;--red-bg:#fdf0ee;--red-border:#f0c4be;
+  --orange:#b8590a;--orange-bg:#fef3e8;--orange-border:#f0d0a8;
+  --green:#1a5c3a;--green-bg:#eef5f0;--green-border:#b8d4c2;
+  --blue:#1a3a6c;--blue-bg:#eef2fa;--blue-border:#b8c8e8;
+  --sans:'Geist',sans-serif;--mono:'Geist Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.main{padding:32px 36px;overflow-y:auto}
+
+.logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-name{font-size:15px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--hint);margin-top:2px;font-family:var(--mono)}
+.nav{padding:12px 10px;flex:1}
+.nav-btn{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:var(--sans);width:100%;text-align:left;transition:all .12s}
+.nav-btn:hover{color:var(--text);background:var(--bg)}
+.nav-btn.active{color:var(--accent);background:var(--accent-bg);font-weight:500}
+.nav-badge{font-family:var(--mono);font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:20px}
+.sidebar-foot{padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-hint{font-size:11px;color:var(--hint);line-height:1.7}
+
+.dropzone{border:1.5px dashed var(--border2);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;background:var(--white)}
+.dropzone:hover,.dropzone.over{border-color:var(--accent);background:var(--accent-bg)}
+.dz-icon{width:36px;height:36px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border)}
+.dz-title{font-size:13px;font-weight:500;color:var(--text)}
+.dz-sub{font-size:11px;color:var(--hint);margin-top:2px;font-family:var(--mono)}
+
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.ph-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.03em}
+.ph-title em{color:var(--accent);font-style:normal}
+.ph-sub{font-size:12px;color:var(--hint);margin-top:3px}
+
+.btn{font-family:var(--sans);font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--border2);font-weight:500;transition:all .12s;background:var(--white);color:var(--text)}
+.btn:hover{background:var(--bg)}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-p:hover{background:#155030}
+.btn-d{background:transparent;border-color:var(--red-border);color:var(--red)}
+.btn-d:hover{background:var(--red-bg)}
+
+.alert{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;display:flex;align-items:center;gap:10px;color:var(--red)}
+.alert-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0;animation:pulse 1.5s infinite}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi-l{font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi-n{font-size:28px;font-weight:600;color:var(--text);letter-spacing:-.03em;font-family:var(--mono)}
+.kpi-n.red{color:var(--red)}.kpi-n.green{color:var(--green)}.kpi-n.acc{color:var(--accent)}
+.kpi-s{font-size:12px;color:var(--hint);margin-top:3px}
+
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:24px}
+.sl{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--hint)}
+.sline{flex:1;height:1px;background:var(--border)}
+.sn{font-size:10px;font-family:var(--mono);color:var(--hint)}
+
+table.t{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;border:1px solid var(--border);overflow:hidden}
+table.t th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:400;background:var(--bg)}
+tr.row{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tr.row:last-child{border-bottom:none}
+tr.row:hover{background:#fafaf7}
+tr.row.urg{border-left:3px solid var(--red)}
+tr.row.soon{border-left:3px solid var(--orange)}
+tr.row.ok{border-left:3px solid transparent}
+tr.row td{padding:12px 14px;vertical-align:middle}
+.cn{font-weight:600;font-size:14px;color:var(--text)}
+.cs{font-size:12px;color:var(--muted);margin-top:2px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
+.ch{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+.pill{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono);white-space:nowrap;border:1px solid}
+.pn{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}.pc{background:#f0eafa;color:#6b3fa0;border-color:#d4b8f0}.pd{background:#e8f4fd;color:#1a6090;border-color:#a8d4f0}
+.po{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+.pf1{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-border)}
+.pf2{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.pw{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.pl{background:var(--bg);color:var(--hint);border-color:var(--border)}
+.pde{background:#f0f0ee;color:#666660;border-color:#d0d0c8;text-decoration:line-through}
+
+.ul{font-size:12px;color:var(--red);font-family:var(--mono);font-weight:500}
+.us{font-size:12px;color:var(--orange);font-family:var(--mono);font-weight:500}
+.uo{font-size:12px;color:var(--muted);font-family:var(--mono)}
+
+.qbs{display:flex;gap:5px;flex-wrap:wrap}
+.qb{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--white);color:var(--muted);transition:all .1s;white-space:nowrap}
+.qb:hover{background:var(--bg);color:var(--text)}
+.qb.w{border-color:var(--green-border);color:var(--green)}.qb.w:hover{background:var(--green-bg)}
+.qb.l{border-color:var(--red-border);color:var(--red)}.qb.l:hover{background:var(--red-bg)}
+
+.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.pcol{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px}
+.pch{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--hint);margin-bottom:10px;display:flex;justify-content:space-between}
+.pcard{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;margin-bottom:7px;cursor:pointer;transition:border-color .1s}
+.pcard:hover{border-color:var(--border2)}
+.pcn{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.pca{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.pcd{font-size:10px;color:var(--hint);margin-top:3px}
+
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.mbox{background:var(--white);border-radius:14px;padding:28px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12);animation:fadein .15s ease}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.mtitle{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.mclose{background:none;border:none;color:var(--hint);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:5px}
+.mclose:hover{background:var(--bg)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ff{margin-bottom:12px}
+.ff label{display:block;font-size:11px;font-family:var(--mono);color:var(--hint);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.ff input,.ff select,.ff textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s}
+.ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--accent);background:var(--white)}
+.mfoot{display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);align-items:center}
+
+.clog-entry{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:8px;font-size:12px}
+.clog-head{display:flex;justify-content:space-between;margin-bottom:4px}
+.clog-badge{font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:500}
+.clog-time{font-family:var(--mono);font-size:10px;color:var(--hint)}
+.clog-text{color:var(--muted);line-height:1.5}
+.clog-add{display:flex;gap:8px;margin-top:8px}
+.clog-add textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:none;transition:border-color .15s}
+.clog-add textarea:focus{border-color:var(--accent);background:var(--white)}
+
+.gc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:14px}
+.gt{font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px}
+.gs{display:flex;gap:14px;margin-bottom:14px}
+.gn{width:24px;height:24px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--accent-border);margin-top:1px}
+.gt2{font-size:13px;font-weight:500;margin-bottom:3px}
+.gd{font-size:12px;color:var(--muted);line-height:1.65}
+.code{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;line-height:1.9}
+.code .h{color:var(--accent)}
+.empty{text-align:center;padding:40px;color:var(--hint);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-name">Q-Line Tracker</div>
+    <div class="logo-sub">offerte follow-up</div>
+
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
+    <button class="nav-btn" onclick="show('pipe')">Pipeline</button>
+    <button class="nav-btn" onclick="show('alle')">Alle leads</button>
+    <button class="nav-btn" onclick="show('analyse')">Analyse</button>
+
+  </nav>
+  <div class="sidebar-foot">
+    <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+      <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
+      <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
+      <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+      <div id="savepath" style="font-size:10px;color:var(--hint);margin-top:6px;font-family:var(--mono);word-break:break-all"></div>
+    </div>
+  </div>
+</aside>
+<main class="main" id="main"></main>
+</div>
+
+<div class="mo" id="mo">
+  <div class="mbox">
+    <div class="mhead">
+      <div class="mtitle" id="mtitle">Lead toevoegen</div>
+      <button class="mclose" onclick="closeMo()">×</button>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
+      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
+    </div>
+    <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
+    <div class="fg">
+      <div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+      <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Datum</label><input id="fd" type="date"></div>
+      <div class="ff"><label>Status</label>
+        <select id="fst" onchange="toggleDatumOfferte()">
+          <option value="nieuw">Nieuwe lead</option>
+          <option value="contact">Contact gelegd</option>
+          <option value="offerte">Offerte verstuurd</option>
+          <option value="dealer">Doorgestuurd naar dealer</option>
+          <option value="gewonnen">Gewonnen</option>
+          <option value="verloren">Verloren</option>
+          <option value="deadend">Dead end</option>
+        </select>
+      </div>
+    </div>
+    <div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
+    <div class="fg">
+      <div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
+      <div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Voorkeur contact</label><select id="fcw"><option value="">— onbekend —</option><option value="Telefonisch">📞 Telefonisch</option><option value="E-mail">✉ E-mail</option><option value="WhatsApp">💬 WhatsApp</option><option value="Anders">Anders</option></select></div>
+      <div class="ff"><label>Land</label><input id="fland" placeholder="bijv. Nederland"></div>
+    </div>
+    <div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
+    <div id="cwrap" style="display:none">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
+      <div id="clist"></div>
+      <div class="clog-add">
+        <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
+        <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
+          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeMo()">Annuleren</button>
+      <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+      <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
+    </div>
+  </div>
+</div>
+
+<div id="fu-mo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+    <div style="font-size:16px;font-weight:600;color:#111;margin-bottom:8px">Wanneer opvolgen?</div>
+    <div id="fu-intro" style="font-size:13px;color:#444;margin-bottom:18px;line-height:1.6"></div>
+    <div id="fu-note-wrap" style="margin-bottom:14px;display:none">
+      <label style="font-size:11px;font-family:monospace;color:#888;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Notitie</label>
+      <textarea id="fu-note" rows="2" style="width:100%;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;resize:none" placeholder="Wat besproken?"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="fu-btns">
+      <button onclick="setFuDays(3,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 dagen</button>
+      <button onclick="setFuDays(7,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 week</button>
+      <button onclick="setFuDays(14,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">2 weken</button>
+      <button onclick="setFuDays(30,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 maand</button>
+      <button onclick="setFuDays(90,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 maanden</button>
+      <button onclick="setFuDays(180,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">6 maanden</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+      <input type="number" id="fu-custom" placeholder="Eigen aantal..." min="1" style="width:140px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;outline:none">
+      <span style="font-size:13px;color:#888">dagen</span>
+      <button onclick="setFuCustom()" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">OK</button>
+    </div>
+    <div style="display:flex;gap:8px;border-top:1px solid #e2e0d8;padding-top:16px">
+      <button onclick="closeFuDialog(false)" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#888">Geen reminder</button>
+      <button onclick="closeFuDialog(true)" style="padding:8px 16px;border-radius:8px;border:none;background:#1a5c3a;color:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY='qltrk2';
+const FB_URL='https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app/leads.json';
+
+async function fbSave(data){
+  try{
+    await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const si=document.getElementById('sync-indicator');
+    if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
+  }catch(e){
+    const si=document.getElementById('sync-indicator');
+    if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
+  }
+}
+
+async function fbLoad(){
+  try{
+    const res=await fetch(FB_URL);
+    const data=await res.json();
+    if(Array.isArray(data)&&data.length>0){
+      deals=data;
+      localStorage.setItem(KEY,JSON.stringify(deals));
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+const SKEY='qltrk2_settings';
+function getSettings(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
+function getDays(){const s=getSettings();return{fu1:Number(s.fu1)||3,fu2:Number(s.fu2)||10,fu2laat:Number(s.fu2laat)||20};}
+let deals=[],editId=null,view='dash';
+function load(){try{deals=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){deals=[]}}
+async function loadWithSync(){
+  const ok=await fbLoad();
+  if(!ok)load();
+  render();
+  const si=document.getElementById('sync-indicator');
+  if(si){si.textContent=ok?'☁ gesynchroniseerd':'☁ lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
+}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(deals));
+  const bkey='qltrk2_backups';
+  try{
+    const backups=JSON.parse(localStorage.getItem(bkey)||'[]');
+    backups.unshift({ts:new Date().toISOString(),data:JSON.stringify(deals)});
+    if(backups.length>10)backups.length=10;
+    localStorage.setItem(bkey,JSON.stringify(backups));
+  }catch(e){}
+  if(__fileHandle)doSave();
+  fbSave(deals);
+}
+let __fileHandle=null;
+
+async function kiesMap(){
+  try{
+    __fileHandle=await window.showSaveFilePicker({
+      suggestedName:'qline-leads.json',
+      types:[{description:'JSON bestand',accept:{'application/json':['.json']}}],
+      startIn:'desktop'
+    });
+    localStorage.setItem('qltrk_savepath',__fileHandle.name);
+    document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
+    await doSave();
+    alert('Map gekozen! Vanaf nu wordt automatisch opgeslagen.');
+  }catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
+}
+
+async function doSave(){
+  if(!__fileHandle)return false;
+  try{
+    const writable=await __fileHandle.createWritable();
+    await writable.write(JSON.stringify(deals,null,2));
+    await writable.close();
+    const el=document.getElementById('savepath');
+    if(el){el.textContent=__fileHandle.name+' — opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+    return true;
+  }catch(e){
+    __fileHandle=null;
+    return false;
+  }
+}
+
+async function autoSave(){
+  if(__fileHandle){
+    const ok=await doSave();
+    if(!ok)await kiesMap();
+  } else {
+    await kiesMap();
+  }
+}
+
+function exportBackup(){
+  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/[/]/g,'-');
+  const blob=new Blob([JSON.stringify(deals,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='qline-backup-'+datum+'.json';
+  a.click();
+}
+function importBackup(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!Array.isArray(data)){alert('Ongeldig backup bestand.');return}
+      if(!confirm(`Backup terugzetten? Dit overschrijft ${deals.length} huidige leads met ${data.length} leads uit de backup.`))return;
+      deals=data;save();render();
+      alert('Backup teruggezet!');
+    }catch(err){alert('Kon backup niet lezen.');}
+  };
+  reader.readAsText(file);
+}
+const td=()=>new Date().toISOString().slice(0,10);
+const da=d=>Math.floor((Date.now()-new Date(d))/86400000);
+const fmt=n=>n?'€'+Number(n).toLocaleString('nl-NL'):'—';
+const fd=d=>new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+const SL={nieuw:'Nieuwe lead',contact:'Contact gelegd',offerte:'Offerte verstuurd',dealer:'Naar dealer',gewonnen:'Gewonnen',verloren:'Verloren',deadend:'Dead end'};
+
+// DEAD LEAD RULE: 4+ outbound zonder reactie + laatste poging 3+ dagen geleden
+function getLeadRule(d){
+  if(d.status==='gewonnen'||d.status==='verloren'||d.status==='deadend')return null;
+  var contacts=d.contacts||[];
+  if(contacts.length===0)return null;
+
+  var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+  var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+
+  // REOPEN: was dead maar heeft nu gereageerd
+  if(d._was_dead&&klant_replies>0){
+    return{rule:'REOPENED',label:'Heropend',color:'#2980b9',bg:'#eef2fa'};
+  }
+
+  // DEAD: 4+ outbound, 0 reacties, laatste contact 3+ dagen geleden
+  if(outbound>=4&&klant_replies===0){
+    // Check dagen sinds laatste contact
+    var laatste=contacts[contacts.length-1];
+    // We don't have exact date objects, so use nextContact or just count
+    var dagenOpen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+    if(dagenOpen>=3){
+      return{rule:'DEAD',label:'Dead lead',color:'#888',bg:'#f5f4f0'};
+    }
+  }
+
+  // FOLLOW-UP STRATEGY: geef wachttijd advies
+  if(klant_replies===0&&outbound>0){
+    var wacht=[0,2,3,4,3][outbound]||3;
+    return{rule:'FOLLOWUP',label:'Follow-up',outbound:outbound,wacht:wacht,color:'#b8590a',bg:'#fef3e8'};
+  }
+
+  // ACTIVE: klant heeft gereageerd
+  if(klant_replies>0){
+    return{rule:'ACTIVE',label:'Actief',color:'#1a5c3a',bg:'#eef5f0'};
+  }
+  return null;
+}
+
+// Leer van gewonnen deals - bereken persoonlijk gemiddelde
+function getLeerData(){
+  var won=deals.filter(function(d){return d.status==='gewonnen';});
+  var deadends=deals.filter(function(d){return d.status==='deadend';});
+  if(won.length===0)return null;
+  var totaalInteracties=0, totaalReacties=0, totaalDagen=0, n=0;
+  won.forEach(function(d){
+    var contacts=d.contacts||[];
+    var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+    var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+    var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+    var pairs=0, streak=0;
+    contacts.forEach(function(cc){
+      if(cc.type==='reactie'){if(streak>0)pairs++;streak=0;}
+      else streak++;
+    });
+    totaalInteracties+=pairs;
+    totaalReacties+=reacties;
+    totaalDagen+=dagen;
+    n++;
+  });
+  return{
+    gemInteracties:totaalInteracties/n,
+    gemReacties:totaalReacties/n,
+    gemDagen:totaalDagen/n,
+    aantalWon:n
+  };
+}
+
+// Compute score from contact log + historical learning
+function getScore(d){
+  var contacts=d.contacts||[];
+  if(d.status==='nieuw')return 0;
+  if(d.status==='contact')return Math.min(30,((d.contacts||[]).filter(function(cc){return cc.type==='reactie';}).length)*10+5);
+  if(d.status==='gewonnen')return 100;
+  if(d.status==='verloren')return 0;
+  if(d.status==='deadend')return 0;
+
+  var interaction_pairs=0;
+  var klant_replies=0;
+  var outbound_streak=0;
+  var laatste_was_reactie=false;
+  for(var i=0;i<contacts.length;i++){
+    var cc=contacts[i];
+    if(cc.type==='reactie'){
+      klant_replies++;
+      if(outbound_streak>0)interaction_pairs++;
+      outbound_streak=0;
+      laatste_was_reactie=true;
+    } else {
+      outbound_streak++;
+      laatste_was_reactie=false;
+    }
+  }
+  var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+
+  var leer=getLeerData();
+  var score;
+
+  if(leer&&leer.aantalWon>=2){
+    // Score op basis van hoe ver je bent t.o.v. jouw gemiddelde winnende deal
+    var interactie_pct=leer.gemInteracties>0?Math.min(1,interaction_pairs/leer.gemInteracties):0;
+    var reactie_pct=leer.gemReacties>0?Math.min(1,klant_replies/leer.gemReacties):0;
+    var tijd_pct=leer.gemDagen>0?Math.min(1,dagen/leer.gemDagen):0;
+    // Gewogen: interacties 40%, reacties 40%, tijd 20%
+    score=(interactie_pct*40)+(reactie_pct*40)+(tijd_pct*20);
+    // Bonus/malus
+    if(laatste_was_reactie)score+=10;
+    if(outbound_streak>=3)score-=10;
+    score=Math.min(95,Math.max(5,Math.round(score)));
+  } else {
+    // Nog niet genoeg data - gebruik basisformule
+    score=(interaction_pairs*25)+(klant_replies*15)-(outbound_streak*5)-(Math.max(0,dagen-30)*0.5)+(laatste_was_reactie?15:0);
+    score=Math.min(95,Math.max(5,Math.round(score)));
+  }
+  return score;
+}
+
+// Voorspel wanneer lead slachtrijp is
+function getVoorspelling(d){
+  var leer=getLeerData();
+  if(!leer||leer.aantalWon<2)return null;
+  var contacts=d.contacts||[];
+  var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+  var interaction_pairs=0, streak=0;
+  contacts.forEach(function(cc){
+    if(cc.type==='reactie'){if(streak>0)interaction_pairs++;streak=0;}
+    else streak++;
+  });
+  var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+
+  var nog_interacties=Math.max(0,Math.ceil(leer.gemInteracties-interaction_pairs));
+  var nog_reacties=Math.max(0,Math.ceil(leer.gemReacties-klant_replies));
+  var nog_dagen=Math.max(0,Math.ceil(leer.gemDagen-dagen));
+
+  return{
+    nog_interacties:nog_interacties,
+    nog_reacties:nog_reacties,
+    nog_dagen:nog_dagen,
+    gem_interacties:Math.round(leer.gemInteracties*10)/10,
+    gem_reacties:Math.round(leer.gemReacties*10)/10,
+    gem_dagen:Math.round(leer.gemDagen),
+    aantalWon:leer.aantalWon
+  };
+}
+
+// Compute display status from contact log
+function getDisplayStatus(d){
+  if(d.status==='nieuw')return{key:'nieuw',label:'Nieuwe lead',pill:'pn'};
+  if(d.status==='contact'){
+    var contacts=d.contacts||[];
+    var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+    if(reacties>0)return{key:'contact',label:'Reageert',pill:'pc'};
+    return{key:'contact',label:'Contact gelegd',pill:'pc'};
+  }
+  if(d.status==='dealer')return{key:'dealer',label:'Naar dealer',pill:'pd'};
+  if(d.status==='gewonnen')return{key:'gewonnen',label:'Gewonnen',pill:'pw'};
+  if(d.status==='verloren')return{key:'verloren',label:'Verloren',pill:'pl'};
+  if(d.status==='deadend')return{key:'deadend',label:'Dead end',pill:'pde'};
+  // offerte verstuurd - compute FU level from contacts
+  var contacts=d.contacts||[];
+  var outbound=contacts.filter(function(cc){return cc.type==='bel'||cc.type==='mail';}).length;
+  var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+  if(outbound===0)return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
+  if(reacties===0&&outbound===1)return{key:'fu1',label:'Follow-up 1',pill:'pf1'};
+  if(reacties===0&&outbound>=2)return{key:'fu2',label:'Follow-up 2+',pill:'pf2'};
+  if(reacties>0&&outbound>reacties)return{key:'fu1',label:'In gesprek',pill:'pf1'};
+  if(reacties>0)return{key:'offerte',label:'Actief gesprek',pill:'po'};
+  return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
+}
+const SP={nieuw:'pn',offerte:'po',fu1:'pf1',fu2:'pf2',gewonnen:'pw',verloren:'pl'}; // legacy
+
+function urg(d){
+  if(['gewonnen','verloren','deadend'].includes(d.status))return'none';
+  if(d.status==='nieuw'||d.status==='contact'||d.status==='dealer')return'ok';
+  if(d.nextContact){
+    const days=Math.floor((new Date(d.nextContact)-Date.now())/86400000);
+    if(days<0)return'urg';
+    if(days<=2)return'soon';
+    return'ok';
+  }
+  return'ok';
+}
+// Migrate old fu1/fu2 statuses to offerte
+deals.forEach(function(d){if(d.status==='fu1'||d.status==='fu2')d.status='offerte';});
+function ns(d){
+  if(d.status==='nieuw')return'Offerte nog niet verstuurd';
+  if(d.nextContact){
+    const days=Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
+    if(days<0)return`${Math.abs(days)}d te laat`;
+    if(days===0)return'Vandaag opvolgen';
+    return`Over ${days}d opvolgen`;
+  }
+  return'Stel follow-up in';
+}
+
+function parseXml(text){
+  const doc=new DOMParser().parseFromString(text,'text/xml');
+  const g=t=>doc.querySelector(t)?.textContent?.trim()||'';
+
+  // Formaat 1: webshop aanvraag (Naam, E-mailadres, Product, ID)
+  if(g('Naam')){
+    const adres=[g('Address'),g('Zipcode'),g('City'),g('Country')].filter(Boolean).join(', ');
+    const wanneer=g('WannPlanenSieDenKauf')||g('WhenDoYouPlanToBuy')||'';
+    const type=g('WelcheArtVonBetriebOderSituationTrifftAufSieZu')||g('TypeOfBusiness')||'';
+    const notitie=[wanneer?`Kooptermijn: ${wanneer}`:'',type?`Type klant: ${type}`:'',adres?`Adres: ${adres}`:''].filter(Boolean).join('\n');
+    const contactWay=g('PreferredContactWay')||'';
+    const kooptermijn=g('WannPlanenSieDenKauf')||'';
+    const land=g('Country')||'';
+    const extraNotitie=[contactWay?`Voorkeur contact: ${contactWay}`:'',kooptermijn?`Kooptermijn: ${kooptermijn}`:'',land?`Land: ${land}`:''].filter(Boolean).join('\n');
+    const notitieXml=[notitie,extraNotitie].filter(Boolean).join('\n');
+    return{klant:g('Naam'),email:g('E-mailadres'),sub:g('Product')||g('Onderwerp'),aanvraagnr:g('ID'),telefoon:g('Phone'),land,contactWay,kooptermijn,datum:td(),status:'nieuw',notitie:notitieXml};
+  }
+
+  // Formaat 2: contactformulier (fromName, fromEmail, message als JSON)
+  const naam=g('fromName');
+  const email=g('fromEmail');
+  const aanvraagnr=g('id');
+  const datumRaw=g('dateCreated');
+  const datum=datumRaw?datumRaw.slice(0,10):td();
+  const subject=g('subject');
+
+  let telefoon='',bericht='',notitie='';
+  try{
+    const msg=JSON.parse(g('message'));
+    telefoon=msg.Telefoonnummer||msg.Phone||msg.telefoon||'';
+    bericht=msg.body||msg.message||msg.bericht||'';
+  }catch(e){
+    bericht=g('message');
+  }
+  notitie=[subject?`Onderwerp: ${subject}`:'',bericht?`Bericht:\n${bericht}`:'',telefoon?`Tel: ${telefoon}`:''].filter(Boolean).join('\n');
+
+  return{klant:naam,email,sub:subject||'Contactaanvraag',aanvraagnr,telefoon,datum,status:'nieuw',notitie};
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dz').classList.remove('over');
+  const f=e.dataTransfer.files[0];
+  if(f)processFile(f);
+}
+function handleFile(input){if(input.files[0])processFile(input.files[0])}
+async function processFile(file){
+  const dz=document.getElementById('dz');
+  if(dz)dz.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:2px"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div><span style="font-size:13px;color:var(--accent)">Verwerken...</span></div>`;
+  try{
+    if(file.name.endsWith('.xml')){
+      const data=parseXml(await file.text());
+      openNew(data);
+    }
+  }catch(err){console.error(err);}
+  render();
+}
+
+function toggleDatumOfferte(){
+  const wrap=document.getElementById('fdo-wrap');
+  if(!wrap)return;
+  const s=document.getElementById('fst')?.value||'';
+  wrap.style.display=['offerte','fu1','fu2'].includes(s)?'block':'none';
+}
+function openNew(pre){
+  editId=null;
+  document.getElementById('mtitle').textContent='Lead toevoegen';
+  document.getElementById('fk').value=pre?.klant||'';
+  document.getElementById('fb').value=pre?.bedrag||'';
+  document.getElementById('fs').value=pre?.sub||'';
+  document.getElementById('fon').value=pre?.offertenr||'';
+  document.getElementById('fan').value=pre?.aanvraagnr||'';
+  document.getElementById('fd').value=pre?.datum||td();
+  document.getElementById('fst').value=pre?.status||'nieuw';
+  document.getElementById('fdo').value=pre?.datumOfferte||'';
+  document.getElementById('fe').value=pre?.email||'';
+  document.getElementById('ftel').value=pre?.telefoon||'';
+  const fcw=document.getElementById('fcw');if(fcw&&pre?.contactWay){fcw.value=pre.contactWay;}
+  const fland=document.getElementById('fland');if(fland)fland.value=pre?.land||'';
+  document.getElementById('fn').value=pre?.notitie||'';
+  document.getElementById('cwrap').style.display='none';
+  document.getElementById('bdel').style.display='none';
+  document.getElementById('mo').classList.add('open');
+  toggleDatumOfferte();
+}
+function openEdit(id){
+  editId=id;
+  const d=deals.find(x=>x.id===id);
+  document.getElementById('mtitle').textContent=d.klant;
+  document.getElementById('fk').value=d.klant;
+  document.getElementById('fb').value=d.bedrag||'';
+  document.getElementById('fs').value=d.onderwerp||'';
+  document.getElementById('fon').value=d.offertenr||'';
+  document.getElementById('fan').value=d.aanvraagnr||'';
+  document.getElementById('fd').value=d.datum;
+  document.getElementById('fst').value=d.status;
+  document.getElementById('fdo').value=d.datumOfferte||'';
+  toggleDatumOfferte();
+  document.getElementById('fe').value=d.email||'';
+  document.getElementById('ftel').value=d.telefoon||'';
+  const fcw2=document.getElementById('fcw');if(fcw2)fcw2.value=d.contactWay||'';
+  const fland2=document.getElementById('fland');if(fland2)fland2.value=d.land||'';
+  document.getElementById('fn').value=d.notitie||'';
+  document.getElementById('cwrap').style.display='block';
+  document.getElementById('fnc').value='';
+  renderClog(d.contacts||[]);
+  document.getElementById('bdel').style.display='inline-block';
+  document.getElementById('mo').classList.add('open');
+  toggleDatumOfferte();
+}
+function closeMo(){document.getElementById('mo').classList.remove('open');editId=null}
+function saveDeal(){
+  const k=document.getElementById('fk').value.trim();
+  if(!k){alert('Vul een naam in.');return}
+  const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,datumOfferte:document.getElementById('fdo').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),contactWay:document.getElementById('fcw')?.value||'',land:document.getElementById('fland')?.value.trim()||'',notitie:document.getElementById('fn').value.trim()};
+  if(editId){Object.assign(deals.find(x=>x.id===editId),obj)}
+  else{deals.push({id:Date.now().toString(),...obj,contacts:[]})}
+  save();closeMo();render();
+}
+function delDeal(){
+  const d=deals.find(x=>x.id===editId);
+  if(!d)return;
+  const footer=document.querySelector('.mfoot');
+  footer.innerHTML=`
+    <span style="font-size:13px;color:var(--red);font-weight:500">Weet je het zeker?</span>
+    <button class="btn btn-d" style="margin-left:8px" onclick="confirmDel()">Ja, verwijder</button>
+    <button class="btn" onclick="cancelDel()">Annuleer</button>`;
+}
+function confirmDel(){
+  deals=deals.filter(x=>x.id!==editId);
+  save();closeMo();render();
+}
+function cancelDel(){
+  const footer=document.querySelector('.mfoot');
+  footer.innerHTML=`
+    <button class="btn" onclick="closeMo()">Annuleren</button>
+    <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+    <button class="btn btn-d" id="bdel" style="margin-left:auto" onclick="delDeal()">Verwijder</button>`;
+}
+function quickBel(id,e){e&&e.stopPropagation();showContactPopup(id,'bel');}
+function quickReactie(id,e){e&&e.stopPropagation();showContactPopup(id,'reactie');}
+function quickMail(id,e){e&&e.stopPropagation();showContactPopup(id);}
+function showContactPopup(id,preselect){
+  const d=deals.find(x=>x.id===id);
+  if(!d)return;
+  window.__fuId=id;
+  window.__fuDate=null;
+  window.__contactType=null;
+  const box=document.querySelector('.mbox');
+  box.innerHTML=`
+    <div class="mhead"><div class="mtitle">Contact met ${d.klant}</div></div>
+    <div class="ff">
+      <label>Wat heb je gedaan?</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn" id="btn-bel" onclick="selectType('bel')">📞 Gebeld</button>
+        <button class="btn" id="btn-app" onclick="selectType('app')">💬 Geappt</button>
+        <button class="btn" id="btn-mail" onclick="selectType('mail')">✉ Gemaild</button>
+        <button class="btn" id="btn-reactie" onclick="selectType('reactie')">📩 Reactie ontvangen</button>
+      </div>
+    </div>
+    <div class="ff">
+      <label>Notitie (optioneel)</label>
+      <textarea id="fu-note" rows="3" placeholder="Wat besproken? Wat afgesproken?"></textarea>
+    </div>
+    <div class="ff">
+      <label>Wanneer weer opvolgen?</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn" onclick="pickDays(3,this)">3 dagen</button>
+        <button class="btn" onclick="pickDays(7,this)">1 week</button>
+        <button class="btn" onclick="pickDays(14,this)">2 weken</button>
+        <button class="btn" onclick="pickDays(30,this)">1 maand</button>
+        <button class="btn" onclick="pickDays(90,this)">3 maanden</button>
+        <button class="btn" onclick="pickDays(180,this)">6 maanden</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="fu-eigen" placeholder="Eigen aantal" min="1" style="width:130px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--text);outline:none">
+        <span style="font-size:14px;color:var(--muted)">dagen</span>
+        <button class="btn" onclick="pickEigen()">OK</button>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="saveContact(false)">Opslaan zonder reminder</button>
+      <button class="btn btn-p" onclick="saveContact(true)">Opslaan</button>
+    </div>`;
+  document.getElementById('mo').classList.add('open');
+  if(preselect)setTimeout(()=>selectType(preselect),10);
+}
+function selectType(type){
+  window.__contactType=type;
+  ['bel','app','mail','reactie'].forEach(t=>{
+    const btn=document.getElementById('btn-'+t);
+    if(!btn)return;
+    btn.style.background=type===t?'var(--accent-bg)':'';
+    btn.style.borderColor=type===t?'var(--accent-border)':'';
+    btn.style.color=type===t?'var(--accent)':'';
+  });
+}
+function pickDays(days,btn){
+  document.querySelectorAll('#mo .btn').forEach(b=>{b.style.background='';b.style.borderColor='';});
+  if(btn){btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';}
+  const d=new Date();d.setDate(d.getDate()+days);
+  window.__fuDate=d.toISOString().slice(0,10);
+}
+function pickEigen(){
+  const days=parseInt(document.getElementById('fu-eigen')?.value);
+  if(!days||days<1)return;
+  const d=new Date();d.setDate(d.getDate()+days);
+  window.__fuDate=d.toISOString().slice(0,10);
+  saveContact(true);
+}
+function closeFuDialog(metDatum){
+  saveContact(metDatum);
+}
+function showFuPopup(id){
+  showContactPopup(id);
+}
+function saveContact(metDatum){
+  const d=deals.find(x=>x.id===window.__fuId);
+  if(!d)return;
+  if(!d.contacts)d.contacts=[];
+  const now=new Date();
+  const type=window.__contactType||'bel';
+  const tekst=document.getElementById('fu-note')?.value?.trim()||'';
+  if(type||tekst){
+    d.contacts.push({type,datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
+  }
+  if(metDatum&&window.__fuDate)d.nextContact=window.__fuDate;
+  save();
+  window.__fuDate=null;
+  window.__contactType=null;
+  window.__fuId=null;
+  document.getElementById('mo').classList.remove('open');
+  restoreModal();
+  render();
+}
+
+function restoreModal(){
+  const box=document.querySelector('.mbox');
+  if(!box)return;
+  box.innerHTML=`
+    <div class="mhead">
+      <div class="mtitle" id="mtitle">Lead toevoegen</div>
+      <button class="mclose" onclick="closeMo()">×</button>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
+      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
+    </div>
+    <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
+    <div class="fg">
+      <div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+      <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Datum</label><input id="fd" type="date"></div>
+      <div class="ff"><label>Status</label>
+        <select id="fst" onchange="toggleDatumOfferte()">
+          <option value="nieuw">Nieuwe lead</option>
+          <option value="contact">Contact gelegd</option>
+          <option value="offerte">Offerte verstuurd</option>
+          <option value="dealer">Doorgestuurd naar dealer</option>
+          <option value="gewonnen">Gewonnen</option>
+          <option value="verloren">Verloren</option>
+          <option value="deadend">Dead end</option>
+        </select>
+      </div>
+    </div>
+    <div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
+    <div class="fg">
+      <div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
+      <div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
+    </div>
+    <div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
+    <div id="cwrap" style="display:none">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
+      <div id="clist"></div>
+      <div class="clog-add">
+        <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
+        <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
+          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeMo()">Annuleren</button>
+      <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+      <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
+    </div>`;
+}
+function quick(id,s,e){
+  e&&e.stopPropagation();
+  const d=deals.find(x=>x.id===id);
+  if(!d)return;
+  d.status=s;
+  if(s==='offerte'&&!d.datumOfferte)d.datumOfferte=new Date().toISOString().slice(0,10);
+  if(s==='gewonnen'||s==='verloren'||s==='deadend'){d.nextContact=null;save();render();}
+  else{save();showContactPopup(id);}
+}
+
+function renderClog(contacts){
+  const el=document.getElementById('clist');
+  if(!el)return;
+  if(!contacts.length){el.innerHTML=`<div style="font-size:12px;color:var(--hint);margin-bottom:8px">Nog geen contactmomenten.</div>`;return}
+  el.innerHTML=contacts.map((c,i)=>{
+    const icon=c.type==='mail'?'Mail':c.type==='reactie'?'Reactie':c.type==='app'?'App':'Bel';
+    const clr=c.type==='mail'?'color:var(--blue)':c.type==='reactie'?'color:var(--orange)':c.type==='app'?'color:#6b3fa0':'color:var(--accent)';
+    return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" style="${clr}">${icon} ${i+1} &mdash; ${c.datum} ${c.tijd}</span><button onclick="deleteContact(${i})" style="margin-left:auto;background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px" title="Verwijder">✕</button></div><div class="clog-text">${c.tekst||''}</div></div>`;
+  }).join('');
+}
+function deleteContact(i){
+  const d=deals.find(x=>x.id===editId);
+  if(!d||!d.contacts)return;
+  d.contacts.splice(i,1);
+  save();
+  renderClog(d.contacts);
+}
+function mailKlant(){
+  const d=deals.find(x=>x.id===editId);
+  if(!d||!d.email){alert('Geen e-mailadres bekend voor deze klant.');return}
+  const tekst=document.getElementById('fnc').value.trim();
+  if(!d.contacts)d.contacts=[];
+  const now=new Date();
+  d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:tekst||'Mail verstuurd'});
+  document.getElementById('fnc').value='';
+  save();renderClog(d.contacts);
+  window.location.href=`mailto:${d.email}?subject=Offerte ${d.offertenr||d.onderwerp||''}`;
+}
+function openContactFromModal(){
+  // Save current form data first
+  const k=document.getElementById('fk').value.trim();
+  if(!k){alert('Vul een naam in.');return}
+  const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),notitie:document.getElementById('fn').value.trim()};
+  if(editId){Object.assign(deals.find(x=>x.id===editId),obj)}
+  else{const id=Date.now().toString();deals.push({id,...obj,contacts:[]});editId=id;}
+  save();
+  document.getElementById('mo').classList.remove('open');
+  showContactPopup(editId);
+}
+function addContact(){
+  const tekst=document.getElementById('fnc').value.trim();
+  const d=deals.find(x=>x.id===editId);
+  if(!d)return;
+  if(!d.contacts)d.contacts=[];
+  const now=new Date();
+  d.contacts.push({type:'bel',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
+  document.getElementById('fnc').value='';
+  save();renderClog(d.contacts);
+}
+
+function show(v){
+  view=v;
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['dash','pipe','alle','analyse'][i]===v));
+  render();
+}
+function render(){
+  updateBadge();
+  const m=document.getElementById('main');
+  if(view==='dash')m.innerHTML=rDash();
+  else if(view==='pipe')m.innerHTML=rPipe();
+  else if(view==='alle')m.innerHTML=rAlle();
+  else if(view==='analyse'){m.innerHTML=rAnalyse();setTimeout(runAiScoring,100);}
+}
+function updateBadge(){
+  const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;
+  const b=document.getElementById('badge');
+  b.textContent=n;b.style.display=n?'inline':'none';
+}
+
+function dzHtml(){
+  return`<div class="dropzone" id="dz"
+    ondragover="event.preventDefault();this.classList.add('over')"
+    ondragleave="this.classList.remove('over')"
+    ondrop="handleDrop(event)"
+    onclick="document.getElementById('fi').click()">
+    <div class="dz-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+    <div>
+      <div class="dz-title">Sleep de webshop XML hiernaartoe</div>
+      <div class="dz-sub">Alle klantgegevens worden automatisch ingelezen · of klik om te bladeren</div>
+    </div>
+    <input id="fi" type="file" accept=".xml" style="display:none" onchange="handleFile(this)">
+  </div>`;
+}
+
+function rDash(){
+  const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
+  const won=deals.filter(d=>d.status==='gewonnen');
+  const laat=deals.filter(d=>urg(d)==='urg');
+  const bk=deals.filter(d=>urg(d)==='soon');
+  const conv=deals.length?Math.round(won.length/deals.length*100):0;
+  const openVal=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+  // Sort: te laat/vandaag eerst, dan op nextContact datum oplopend, dan leads zonder datum
+  function sortVal(d){
+    if(!d.nextContact)return 99999;
+    return Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
+  }
+  const actie=open.filter(d=>urg(d)==='urg'||urg(d)==='soon').sort((a,b)=>sortVal(a)-sortVal(b));
+  const rest=open.filter(d=>urg(d)==='ok').sort((a,b)=>sortVal(a)-sortVal(b));
+  const geenDatum=open.filter(d=>d.status!=='nieuw'&&!d.nextContact);
+  const nieuweLeads=open.filter(d=>d.status==='nieuw').sort((a,b)=>new Date(a.datum)-new Date(b.datum));
+  return`${dzHtml()}
+  <div class="ph">
+    <div><div class="ph-title">Dashboard <em>— actie vereist</em></div><div class="ph-sub">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
+    <button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">Open leads</div><div class="kpi-n">${open.length}</div><div class="kpi-s">${fmt(openVal)} open waarde</div></div>
+    <div class="kpi"><div class="kpi-l">Actie vereist</div><div class="kpi-n red">${laat.length+bk.length}</div><div class="kpi-s">${laat.length} te laat · ${bk.length} vandaag/binnenkort</div></div>
+    <div class="kpi"><div class="kpi-l">Gewonnen</div><div class="kpi-n green">${won.length}</div><div class="kpi-s">${fmt(won.reduce((s,d)=>s+(Number(d.bedrag)||0),0))}</div></div>
+    <div class="kpi"><div class="kpi-l">Conversie</div><div class="kpi-n acc">${conv}%</div><div class="kpi-s">${deals.length} totaal</div></div>
+  </div>
+  ${laat.length?`<div class="alert"><div class="alert-dot"></div><strong>${laat.length} lead${laat.length>1?'s':''} te laat</strong> — pak vandaag de telefoon.</div>`:''}
+  ${actie.length?`<div class="sh"><div class="sl">Nu opvolgen</div><div class="sline"></div><div class="sn">${actie.length}</div></div>${tbl(actie)}`:''}
+  ${rest.length?`<div class="sh"><div class="sl">Ingepland</div><div class="sline"></div><div class="sn">${rest.length}</div></div>${tbl(rest)}`:''}
+  ${geenDatum.length?`<div class="sh"><div class="sl">Geen follow-up datum</div><div class="sline"></div><div class="sn">${geenDatum.length}</div></div>${tbl(geenDatum)}`:''}
+  ${nieuweLeads.length?`<div class="sh"><div class="sl">Nieuwe leads</div><div class="sline"></div><div class="sn">${nieuweLeads.length}</div></div>${tbl(nieuweLeads)}`:''}
+  ${open.length===0?'<div class="empty">Geen open leads — sleep een XML bestand of voeg handmatig toe.</div>':''}`;
+}
+
+function tbl(rows){
+  if(!rows.length)return'';
+  const trs=rows.map(d=>{
+    const u=urg(d),cls=u==='urg'?'urg':u==='soon'?'soon':'ok';
+    const utag=u==='urg'?`<span class="ul">● Te laat</span>`:u==='soon'?`<span class="us">● Binnenkort</span>`:`<span class="uo">${da(d.datum)}d</span>`;
+    const calls=d.contacts?.length||0;
+    const lastContact=calls?d.contacts[calls-1]:null;
+    const lastTag=lastContact
+      ?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'…':''}</div>`
+      :`<span class="ch">—</span>`;
+    const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
+      ${d.status==='nieuw'?`<button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
+      ${d.status==='contact'?`<button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''} 
+      <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
+      <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
+      <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
+      <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
+      <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
+    </div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
+    return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
+      <td><div class="cn">${d.klant}</div><div class="cs">${d.onderwerp||'—'}</div></td>
+      <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
+      <td><span class="cm">${fmt(d.bedrag)}</span></td>
+      <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:36px;height:5px;background:#f0ede6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,getScore(d))}%;background:${getScore(d)>=70?'#1a5c3a':getScore(d)>=40?'#b8590a':'#c0392b'};border-radius:3px"></div></div>
+          <span class="cm" style="font-size:12px;color:${getScore(d)>=70?'var(--green)':getScore(d)>=40?'var(--orange)':'var(--red)'}">${getScore(d)}%</span>
+        </div>
+      </td>
+      <td>
+        ${d.nextContact?`<div class="ch" style="color:var(--text);font-weight:600">${fd(d.nextContact)}</div><div class="ch">opvolgen</div>`:`<div class="ch">${fd(d.datum)}</div><div class="ch">binnenkomst</div>`}
+      </td>
+      <td>${utag}</td>
+      <td>${lastTag}</td>
+      <td><div class="ch">${ns(d)}</div>${calls?`<div class="ch">${calls}× contact</div>`:''}</td>
+      <td>${act}</td>
+    </tr>`;
+  }).join('');
+  return`<table class="t"><thead><tr><th>Klant</th><th>Offertenr.</th><th>Bedrag</th><th>Status</th><th>Score</th><th>Opvolgen / datum</th><th>Urgentie</th><th>Laatste contact</th><th>Acties</th></tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+function rPipe(){
+  // Build pipeline groups based on contact log, not status field
+  function pipeGroup(d){
+    if(d.status==='nieuw')return'nieuw';
+    if(d.status==='contact')return'contact';
+    if(d.status==='dealer')return'dealer';
+    if(d.status==='gewonnen')return'gewonnen';
+    if(d.status==='verloren')return'verloren';
+    if(d.status==='deadend')return'deadend';
+    // offerte - split by contact log
+    var contacts=d.contacts||[];
+    var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+    var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+    if(contacts.length===0)return'offerte';
+    if(klant_replies>0&&outbound>klant_replies)return'gesprek';
+    if(klant_replies>0)return'gesprek';
+    if(outbound>=2)return'fu2';
+    return'fu1';
+  }
+  const stages=[
+    {k:'nieuw',l:'Nieuwe lead',c:'#1a3a6c'},
+    {k:'contact',l:'Contact gelegd',c:'#6b3fa0'},
+    {k:'dealer',l:'Naar dealer',c:'#1a6090'},
+    {k:'offerte',l:'Offerte verstuurd',c:'#1a5c3a'},
+    {k:'followup',l:'Follow-up',c:'#b8590a'},
+    {k:'gesprek',l:'In gesprek',c:'#2980b9'},
+    {k:'gewonnen',l:'Gewonnen',c:'#27ae60'},
+    {k:'verloren',l:'Verloren',c:'#999'},
+    {k:'deadend',l:'Dead end',c:'#c8c8c0'}
+  ];
+  const cols=stages.map(s=>{
+    const items=deals.filter(d=>{
+      var g=pipeGroup(d);
+      if(s.k==='followup')return g==='fu1'||g==='fu2';
+      return g===s.k;
+    });
+    const cards=items.length?items.map(d=>{const u=urg(d),dc=u==='urg'?'var(--red)':u==='soon'?'var(--orange)':'var(--hint)';var ds=getDisplayStatus(d);
+          var scoreVal=getScore(d);
+          var scoreClr=scoreVal>=70?'#1a5c3a':scoreVal>=40?'#b8590a':'#c0392b';
+          var html='<div class="pcard" onclick="openEdit(\''+d.id+'\')"><div class="pcn">'+d.klant+'</div>';
+          if(d.bedrag)html+='<div class="pca">'+fmt(d.bedrag)+'</div>';
+          html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">';
+          html+='<span style="font-size:10px;color:#888">'+da(d.datum)+'d</span>';
+          html+='<span style="font-size:11px;font-weight:700;color:'+scoreClr+'">'+scoreVal+'%</span>';
+          html+='</div></div>';
+          return html;}).join(''):`<div style="font-size:11px;color:var(--hint);padding:4px 0">Leeg</div>`;
+    return`<div class="pcol"><div class="pch"><span style="color:${s.c}">${s.l}</span><span>${items.length}</span></div>${cards}</div>`;
+  }).join('');
+  return`<div class="ph"><div><div class="ph-title">Pipeline</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div><div class="pipe">${cols}</div>`;
+}
+
+function rAlle(){
+  const sorted=[...deals].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+  return`<div class="ph"><div><div class="ph-title">Alle leads</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${sorted.length?tbl(sorted):'<div class="empty">Nog geen leads.</div>'}`;
+}
+
+function rAnalyse(){
+  const won=deals.filter(d=>d.status==='gewonnen');
+  const lost=deals.filter(d=>d.status==='verloren');
+  const dead=deals.filter(d=>d.status==='deadend');
+  const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
+  const all=deals.length;
+  const conv=all?Math.round(won.length/all*100):0;
+  const openWaarde=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+  const wonWaarde=won.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+  const gemContact=won.length?Math.round(won.reduce((s,d)=>s+(d.contacts?.length||0),0)/won.length*10)/10:0;
+  const fmtE=n=>n>=1000?'€'+Math.round(n/1000)+'K':'€'+Math.round(n);
+  const fmtFull=n=>'€'+Math.round(n).toLocaleString('nl-NL');
+
+  // Maanddata
+  const maanden={};
+  const nu=new Date();
+  for(let i=5;i>=0;i--){const d=new Date(nu.getFullYear(),nu.getMonth()-i,1);maanden[d.toISOString().slice(0,7)]={leads:0,won:0,waarde:0,wonWaarde:0};}
+  deals.forEach(d=>{const m=d.datum?.slice(0,7);if(m&&maanden[m]){maanden[m].leads++;maanden[m].waarde+=Number(d.bedrag)||0;if(d.status==='gewonnen'){maanden[m].won++;maanden[m].wonWaarde+=Number(d.bedrag)||0;}if(d.status==='deadend'){maanden[m].dead=(maanden[m].dead||0)+1;}}});
+  const mk=Object.keys(maanden).sort();
+  const ml=mk.map(m=>{const d=new Date(m+'-01');return d.toLocaleDateString('nl-NL',{month:'short'});});
+
+  // Herkomst land uit notitie (Adres: ..., Land) of email domein extensie
+  const landen={};
+  deals.forEach(d=>{
+    let land='Onbekend';
+    const adresMatch=d.notitie?.match(/Adres:.*?,\s*([A-Z]{2})$/im);
+    if(adresMatch)land=adresMatch[1];
+    else{
+      const emailMatch=d.email?.match(/\.([a-z]{2,3})$/);
+      if(emailMatch){
+        const ext=emailMatch[1].toUpperCase();
+        const map={NL:'Nederland',DE:'Duitsland',BE:'België',FR:'Frankrijk',GB:'VK',UK:'VK',COM:'Internationaal',NET:'Internationaal',ORG:'Internationaal',EU:'Europa',AT:'Oostenrijk',CH:'Zwitserland',ES:'Spanje',IT:'Italië',PL:'Polen',DK:'Denemarken',SE:'Zweden',NO:'Noorwegen'};
+        land=map[ext]||ext;
+      }
+    }
+    landen[land]=(landen[land]||0)+1;
+  });
+  const landenSorted=Object.entries(landen).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxLand=landenSorted[0]?.[1]||1;
+
+  // Contactmomenten vs conversie
+  // Groepeer deals op aantal contactmomenten (0,1,2,3,4,5+)
+  const contactGroups={0:{tot:0,won:0},1:{tot:0,won:0},2:{tot:0,won:0},3:{tot:0,won:0},4:{tot:0,won:0},'5+':{tot:0,won:0}};
+  [...won,...lost,...open.filter(d=>d.status!=='nieuw')].forEach(d=>{
+    const n=d.contacts?.length||0;
+    const key=n>=5?'5+':n.toString();
+    if(!contactGroups[key])contactGroups[key]={tot:0,won:0};
+    contactGroups[key].tot++;
+    if(d.status==='gewonnen')contactGroups[key].won++;
+  });
+  const cgKeys=Object.keys(contactGroups);
+  const cgLabels=cgKeys.map(k=>k==='0'?'0 contact':k==='1'?'1x':k+'x');
+  const cgConv=cgKeys.map(k=>contactGroups[k].tot?Math.round(contactGroups[k].won/contactGroups[k].tot*100):0);
+  const cgTot=cgKeys.map(k=>contactGroups[k].tot);
+
+  const offerteDeals=deals.filter(d=>d.status==='offerte');
+  const inGesprek=offerteDeals.filter(d=>(d.contacts||[]).some(cc=>cc.type==='reactie')).length;
+  const followUp=offerteDeals.filter(d=>{var c=d.contacts||[];return c.length>0&&!c.some(cc=>cc.type==='reactie');}).length;
+  const verstuurd=offerteDeals.length-inGesprek-followUp;
+  const statusCounts=[
+    {l:'Nieuwe lead',n:deals.filter(d=>d.status==='nieuw').length,c:'#1a3a6c'},
+    {l:'Offerte verstuurd',n:verstuurd,c:'#1a5c3a'},
+    {l:'Follow-up',n:followUp,c:'#b8590a'},
+    {l:'In gesprek',n:inGesprek,c:'#2980b9'},
+    {l:'Gewonnen',n:won.length,c:'#27ae60'},
+    {l:'Verloren',n:lost.length,c:'#bbb'},
+    {l:'Dead end',n:dead.length,c:'#c8c8c0'},
+  ];
+
+  const top5=open.filter(d=>d.bedrag).sort((a,b)=>Number(b.bedrag)-Number(a.bedrag)).slice(0,5);
+
+  setTimeout(()=>{
+    if(!window.Chart)return;
+    const c1=document.getElementById('ch1');
+    if(c1){new Chart(c1,{type:'bar',data:{labels:ml,datasets:[
+      {data:mk.map(m=>maanden[m].leads),backgroundColor:'#b8d4c2',borderRadius:5,label:'Leads'},
+      {data:mk.map(m=>maanden[m].won),backgroundColor:'#1a5c3a',borderRadius:5,label:'Gewonnen'}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,ticks:{stepSize:1,color:'#888'},grid:{color:'#f0ede6'}}}}});}
+
+    const c2=document.getElementById('ch2');
+    if(c2){new Chart(c2,{type:'line',data:{labels:ml,datasets:[
+      {data:mk.map(m=>maanden[m].waarde),borderColor:'#b8590a',backgroundColor:'rgba(184,89,10,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#b8590a',label:'Open'},
+      {data:mk.map(m=>maanden[m].wonWaarde),borderColor:'#1a5c3a',backgroundColor:'rgba(26,92,58,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#1a5c3a',label:'Gewonnen'}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{color:'#888',callback:v=>fmtE(v)}}}}});}
+
+    const c3=document.getElementById('ch3');
+    const tot=statusCounts.reduce((s,x)=>s+x.n,0)||1;
+    if(c3){new Chart(c3,{type:'doughnut',data:{labels:statusCounts.map(x=>x.l),datasets:[{data:statusCounts.map(x=>x.n),backgroundColor:statusCounts.map(x=>x.c),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});}
+
+    const c4=document.getElementById('ch4');
+    if(c4&&top5.length){new Chart(c4,{type:'bar',data:{labels:top5.map(d=>d.klant.split(' ')[0]),datasets:[{data:top5.map(d=>Number(d.bedrag)),backgroundColor:['#1a5c3a','#2e7d52','#3d9968','#52b37f','#6dcc98'],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{callback:v=>fmtE(v),color:'#888'}},y:{grid:{display:false},ticks:{color:'#333',font:{weight:'600'}}}}}});}
+
+
+  },150);
+
+  const card=(label,val,sub,clr,fk)=>{
+    return '<div onclick="showAnalyseDetail(\''+fk+'\')" style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:16px 20px;border-top:3px solid '+clr+';cursor:pointer;transition:box-shadow .15s;position:relative" onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,0.10)\'" onmouseout="this.style.boxShadow=\'none\'">'
+      +'<div style="font-size:11px;color:#888;font-family:monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+label+'</div>'
+      +'<div style="font-size:24px;font-weight:700;color:#111;letter-spacing:-.02em">'+val+'</div>'
+      +'<div style="font-size:12px;color:#888;margin-top:4px">'+sub+'</div>'
+      +'<div style="position:absolute;top:14px;right:14px;font-size:11px;color:#ccc">→</div>'
+      +'</div>';
+  };
+  const dot=(c,l)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${l}</span>`;
+  const cbox=(title,id,legend,h,extra)=>`<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+    <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:${legend?'6px':'14px'}">${title}</div>
+    ${legend?`<div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:#666">${legend}</div>`:''}
+    <div style="position:relative;height:${h}px"><canvas id="${id}"></canvas></div>
+    ${extra||''}
+  </div>`;
+
+  return`
+  <div style="margin-bottom:18px">
+    <div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em">Analyse <span style="color:#1a5c3a">— verkoopinzicht</span></div>
+    <div style="font-size:12px;color:#888;margin-top:2px">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px">
+    ${card('Open pipeline',fmtFull(openWaarde),open.length+' open leads','#1a5c3a','open')}
+    ${card('Gewonnen omzet',fmtFull(wonWaarde),won.length+' opdrachten','#27ae60','gewonnen')}
+    ${card('Conversie',conv+'%',all+' leads totaal','#1a3a6c','all')}
+    ${card('Gem. contactmomenten',gemContact+'x','per gewonnen deal','#b8590a','actie')}
+    ${card('Verloren',lost.length+' leads',fmtFull(lost.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#c0392b','verloren')}
+    ${card('Dead end',dead.length+' leads',fmtFull(dead.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#999','deadend')}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    ${cbox('Leads per maand','ch1',dot('#b8d4c2','Leads')+dot('#1a5c3a','Gewonnen'),175)}
+    ${cbox('Waarde per maand','ch2',dot('#b8590a','Open')+dot('#1a5c3a','Gewonnen'),175)}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Verdeling per fase</div>
+      <div style="position:relative;height:140px"><canvas id="ch3"></canvas></div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px">
+        ${statusCounts.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0">
+          <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:50%;background:${x.c};display:inline-block;flex-shrink:0"></span>${x.l}</span>
+          <span style="font-size:12px;font-weight:700;color:#111">${x.n}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    ${cbox('Top 5 grootste open','ch4','',top5.length?top5.length*36+40:120)}
+
+    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Herkomst (land)</div>
+      ${landenSorted.length?landenSorted.map(([land,n])=>`
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:600;color:#333">${land}</span>
+            <span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
+          </div>
+          <div style="height:7px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/maxLand*100)}%;background:#1a3a6c;border-radius:4px"></div></div>
+        </div>`).join(''):`<div style="font-size:12px;color:#aaa;padding:20px 0;text-align:center">Voeg email-adressen toe<br>om herkomst te zien</div>`}
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#111">Scoringskans per lead</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Op basis van contactmomenten, status en doorlooptijd</div>
+      </div>
+      <div style="font-size:11px;color:#888;font-family:monospace;text-align:right">Kans = contacten × status × tijd</div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 60px 120px;gap:0;font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px;border-bottom:1px solid #f0ede6;margin-bottom:4px">
+        <span>Klant</span><span style="text-align:center">Contacten</span><span style="text-align:center">Doorlooptijd</span><span style="text-align:right">Bedrag</span><span style="text-align:right">Scoringskans</span>
+      </div>
+      <div id="scoring-list"><div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Klik op "Score berekenen" om AI-analyse te starten</div></div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;color:#ccc">AI-scoring via contactlog — interaction pairs, klantreacties, recency</div>
+    </div>
+  </div>`;
+}
+
+
+
+function showAnalyseDetail(filterKey){
+  const filterMap={
+    open:{label:'Open leads',fn:d=>!['gewonnen','verloren','deadend'].includes(d.status)},
+    gewonnen:{label:'Gewonnen opdrachten',fn:d=>d.status==='gewonnen'},
+    verloren:{label:'Verloren leads',fn:d=>d.status==='verloren'},
+    deadend:{label:'Dead end leads',fn:d=>d.status==='deadend'},
+    all:{label:'Alle leads',fn:d=>true},
+    actie:{label:'Leads — actie vereist',fn:d=>['urg','soon'].includes(urg(d))}
+  };
+  const f=filterMap[filterKey]||{label:'Leads',fn:()=>true};
+  const lijst=[...deals].filter(f.fn).sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+
+  const fmtD=d=>d?new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):'-';
+  const rows=lijst.map(d=>{
+    const sc=scoreForDisplay(d);
+    const scoreVal=sc?.score??'-';
+    const scoreClr=scoreVal>=60?'var(--green)':scoreVal>=30?'var(--orange)':'var(--red)';
+    const volgende=d.nextContact?fmtD(d.nextContact):'—';
+    const lastContact=d.contacts?.length?(d.contacts[d.contacts.length-1].datum?fmtD(d.contacts[d.contacts.length-1].datum):'-'):'-';
+    const lastNota=d.contacts?.length?d.contacts[d.contacts.length-1].nota?.slice(0,40):'';
+    const actie=ns(d);
+    const urgClr=urg(d)==='urg'?'var(--red)':urg(d)==='soon'?'var(--orange)':'var(--hint)';
+    const st=getDisplayStatus(d);
+    return`<tr style="border-bottom:1px solid #f0ede6;cursor:pointer" onclick="openEdit('${d.id}')" onmouseover="this.style.background='#fafaf7'" onmouseout="this.style.background=''">
+      <td style="padding:10px 12px">
+        <div style="font-weight:600;font-size:13px;color:#111">${d.klant||'-'}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">${d.aanvraagnr?'WS: '+d.aanvraagnr:d.offertenr||''}</div>
+      </td>
+      <td style="padding:10px 12px"><span class="pill ${st.pill}" style="font-size:10px">${st.label}</span></td>
+      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#333">${fmtD(d.datum)}</td>
+      <td style="padding:10px 12px;font-size:12px;color:#555">${lastContact}<div style="font-size:10px;color:#aaa;margin-top:1px">${lastNota}</div></td>
+      <td style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:${scoreClr}">${scoreVal}%</td>
+      <td style="padding:10px 12px;font-size:11px;color:${urgClr}">${actie}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:var(--accent)">${volgende}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#888">${d.bedrag?'€'+Number(d.bedrag).toLocaleString('nl-NL'):'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const totWaarde=lijst.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+
+  document.getElementById('main').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button class="btn" onclick="show('analyse')" style="font-size:13px">← Terug</button>
+      <div>
+        <div style="font-size:20px;font-weight:700;color:#111;letter-spacing:-.02em">Leads — <span style="color:var(--accent)">${f.label}</span></div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${lijst.length} leads · ${totWaarde?'€'+Math.round(totWaarde).toLocaleString('nl-NL'):'-'}</div>
+      </div>
+    </div>
+    ${lijst.length?`
+    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f5f4f0;border-bottom:1px solid #e2e0d8">
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Klant</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Status</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Start</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Laatste contact</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Score</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Actie</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Follow-up</th>
+            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Bedrag</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`:`<div style="text-align:center;padding:60px;color:#aaa;font-size:14px">Geen leads gevonden in deze categorie.</div>`}
+  `;
+}
+
+function scoreForDisplay(d){
+  if(!d||['gewonnen','verloren','deadend'].includes(d.status))return{score:0};
+  return{score:getScore(d)};
+}
+
+function exportMaandoverzicht(){
+  const sep=';';
+  const fmtDatum=d=>d?new Date(d).toLocaleDateString('nl-NL'):'-';
+
+  // Sorteer op startdatum
+  const sorted=[...deals].sort((a,b)=>new Date(a.datum)-new Date(b.datum));
+
+  const rows=[
+    ['Q-Line Offerte Tracker — Lead overzicht'],
+    ['Gegenereerd op: '+new Date().toLocaleDateString('nl-NL')],
+    [],
+    ['Maand','Klant','Webshop nr.','Offertenr.','Product / aanvraag','Land','Voorkeur contact','Bedrag (€)','Status','Contactmomenten','Startdatum','Datum offerte','Einddatum / laatste contact']
+  ];
+
+  sorted.forEach(d=>{
+    const maand=d.datum?new Date(d.datum).toLocaleDateString('nl-NL',{month:'long',year:'numeric'}):'-';
+    const contacts=d.contacts||[];
+    const aantalContact=contacts.length;
+    const laatste=contacts.length?contacts[contacts.length-1].datum:'';
+    const eindDatum=(['gewonnen','verloren','deadend'].includes(d.status)&&laatste)?laatste:(laatste||'');
+    const statusLabel=SL[d.status]||d.status;
+
+    rows.push([
+      maand,
+      d.klant||'-',
+      d.aanvraagnr||'-',
+      d.offertenr||'-',
+      d.onderwerp||d.sub||'-',
+      d.land||'-',
+      d.contactWay||'-',
+      Number(d.bedrag)||'',
+      statusLabel,
+      aantalContact,
+      fmtDatum(d.datum),
+      fmtDatum(d.datumOfferte),
+      fmtDatum(eindDatum)
+    ]);
+  });
+
+  const csv=rows.map(r=>r.map(c=>{
+    const s=String(c??'');
+    return s.includes(sep)||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;
+  }).join(sep)).join('\n');
+
+  const bom='\uFEFF';
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
+  a.href=URL.createObjectURL(blob);
+  a.download='qline-leads-'+datum+'.csv';
+  a.click();
+}
+
+function runAiScoring(){
+  var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
+  var el=document.getElementById('scoring-list');
+  if(!el)return;
+  if(!actief.length){
+    el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';
+    return;
+  }
+
+  var results=actief.map(function(d){
+    var contacts=d.contacts||[];
+    var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+
+    // Tel interacties voor redenering
+    var interaction_pairs=0;
+    var klant_replies=0;
+    var outbound_na_laatste_reply=0;
+    var laatste_was_reactie=false;
+    var outbound_streak=0;
+
+    for(var i=0;i<contacts.length;i++){
+      var cc=contacts[i];
+      if(cc.type==='reactie'){
+        klant_replies++;
+        if(outbound_streak>0)interaction_pairs++;
+        outbound_streak=0;
+        laatste_was_reactie=true;
+      } else {
+        outbound_streak++;
+        laatste_was_reactie=false;
+      }
+    }
+    outbound_na_laatste_reply=outbound_streak;
+    var score=getScore(d);
+    var voorspelling=getVoorspelling(d);
+
+    // Status
+    var status=score>=70?'HOT':score>=45?'WARM':score>=25?'COLD':'DEAD';
+
+    // Trend: kijk naar laatste 3 contacten
+    var trend='stabiel';
+    var recent=contacts.slice(-3);
+    var recent_reacties=recent.filter(function(cc){return cc.type==='reactie';}).length;
+    var recent_outbound=recent.filter(function(cc){return cc.type!=='reactie';}).length;
+    if(laatste_was_reactie)trend='stijgend';
+    else if(outbound_na_laatste_reply>=3)trend='dalend';
+    else if(recent_reacties>0)trend='stijgend';
+    else if(recent_outbound>=2&&recent_reacties===0)trend='dalend';
+
+    // Kans binnen 14 dagen
+    var closing14d=Math.round(score*(laatste_was_reactie?0.7:0.4));
+
+    // Lead rule toepassen
+    var regel=getLeadRule(d);
+
+    // Status override voor DEAD
+    if(regel&&regel.rule==='DEAD'){
+      status='DEAD';
+      score=0;
+      closing14d=0;
+    } else if(regel&&regel.rule==='REOPENED'){
+      status='HOT';
+    }
+
+    // Redenering
+    var reasoning='';
+    if(regel&&regel.rule==='DEAD'){
+      reasoning=outbound_na_laatste_reply+' outbound pogingen zonder reactie. Lead is automatisch gearchiveerd als DEAD.';
+    } else if(regel&&regel.rule==='REOPENED'){
+      reasoning='Lead was inactief maar klant heeft alsnog gereageerd. Herstart opvolgcyclus direct.';
+    } else if(contacts.length===0){
+      reasoning='Nog geen contactmomenten. Offerte staat open zonder opvolging.';
+    } else if(laatste_was_reactie){
+      reasoning='Klant heeft als laatste gereageerd ('+klant_replies+'x totaal). '+interaction_pairs+' volledige interacties. Momentum aanwezig.';
+    } else if(outbound_na_laatste_reply>=3){
+      reasoning=outbound_na_laatste_reply+' pogingen zonder reactie na laatste klantcontact. Nog '+Math.max(0,4-outbound_na_laatste_reply)+' poging(en) voor DEAD status.';
+    } else if(klant_replies===0){
+      reasoning='Nog geen reactie van klant na '+outbound_na_laatste_reply+' poging(en).';
+    } else {
+      reasoning=klant_replies+' klantreactie(s), '+interaction_pairs+' interacties. '+outbound_na_laatste_reply+' uitstaande pogingen.';
+    }
+
+    // Volgende actie op basis van regels
+    var next_action='';
+    if(regel&&regel.rule==='DEAD'){
+      next_action='Archiveer als verloren of stuur één laatste persoonlijke mail.';
+    } else if(regel&&regel.rule==='REOPENED'){
+      next_action='Direct bellen — klant heeft initiatief genomen!';
+    } else if(regel&&regel.rule==='FOLLOWUP'){
+      var wacht=regel.wacht||2;
+      next_action='Poging '+regel.outbound+' gedaan — wacht '+wacht+' dag(en) dan volgende follow-up.';
+    } else if(laatste_was_reactie&&score>=60){
+      next_action='Klant is actief — reageer snel en stuur naar beslissing.';
+    } else if(laatste_was_reactie){
+      next_action='Klant heeft gereageerd — pak momentum op en plan vervolgstap.';
+    } else if(contacts.length===0){
+      next_action='Eerste opvolging doen — bel of mail vandaag nog.';
+    } else {
+      next_action='Follow-up sturen en expliciet om reactie vragen.';
+    }
+
+    return Object.assign({},d,{
+      score:score,status:status,trend:trend,closing14d:closing14d,
+      reasoning:reasoning,next_action:next_action,
+      interaction_pairs:interaction_pairs,klant_replies:klant_replies,
+      outbound_na_laatste_reply:outbound_na_laatste_reply,
+      voorspelling:voorspelling
+    });
+  });
+
+  // Separate dead from active, sort each group
+  var actieve=results.filter(function(r){return r.status!=='DEAD';});
+  var dode=results.filter(function(r){return r.status==='DEAD';});
+  actieve.sort(function(a,b){return b.score-a.score;});
+  results=actieve.concat(dode);
+
+  var html='';
+  var deadShown=false;
+  for(var i=0;i<results.length;i++){
+    if(!deadShown&&results[i].status==='DEAD'){
+      deadShown=true;
+      html+='<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px"><div style="flex:1;height:1px;background:#e2e0d8"></div><span style="font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Dead leads — 4+ pogingen zonder reactie</span><div style="flex:1;height:1px;background:#e2e0d8"></div></div>';
+    }
+    var r=results[i];
+    var clr=r.status==='HOT'?'#c0392b':r.status==='WARM'?'#b8590a':r.status==='COLD'?'#1a3a6c':r.status==='DEAD'?'#aaa':'#888';
+    var isDead=r.status==='DEAD';
+    var bgClr=r.status==='HOT'?'#fdf0ee':r.status==='WARM'?'#fef3e8':r.status==='COLD'?'#eef2fa':'#f5f4f0';
+    var barClr=r.score>=70?'#1a5c3a':r.score>=40?'#b8590a':'#c0392b';
+    var trendIcon=r.trend==='stijgend'?'&#8593;':r.trend==='dalend'?'&#8595;':'&#8594;';
+    var trendClr=r.trend==='stijgend'?'#1a5c3a':r.trend==='dalend'?'#c0392b':'#888';
+    var voorspTekst='';
+    if(r.voorspelling){
+      var vp=r.voorspelling;
+      if(r.score>=85){
+        voorspTekst='<div style="font-size:11px;background:#eef5f0;border:1px solid #b8d4c2;border-radius:6px;padding:6px 10px;margin-top:8px;color:#1a5c3a">&#127919; Klant is slachtrijp — vraag om de opdracht.</div>';
+      } else if(vp.nog_interacties<=1&&vp.nog_reacties<=1){
+        voorspTekst='<div style="font-size:11px;background:#fef3e8;border:1px solid #f0d0a8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#b8590a">&#9202; Bijna klaar — nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig o.b.v. jouw gemiddelde.</div>';
+      } else {
+        voorspTekst='<div style="font-size:11px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#888">Nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig. Gem. winnende deal: '+vp.gem_interacties+' interacties / '+vp.gem_dagen+'d ('+vp.aantalWon+' gewonnen deals)</div>';
+      }
+    } else {
+      voorspTekst='<div style="font-size:11px;color:#ccc;margin-top:6px">Leerdata beschikbaar na 2+ gewonnen deals.</div>';
+    }
+    html+='<div style="border:1px solid #e2e0d8;border-radius:10px;padding:16px;margin-bottom:10px;background:#fff">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+        +'<div style="flex:1">'
+          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+            +'<span style="font-size:14px;font-weight:700;color:#111">'+r.klant+'</span>'
+            +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+bgClr+';color:'+clr+'">'+r.status+'</span>'
+            +'<span style="font-size:11px;font-weight:600;color:'+trendClr+'">'+trendIcon+' '+r.trend+'</span>'
+            +(r.bedrag?'<span style="font-size:11px;color:#888;font-family:monospace">&#8364;'+Math.round(Number(r.bedrag)).toLocaleString('nl-NL')+'</span>':'')
+          +'</div>'
+          +'<div style="display:flex;gap:16px;font-size:11px;color:#aaa;margin-bottom:8px;font-family:monospace">'
+            +'<span>'+r.interaction_pairs+' interacties</span>'
+            +'<span style="color:#1a5c3a">'+r.klant_replies+' klantreacties</span>'
+            +(r.outbound_na_laatste_reply>0?'<span style="color:'+( r.outbound_na_laatste_reply>=3?'#c0392b':'#b8590a')+'">'+r.outbound_na_laatste_reply+' uitstaand</span>':'')
+          +'</div>'
+          +'<div style="font-size:12px;color:#555;margin-bottom:6px;line-height:1.5">'+r.reasoning+'</div>'
+          +'<div style="font-size:12px;font-weight:600;color:#1a5c3a;background:#eef5f0;padding:6px 10px;border-radius:6px;display:inline-block">&#8594; '+r.next_action+'</div>'
+          +voorspTekst
+        +'</div>'
+        +'<div style="text-align:center;flex-shrink:0;min-width:80px">'
+          +'<div style="font-size:30px;font-weight:800;color:'+barClr+';font-family:monospace;line-height:1">'+r.score+'</div>'
+          +'<div style="font-size:10px;color:#aaa;margin-bottom:6px">/ 100</div>'
+          +'<div style="width:60px;height:6px;background:#f0ede6;border-radius:3px;margin:0 auto"><div style="height:100%;width:'+Math.min(100,r.score)+'%;background:'+barClr+';border-radius:3px"></div></div>'
+          +'<div style="font-size:10px;color:#888;margin-top:6px">'+r.closing14d+'%<br>binnen 14d</div>'
+        +'</div>'
+      +'</div>'
+      +'</div>';
+  }
+  el.innerHTML=html;
+}
+
+document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
+load();render();loadWithSync();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</body>
+</html>

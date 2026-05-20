@@ -1399,28 +1399,7 @@ function exportMaandoverzicht(){
   a.click();
 }
 
-async function runAiScoring(){
-  var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
-  actief.sort(function(a,b){return getScore(b)-getScore(a);});
-  var el=document.getElementById('scoring-list');
-  if(!el)return;
-  if(!actief.length){el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';return;}
-  el.innerHTML='<div style="text-align:center;padding:30px;color:#888"><div style="font-size:13px;margin-bottom:8px">🤖 AI analyseert contactlog teksten...</div><div style="font-size:11px;color:#aaa">Dit duurt 10-20 seconden</div></div>';
-  var leadsData=actief.map(function(d){var contacts=d.contacts||[];return{id:d.id,klant:d.klant,bedrag:d.bedrag,status:d.status,datum:d.datum,datumOfferte:d.datumOfferte,contactlog:contacts.map(function(c){return '['+c.type+' op '+c.datum+']: '+c.nota;}).join('\n')};});
-  try{
-    var response=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,system:'Je bent een ervaren B2B verkoopcoach voor Q-Line, een bedrijf dat hoogwaardige paardensportaccommodaties verkoopt. Analyseer leads op basis van hun contactlog teksten en geef terug als JSON array. Per lead: id, score (0-100), status (HOT/WARM/COLD/DEAD), trend (stijgend/stabiel/dalend), reasoning (1-2 zinnen Nederlands), next_action (concrete actie Nederlands), signalen (max 3 korte signalen uit tekst, positief begin met +, negatief met -). Geef ALLEEN JSON terug.',messages:[{role:'user',content:'Analyseer:\n'+JSON.stringify(leadsData,null,2)}]})});
-    var data=await response.json();
-    var aiResults=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
-    var results=actief.map(function(d){
-      var ai=aiResults.find(function(r){return r.id===d.id;})||{};
-      var contacts=d.contacts||[];
-      var klant_replies=contacts.filter(function(c){return c.type==='reactie';}).length;
-      var outbound=contacts.filter(function(c){return c.type!=='reactie';}).length;
-      var laatste=contacts.length?contacts[contacts.length-1]:null;
-      var laatste_was_reactie=laatste&&laatste.type==='reactie';
-      return Object.assign({},d,{score:ai.score||getScore(d),status:ai.status||'COLD',trend:ai.trend||'stabiel',reasoning:ai.reasoning||'',next_action:ai.next_action||'Follow-up sturen',signalen:ai.signalen||[],klant_replies:klant_replies,outbound_na_laatste_reply:outbound,interaction_pairs:Math.min(klant_replies,outbound),closing14d:Math.round((ai.score||getScore(d))*(laatste_was_reactie?0.7:0.4)),voorspelling:getVoorspelling(d)});
-    });
-    results.sort(function(a,b){return b.score-a.score;});
+function runAiScoring(){
   var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
   actief.sort(function(a,b){return getScore(b)-getScore(a);});
   var el=document.getElementById('scoring-list');
@@ -1592,16 +1571,105 @@ async function runAiScoring(){
       +'</div>';
   }
   el.innerHTML=html;
-  }catch(err){
-    console.error('AI scoring error:',err);
-    var fb=actief.map(function(d){var s=getScore(d);var contacts=d.contacts||[];var kr=contacts.filter(function(c){return c.type==='reactie';}).length;var ob=contacts.filter(function(c){return c.type!=='reactie';}).length;return Object.assign({},d,{score:s,status:s>=70?'HOT':s>=45?'WARM':s>=25?'COLD':'DEAD',trend:'stabiel',reasoning:'Lokale score (AI tijdelijk niet beschikbaar)',next_action:'Follow-up sturen',signalen:[],klant_replies:kr,outbound_na_laatste_reply:ob,interaction_pairs:Math.min(kr,ob),closing14d:Math.round(s*0.4),voorspelling:getVoorspelling(d)});});
-    fb.sort(function(a,b){return b.score-a.score;});
-    results=fb;
-    var html2='';for(var j=0;j<fb.length;j++){var r=fb[j];var barClr=r.score>=70?'#1a5c3a':r.score>=40?'#b8590a':'#c0392b';html2+='<div style="border:1px solid #e2e0d8;border-radius:10px;padding:16px;margin-bottom:10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">'+r.klant+'</span><span style="font-size:28px;font-weight:800;color:'+barClr+'">'+r.score+'</span></div><div style="font-size:12px;color:#888;margin-top:4px">'+r.reasoning+'</div><div style="font-size:12px;font-weight:600;color:#1a5c3a;margin-top:8px;background:#eef5f0;padding:6px 10px;border-radius:6px">→ '+r.next_action+'</div></div>';}
-    el.innerHTML='<div style="font-size:11px;color:#b8590a;padding:8px 12px;background:#fef3e8;border-radius:6px;margin-bottom:12px">⚠ AI analyse niet beschikbaar — lokale score getoond</div>'+html2;
-  }
 }
 
+document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
+load();render();loadWithSync();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</body>
+</html>function runAiScoring(){
+  var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
+  actief.sort(function(a,b){return getScore(b)-getScore(a);});
+  var el=document.getElementById('scoring-list');
+  if(!el)return;
+  if(!actief.length){el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';return;}
+
+  // Slimme tekst analyse op basis van contactlog
+  function analyseerTekst(contacts){
+    var tekst = contacts.map(function(c){return (c.nota||'').toLowerCase();}).join(' ');
+    var score_bonus = 0;
+    var signalen = [];
+    var next_action = '';
+
+    // Positieve signalen
+    var positief = [
+      {woorden:['wanneer kunnen','wanneer start','wanneer levering','wanneer mogen'], punt:20, label:'+ Klant vraagt naar planning'},
+      {woorden:['akkoord','goed voorstel','mooie prijs','doen we','gaan we doen'], punt:20, label:'+ Klant is akkoord'},
+      {woorden:['budget','financiering','lening','gespaard'], punt:10, label:'+ Budget besproken'},
+      {woorden:['partner','man','vrouw','samen beslissen','overleggen'], punt:5, label:'+ Beslissers betrokken'},
+      {woorden:['bouwvergunning','vergunning aangevraagd','tekening','architect'], punt:15, label:'+ Concreet aan de slag'},
+      {woorden:['heel geinteresseerd','zeer geinteresseerd','graag','absoluut'], punt:15, label:'+ Sterke interesse'},
+      {woorden:['teruggebeld','heeft teruggebeld','zelf gebeld','belde terug'], punt:15, label:'+ Klant belt zelf terug'},
+      {woorden:['deadline','voor de zomer','voor de winter','dit jaar nog'], punt:10, label:'+ Urgentie aanwezig'},
+    ];
+
+    // Negatieve signalen  
+    var negatief = [
+      {woorden:['te duur','te hoog','concurrent','andere aanbieder','goedkoper'], punt:-15, label:'- Prijsweerstand'},
+      {woorden:['geen reactie','niet opgenomen','voicemail','niet bereikbaar'], punt:-10, label:'- Geen reactie'},
+      {woorden:['bedenktijd','nadenken','later','volgend jaar','uitstellen'], punt:-15, label:'- Uitsteller'},
+      {woorden:['geen interesse','niet relevant','niet nodig','toch niet'], punt:-25, label:'- Geen interesse'},
+      {woorden:['al gekocht','al besteld','al geregeld','anders gedaan'], punt:-30, label:'- Al elders gekocht'},
+      {woorden:['niet meer gereageerd','geen reactie meer','stilte'], punt:-20, label:'- Klant gestopt met reageren'},
+    ];
+
+    positief.forEach(function(p){
+      p.woorden.forEach(function(w){
+        if(tekst.includes(w)){score_bonus+=p.punt;if(!signalen.includes(p.label))signalen.push(p.label);}
+      });
+    });
+    negatief.forEach(function(n){
+      n.woorden.forEach(function(w){
+        if(tekst.includes(w)){score_bonus+=n.punt;if(!signalen.includes(n.label))signalen.push(n.label);}
+      });
+    });
+
+    // Bepaal volgende actie op basis van signalen
+    if(tekst.includes('wanneer kunnen')||tekst.includes('wanneer start'))next_action='Klant wil planning — stuur concrete startdatum en sluit deal!';
+    else if(tekst.includes('akkoord')||tekst.includes('gaan we doen'))next_action='Akkoord signaal — stuur opdrachtbevestiging vandaag!';
+    else if(tekst.includes('te duur')||tekst.includes('concurrent'))next_action='Prijsweerstand — bel en bespreek meerwaarde Q-Line vs concurrent.';
+    else if(tekst.includes('bedenktijd')||tekst.includes('nadenken'))next_action='Klant twijfelt — vraag direct: wat houdt je nog tegen?';
+    else if(tekst.includes('partner')||tekst.includes('overleggen'))next_action='Beide beslissers betrekken — plan afspraak met koppel/partner.';
+    else if(tekst.includes('vergunning')||tekst.includes('tekening'))next_action='Klant is concreet bezig — stay close en bied hulp aan bij vergunning.';
+    else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
+    else next_action='Follow-up sturen en concreet om beslissing vragen.';
+
+    return {bonus: Math.max(-40, Math.min(30, score_bonus)), signalen: signalen.slice(0,3), next_action: next_action};
+  }
+
+  var results = actief.map(function(d){
+    var contacts = d.contacts||[];
+    var klant_replies = contacts.filter(function(c){return c.type==='reactie';}).length;
+    var outbound = contacts.filter(function(c){return c.type!=='reactie';}).length;
+    var laatste = contacts.length?contacts[contacts.length-1]:null;
+    var laatste_was_reactie = laatste&&laatste.type==='reactie';
+    var baseScore = getScore(d);
+    var analyse = analyseerTekst(contacts);
+    var score = Math.max(0, Math.min(100, baseScore + analyse.bonus));
+    var status = score>=70?'HOT':score>=45?'WARM':score>=25?'COLD':'DEAD';
+    var trend = 'stabiel';
+    if(laatste_was_reactie)trend='stijgend';
+    else if(outbound>=3&&klant_replies===0)trend='dalend';
+    var reasoning = contacts.length===0?'Nog geen contactmomenten ingevuld — vul de log in voor betere analyse.':
+      (analyse.signalen.length?'Gebaseerd op contactlog: '+analyse.signalen.join(', ').replace(/[+-] /g,'')+'.' :'Score op basis van contactmomenten en doorlooptijd.');
+    return Object.assign({},d,{
+      score:score,status:status,trend:trend,
+      reasoning:reasoning,
+      next_action:analyse.next_action,
+      signalen:analyse.signalen,
+      klant_replies:klant_replies,
+      outbound_na_laatste_reply:outbound,
+      interaction_pairs:Math.min(klant_replies,outbound),
+      closing14d:Math.round(score*(laatste_was_reactie?0.7:0.4)),
+      voorspelling:getVoorspelling(d)
+    });
+  });
+
+  results.sort(function(a,b){return b.score-a.score;});
+  var deadShown=false;
+  var html='';
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
 load();render();loadWithSync();
 

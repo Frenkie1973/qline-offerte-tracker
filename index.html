@@ -164,7 +164,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
   <div class="sidebar-foot">
     <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-      <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
+      <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div><button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
       <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
       <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
       <div id="savepath" style="font-size:10px;color:var(--hint);margin-top:6px;font-family:var(--mono);word-break:break-all"></div>

@@ -1401,6 +1401,7 @@ function exportMaandoverzicht(){
 
 function runAiScoring(){
   var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
+  actief.sort(function(a,b){return getScore(b)-getScore(a);});
   var el=document.getElementById('scoring-list');
   if(!el)return;
   if(!actief.length){

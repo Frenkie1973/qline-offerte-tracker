@@ -296,7 +296,7 @@ async function loadWithSync(){
   if(!ok)load();
   render();
   const si=document.getElementById('sync-indicator');
-  if(si){si.textContent=ok?'☁ gesynchroniseerd':'☁ lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
+  if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(deals));
@@ -322,7 +322,7 @@ async function kiesMap(){
     localStorage.setItem('qltrk_savepath',__fileHandle.name);
     document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
     await doSave();
-    alert('Map gekozen! Vanaf nu wordt automatisch opgeslagen.');
+    alert('Map gekozen! Lokale backup actief.\nData wordt automatisch gesynchroniseerd via Firebase.');
   }catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
 }
 

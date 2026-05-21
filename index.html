@@ -163,11 +163,10 @@ tr.row td{padding:12px 14px;vertical-align:middle}
   </nav>
   <div class="sidebar-foot">
     <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
-    <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-top:8px;font-family:var(--mono)">☁ verbinden...</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-      <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">ð¾ Opslaan</button>
-      <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">ð Kies opslagmap</button>
-      <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">â© Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+      <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
+      <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
+      <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
       <div id="savepath" style="font-size:10px;color:var(--hint);margin-top:6px;font-family:var(--mono);word-break:break-all"></div>
     </div>
   </div>
@@ -179,11 +178,11 @@ tr.row td{padding:12px 14px;vertical-align:middle}
   <div class="mbox">
     <div class="mhead">
       <div class="mtitle" id="mtitle">Lead toevoegen</div>
-      <button class="mclose" onclick="closeMo()">Ã</button>
+      <button class="mclose" onclick="closeMo()">×</button>
     </div>
     <div class="fg">
       <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
-      <div class="ff"><label>Bedrag excl. BTW (â¬)</label><input id="fb" type="number" placeholder="0"></div>
+      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
     </div>
     <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
     <div class="fg">
@@ -210,7 +209,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
       <div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
     </div>
     <div class="fg">
-      <div class="ff"><label>Voorkeur contact</label><select id="fcw"><option value="">â onbekend â</option><option value="Telefonisch">ð Telefonisch</option><option value="E-mail">â E-mail</option><option value="WhatsApp">ð¬ WhatsApp</option><option value="Anders">Anders</option></select></div>
+      <div class="ff"><label>Voorkeur contact</label><select id="fcw"><option value="">— onbekend —</option><option value="Telefonisch">📞 Telefonisch</option><option value="E-mail">✉ E-mail</option><option value="WhatsApp">💬 WhatsApp</option><option value="Anders">Anders</option></select></div>
       <div class="ff"><label>Land</label><input id="fland" placeholder="bijv. Nederland"></div>
     </div>
     <div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
@@ -220,7 +219,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
       <div class="clog-add">
         <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
         <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">ð Gebeld / ð¬ Geappt / â Gemaild</button>
+          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
         </div>
       </div>
     </div>
@@ -268,10 +267,10 @@ async function fbSave(data){
   try{
     await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     const si=document.getElementById('sync-indicator');
-    if(si){si.textContent='â opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
+    if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
   }catch(e){
     const si=document.getElementById('sync-indicator');
-    if(si){si.textContent='â offline';si.style.color='var(--hint)';}
+    if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
   }
 }
 
@@ -297,7 +296,7 @@ async function loadWithSync(){
   if(!ok)load();
   render();
   const si=document.getElementById('sync-indicator');
-  if(si){si.textContent=ok?'â gesynchroniseerd':'â lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
+  if(si){si.textContent=ok?'☁ gesynchroniseerd':'☁ lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(deals));
@@ -334,7 +333,7 @@ async function doSave(){
     await writable.write(JSON.stringify(deals,null,2));
     await writable.close();
     const el=document.getElementById('savepath');
-    if(el){el.textContent=__fileHandle.name+' â opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+    if(el){el.textContent=__fileHandle.name+' — opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
     return true;
   }catch(e){
     __fileHandle=null;
@@ -376,7 +375,7 @@ function importBackup(input){
 }
 const td=()=>new Date().toISOString().slice(0,10);
 const da=d=>Math.floor((Date.now()-new Date(d))/86400000);
-const fmt=n=>n?'â¬'+Number(n).toLocaleString('nl-NL'):'â';
+const fmt=n=>n?'€'+Number(n).toLocaleString('nl-NL'):'—';
 const fd=d=>new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
 const SL={nieuw:'Nieuwe lead',contact:'Contact gelegd',offerte:'Offerte verstuurd',dealer:'Naar dealer',gewonnen:'Gewonnen',verloren:'Verloren',deadend:'Dead end'};
 
@@ -728,10 +727,10 @@ function showContactPopup(id,preselect){
     <div class="ff">
       <label>Wat heb je gedaan?</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <button class="btn" id="btn-bel" onclick="selectType('bel')">ð Gebeld</button>
-        <button class="btn" id="btn-app" onclick="selectType('app')">ð¬ Geappt</button>
-        <button class="btn" id="btn-mail" onclick="selectType('mail')">â Gemaild</button>
-        <button class="btn" id="btn-reactie" onclick="selectType('reactie')">ð© Reactie ontvangen</button>
+        <button class="btn" id="btn-bel" onclick="selectType('bel')">📞 Gebeld</button>
+        <button class="btn" id="btn-app" onclick="selectType('app')">💬 Geappt</button>
+        <button class="btn" id="btn-mail" onclick="selectType('mail')">✉ Gemaild</button>
+        <button class="btn" id="btn-reactie" onclick="selectType('reactie')">📩 Reactie ontvangen</button>
       </div>
     </div>
     <div class="ff">
@@ -816,11 +815,11 @@ function restoreModal(){
   box.innerHTML=`
     <div class="mhead">
       <div class="mtitle" id="mtitle">Lead toevoegen</div>
-      <button class="mclose" onclick="closeMo()">Ã</button>
+      <button class="mclose" onclick="closeMo()">×</button>
     </div>
     <div class="fg">
       <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
-      <div class="ff"><label>Bedrag excl. BTW (â¬)</label><input id="fb" type="number" placeholder="0"></div>
+      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
     </div>
     <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
     <div class="fg">
@@ -853,7 +852,7 @@ function restoreModal(){
       <div class="clog-add">
         <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
         <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">ð Gebeld / ð¬ Geappt / â Gemaild</button>
+          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
         </div>
       </div>
     </div>
@@ -880,7 +879,7 @@ function renderClog(contacts){
   el.innerHTML=contacts.map((c,i)=>{
     const icon=c.type==='mail'?'Mail':c.type==='reactie'?'Reactie':c.type==='app'?'App':'Bel';
     const clr=c.type==='mail'?'color:var(--blue)':c.type==='reactie'?'color:var(--orange)':c.type==='app'?'color:#6b3fa0':'color:var(--accent)';
-    return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" style="${clr}">${icon} ${i+1} &mdash; ${c.datum} ${c.tijd}</span><button onclick="deleteContact(${i})" style="margin-left:auto;background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px" title="Verwijder">â</button></div><div class="clog-text">${c.tekst||''}</div></div>`;
+    return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" style="${clr}">${icon} ${i+1} &mdash; ${c.datum} ${c.tijd}</span><button onclick="deleteContact(${i})" style="margin-left:auto;background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px" title="Verwijder">✕</button></div><div class="clog-text">${c.tekst||''}</div></div>`;
   }).join('');
 }
 function deleteContact(i){
@@ -951,7 +950,7 @@ function dzHtml(){
     <div class="dz-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
     <div>
       <div class="dz-title">Sleep de webshop XML hiernaartoe</div>
-      <div class="dz-sub">Alle klantgegevens worden automatisch ingelezen Â· of klik om te bladeren</div>
+      <div class="dz-sub">Alle klantgegevens worden automatisch ingelezen · of klik om te bladeren</div>
     </div>
     <input id="fi" type="file" accept=".xml" style="display:none" onchange="handleFile(this)">
   </div>`;
@@ -975,45 +974,45 @@ function rDash(){
   const nieuweLeads=open.filter(d=>d.status==='nieuw').sort((a,b)=>new Date(a.datum)-new Date(b.datum));
   return`${dzHtml()}
   <div class="ph">
-    <div><div class="ph-title">Dashboard <em>â actie vereist</em></div><div class="ph-sub">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
+    <div><div class="ph-title">Dashboard <em>— actie vereist</em></div><div class="ph-sub">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
     <button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>
   </div>
   <div class="kpis">
     <div class="kpi"><div class="kpi-l">Open leads</div><div class="kpi-n">${open.length}</div><div class="kpi-s">${fmt(openVal)} open waarde</div></div>
-    <div class="kpi"><div class="kpi-l">Actie vereist</div><div class="kpi-n red">${laat.length+bk.length}</div><div class="kpi-s">${laat.length} te laat Â· ${bk.length} vandaag/binnenkort</div></div>
+    <div class="kpi"><div class="kpi-l">Actie vereist</div><div class="kpi-n red">${laat.length+bk.length}</div><div class="kpi-s">${laat.length} te laat · ${bk.length} vandaag/binnenkort</div></div>
     <div class="kpi"><div class="kpi-l">Gewonnen</div><div class="kpi-n green">${won.length}</div><div class="kpi-s">${fmt(won.reduce((s,d)=>s+(Number(d.bedrag)||0),0))}</div></div>
     <div class="kpi"><div class="kpi-l">Conversie</div><div class="kpi-n acc">${conv}%</div><div class="kpi-s">${deals.length} totaal</div></div>
   </div>
-  ${laat.length?`<div class="alert"><div class="alert-dot"></div><strong>${laat.length} lead${laat.length>1?'s':''} te laat</strong> â pak vandaag de telefoon.</div>`:''}
+  ${laat.length?`<div class="alert"><div class="alert-dot"></div><strong>${laat.length} lead${laat.length>1?'s':''} te laat</strong> — pak vandaag de telefoon.</div>`:''}
   ${actie.length?`<div class="sh"><div class="sl">Nu opvolgen</div><div class="sline"></div><div class="sn">${actie.length}</div></div>${tbl(actie)}`:''}
   ${rest.length?`<div class="sh"><div class="sl">Ingepland</div><div class="sline"></div><div class="sn">${rest.length}</div></div>${tbl(rest)}`:''}
   ${geenDatum.length?`<div class="sh"><div class="sl">Geen follow-up datum</div><div class="sline"></div><div class="sn">${geenDatum.length}</div></div>${tbl(geenDatum)}`:''}
   ${nieuweLeads.length?`<div class="sh"><div class="sl">Nieuwe leads</div><div class="sline"></div><div class="sn">${nieuweLeads.length}</div></div>${tbl(nieuweLeads)}`:''}
-  ${open.length===0?'<div class="empty">Geen open leads â sleep een XML bestand of voeg handmatig toe.</div>':''}`;
+  ${open.length===0?'<div class="empty">Geen open leads — sleep een XML bestand of voeg handmatig toe.</div>':''}`;
 }
 
 function tbl(rows){
   if(!rows.length)return'';
   const trs=rows.map(d=>{
     const u=urg(d),cls=u==='urg'?'urg':u==='soon'?'soon':'ok';
-    const utag=u==='urg'?`<span class="ul">â Te laat</span>`:u==='soon'?`<span class="us">â Binnenkort</span>`:`<span class="uo">${da(d.datum)}d</span>`;
+    const utag=u==='urg'?`<span class="ul">● Te laat</span>`:u==='soon'?`<span class="us">● Binnenkort</span>`:`<span class="uo">${da(d.datum)}d</span>`;
     const calls=d.contacts?.length||0;
     const lastContact=calls?d.contacts[calls-1]:null;
     const lastTag=lastContact
-      ?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'â¦':''}</div>`
-      :`<span class="ch">â</span>`;
+      ?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'…':''}</div>`
+      :`<span class="ch">—</span>`;
     const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
       ${d.status==='nieuw'?`<button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
       ${d.status==='contact'?`<button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''} 
-      <button class="qb" onclick="quickBel('${d.id}',event)">ð Gebeld</button>
-      <button class="qb" onclick="quickMail('${d.id}',event)">â Gemaild</button>
-      <button class="qb" onclick="quickReactie('${d.id}',event)">ð© Reactie</button>
-      <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">â Gewonnen</button>
-      <button class="qb l" onclick="quick('${d.id}','verloren',event)">â Verloren</button>
+      <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
+      <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
+      <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
+      <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
+      <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
     </div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
     return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
-      <td><div class="cn">${d.klant}</div><div class="cs">${d.onderwerp||'â'}</div></td>
-      <td><div class="cm">${d.offertenr||'â'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
+      <td><div class="cn">${d.klant}</div><div class="cs">${d.onderwerp||'—'}</div></td>
+      <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
       <td><span class="cm">${fmt(d.bedrag)}</span></td>
       <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
       <td>
@@ -1027,7 +1026,7 @@ function tbl(rows){
       </td>
       <td>${utag}</td>
       <td>${lastTag}</td>
-      <td><div class="ch">${ns(d)}</div>${calls?`<div class="ch">${calls}Ã contact</div>`:''}</td>
+      <td><div class="ch">${ns(d)}</div>${calls?`<div class="ch">${calls}× contact</div>`:''}</td>
       <td>${act}</td>
     </tr>`;
   }).join('');
@@ -1100,8 +1099,8 @@ function rAnalyse(){
   const openWaarde=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
   const wonWaarde=won.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
   const gemContact=won.length?Math.round(won.reduce((s,d)=>s+(d.contacts?.length||0),0)/won.length*10)/10:0;
-  const fmtE=n=>n>=1000?'â¬'+Math.round(n/1000)+'K':'â¬'+Math.round(n);
-  const fmtFull=n=>'â¬'+Math.round(n).toLocaleString('nl-NL');
+  const fmtE=n=>n>=1000?'€'+Math.round(n/1000)+'K':'€'+Math.round(n);
+  const fmtFull=n=>'€'+Math.round(n).toLocaleString('nl-NL');
 
   // Maanddata
   const maanden={};
@@ -1121,7 +1120,7 @@ function rAnalyse(){
       const emailMatch=d.email?.match(/\.([a-z]{2,3})$/);
       if(emailMatch){
         const ext=emailMatch[1].toUpperCase();
-        const map={NL:'Nederland',DE:'Duitsland',BE:'BelgiÃ«',FR:'Frankrijk',GB:'VK',UK:'VK',COM:'Internationaal',NET:'Internationaal',ORG:'Internationaal',EU:'Europa',AT:'Oostenrijk',CH:'Zwitserland',ES:'Spanje',IT:'ItaliÃ«',PL:'Polen',DK:'Denemarken',SE:'Zweden',NO:'Noorwegen'};
+        const map={NL:'Nederland',DE:'Duitsland',BE:'België',FR:'Frankrijk',GB:'VK',UK:'VK',COM:'Internationaal',NET:'Internationaal',ORG:'Internationaal',EU:'Europa',AT:'Oostenrijk',CH:'Zwitserland',ES:'Spanje',IT:'Italië',PL:'Polen',DK:'Denemarken',SE:'Zweden',NO:'Noorwegen'};
         land=map[ext]||ext;
       }
     }
@@ -1190,7 +1189,7 @@ function rAnalyse(){
       +'<div style="font-size:11px;color:#888;font-family:monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+label+'</div>'
       +'<div style="font-size:24px;font-weight:700;color:#111;letter-spacing:-.02em">'+val+'</div>'
       +'<div style="font-size:12px;color:#888;margin-top:4px">'+sub+'</div>'
-      +'<div style="position:absolute;top:14px;right:14px;font-size:11px;color:#ccc">â</div>'
+      +'<div style="position:absolute;top:14px;right:14px;font-size:11px;color:#ccc">→</div>'
       +'</div>';
   };
   const dot=(c,l)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${l}</span>`;
@@ -1203,7 +1202,7 @@ function rAnalyse(){
 
   return`
   <div style="margin-bottom:18px">
-    <div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em">Analyse <span style="color:#1a5c3a">â verkoopinzicht</span></div>
+    <div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em">Analyse <span style="color:#1a5c3a">— verkoopinzicht</span></div>
     <div style="font-size:12px;color:#888;margin-top:2px">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
   </div>
 
@@ -1249,7 +1248,7 @@ function rAnalyse(){
   </div>
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-    <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">ð Export maandoverzicht</button>
+    <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>
   </div>
 
   <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
@@ -1258,7 +1257,7 @@ function rAnalyse(){
         <div style="font-size:13px;font-weight:700;color:#111">Scoringskans per lead</div>
         <div style="font-size:11px;color:#888;margin-top:2px">Op basis van contactmomenten, status en doorlooptijd</div>
       </div>
-      <div style="font-size:11px;color:#888;font-family:monospace;text-align:right">Kans = contacten Ã status Ã tijd</div>
+      <div style="font-size:11px;color:#888;font-family:monospace;text-align:right">Kans = contacten × status × tijd</div>
     </div>
     <div style="margin-top:14px">
       <div style="display:grid;grid-template-columns:1fr 80px 80px 60px 120px;gap:0;font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px;border-bottom:1px solid #f0ede6;margin-bottom:4px">
@@ -1266,7 +1265,7 @@ function rAnalyse(){
       </div>
       <div id="scoring-list"><div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Klik op "Score berekenen" om AI-analyse te starten</div></div>
     <div style="margin-top:14px">
-      <div style="font-size:11px;color:#ccc">AI-scoring via contactlog â interaction pairs, klantreacties, recency</div>
+      <div style="font-size:11px;color:#ccc">AI-scoring via contactlog — interaction pairs, klantreacties, recency</div>
     </div>
   </div>`;
 }
@@ -1280,7 +1279,7 @@ function showAnalyseDetail(filterKey){
     verloren:{label:'Verloren leads',fn:d=>d.status==='verloren'},
     deadend:{label:'Dead end leads',fn:d=>d.status==='deadend'},
     all:{label:'Alle leads',fn:d=>true},
-    actie:{label:'Leads â actie vereist',fn:d=>['urg','soon'].includes(urg(d))}
+    actie:{label:'Leads — actie vereist',fn:d=>['urg','soon'].includes(urg(d))}
   };
   const f=filterMap[filterKey]||{label:'Leads',fn:()=>true};
   const lijst=[...deals].filter(f.fn).sort((a,b)=>new Date(b.datum)-new Date(a.datum));
@@ -1290,7 +1289,7 @@ function showAnalyseDetail(filterKey){
     const sc=scoreForDisplay(d);
     const scoreVal=sc?.score??'-';
     const scoreClr=scoreVal>=60?'var(--green)':scoreVal>=30?'var(--orange)':'var(--red)';
-    const volgende=d.nextContact?fmtD(d.nextContact):'â';
+    const volgende=d.nextContact?fmtD(d.nextContact):'—';
     const lastContact=d.contacts?.length?(d.contacts[d.contacts.length-1].datum?fmtD(d.contacts[d.contacts.length-1].datum):'-'):'-';
     const lastNota=d.contacts?.length?d.contacts[d.contacts.length-1].nota?.slice(0,40):'';
     const actie=ns(d);
@@ -1307,7 +1306,7 @@ function showAnalyseDetail(filterKey){
       <td style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:${scoreClr}">${scoreVal}%</td>
       <td style="padding:10px 12px;font-size:11px;color:${urgClr}">${actie}</td>
       <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:var(--accent)">${volgende}</td>
-      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#888">${d.bedrag?'â¬'+Number(d.bedrag).toLocaleString('nl-NL'):'-'}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#888">${d.bedrag?'€'+Number(d.bedrag).toLocaleString('nl-NL'):'-'}</td>
     </tr>`;
   }).join('');
 
@@ -1315,10 +1314,10 @@ function showAnalyseDetail(filterKey){
 
   document.getElementById('main').innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <button class="btn" onclick="show('analyse')" style="font-size:13px">â Terug</button>
+      <button class="btn" onclick="show('analyse')" style="font-size:13px">← Terug</button>
       <div>
-        <div style="font-size:20px;font-weight:700;color:#111;letter-spacing:-.02em">Leads â <span style="color:var(--accent)">${f.label}</span></div>
-        <div style="font-size:12px;color:#888;margin-top:2px">${lijst.length} leads Â· ${totWaarde?'â¬'+Math.round(totWaarde).toLocaleString('nl-NL'):'-'}</div>
+        <div style="font-size:20px;font-weight:700;color:#111;letter-spacing:-.02em">Leads — <span style="color:var(--accent)">${f.label}</span></div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${lijst.length} leads · ${totWaarde?'€'+Math.round(totWaarde).toLocaleString('nl-NL'):'-'}</div>
       </div>
     </div>
     ${lijst.length?`
@@ -1355,10 +1354,10 @@ function exportMaandoverzicht(){
   const sorted=[...deals].sort((a,b)=>new Date(a.datum)-new Date(b.datum));
 
   const rows=[
-    ['Q-Line Offerte Tracker â Lead overzicht'],
+    ['Q-Line Offerte Tracker — Lead overzicht'],
     ['Gegenereerd op: '+new Date().toLocaleDateString('nl-NL')],
     [],
-    ['Maand','Klant','Webshop nr.','Offertenr.','Product / aanvraag','Land','Voorkeur contact','Bedrag (â¬)','Status','Contactmomenten','Startdatum','Datum offerte','Einddatum / laatste contact']
+    ['Maand','Klant','Webshop nr.','Offertenr.','Product / aanvraag','Land','Voorkeur contact','Bedrag (€)','Status','Contactmomenten','Startdatum','Datum offerte','Einddatum / laatste contact']
   ];
 
   sorted.forEach(d=>{
@@ -1485,18 +1484,18 @@ function runAiScoring(){
     // Volgende actie op basis van regels
     var next_action='';
     if(regel&&regel.rule==='DEAD'){
-      next_action='Archiveer als verloren of stuur Ã©Ã©n laatste persoonlijke mail.';
+      next_action='Archiveer als verloren of stuur één laatste persoonlijke mail.';
     } else if(regel&&regel.rule==='REOPENED'){
-      next_action='Direct bellen â klant heeft initiatief genomen!';
+      next_action='Direct bellen — klant heeft initiatief genomen!';
     } else if(regel&&regel.rule==='FOLLOWUP'){
       var wacht=regel.wacht||2;
-      next_action='Poging '+regel.outbound+' gedaan â wacht '+wacht+' dag(en) dan volgende follow-up.';
+      next_action='Poging '+regel.outbound+' gedaan — wacht '+wacht+' dag(en) dan volgende follow-up.';
     } else if(laatste_was_reactie&&score>=60){
-      next_action='Klant is actief â reageer snel en stuur naar beslissing.';
+      next_action='Klant is actief — reageer snel en stuur naar beslissing.';
     } else if(laatste_was_reactie){
-      next_action='Klant heeft gereageerd â pak momentum op en plan vervolgstap.';
+      next_action='Klant heeft gereageerd — pak momentum op en plan vervolgstap.';
     } else if(contacts.length===0){
-      next_action='Eerste opvolging doen â bel of mail vandaag nog.';
+      next_action='Eerste opvolging doen — bel of mail vandaag nog.';
     } else {
       next_action='Follow-up sturen en expliciet om reactie vragen.';
     }
@@ -1521,7 +1520,7 @@ function runAiScoring(){
   for(var i=0;i<results.length;i++){
     if(!deadShown&&results[i].status==='DEAD'){
       deadShown=true;
-      html+='<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px"><div style="flex:1;height:1px;background:#e2e0d8"></div><span style="font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Dead leads â 4+ pogingen zonder reactie</span><div style="flex:1;height:1px;background:#e2e0d8"></div></div>';
+      html+='<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px"><div style="flex:1;height:1px;background:#e2e0d8"></div><span style="font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Dead leads — 4+ pogingen zonder reactie</span><div style="flex:1;height:1px;background:#e2e0d8"></div></div>';
     }
     var r=results[i];
     var clr=r.status==='HOT'?'#c0392b':r.status==='WARM'?'#b8590a':r.status==='COLD'?'#1a3a6c':r.status==='DEAD'?'#aaa':'#888';
@@ -1534,9 +1533,9 @@ function runAiScoring(){
     if(r.voorspelling){
       var vp=r.voorspelling;
       if(r.score>=85){
-        voorspTekst='<div style="font-size:11px;background:#eef5f0;border:1px solid #b8d4c2;border-radius:6px;padding:6px 10px;margin-top:8px;color:#1a5c3a">&#127919; Klant is slachtrijp â vraag om de opdracht.</div>';
+        voorspTekst='<div style="font-size:11px;background:#eef5f0;border:1px solid #b8d4c2;border-radius:6px;padding:6px 10px;margin-top:8px;color:#1a5c3a">&#127919; Klant is slachtrijp — vraag om de opdracht.</div>';
       } else if(vp.nog_interacties<=1&&vp.nog_reacties<=1){
-        voorspTekst='<div style="font-size:11px;background:#fef3e8;border:1px solid #f0d0a8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#b8590a">&#9202; Bijna klaar â nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig o.b.v. jouw gemiddelde.</div>';
+        voorspTekst='<div style="font-size:11px;background:#fef3e8;border:1px solid #f0d0a8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#b8590a">&#9202; Bijna klaar — nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig o.b.v. jouw gemiddelde.</div>';
       } else {
         voorspTekst='<div style="font-size:11px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#888">Nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig. Gem. winnende deal: '+vp.gem_interacties+' interacties / '+vp.gem_dagen+'d ('+vp.aantalWon+' gewonnen deals)</div>';
       }

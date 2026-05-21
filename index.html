@@ -293,10 +293,14 @@ function getDays(){const s=getSettings();return{fu1:Number(s.fu1)||3,fu2:Number(
 let deals=[],editId=null,view='dash';
 function load(){try{deals=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){deals=[]}}
 async function loadWithSync(){
-  const ok=await fbLoad();
-  if(!ok)load();
+  // Laad lokaal eerst zodat dashboard meteen zichtbaar is
+  load();
   render();
+  // Sync Firebase op achtergrond
   const si=document.getElementById('sync-indicator');
+  if(si){si.textContent='☁ laden...';si.style.color='var(--hint)';}
+  const ok=await fbLoad();
+  if(ok){render();updateBadge();}
   if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
@@ -1466,7 +1470,7 @@ async function runAiScoring(){
   results.sort(function(a,b){return b.score-a.score;});
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
-load();render();loadWithSync();
+loadWithSync();
 
 }
 </script>

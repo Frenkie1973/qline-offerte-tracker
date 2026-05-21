@@ -164,6 +164,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
   <div class="sidebar-foot">
     <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+      <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div>
       <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
       <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
       <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
@@ -292,11 +293,15 @@ function getDays(){const s=getSettings();return{fu1:Number(s.fu1)||3,fu2:Number(
 let deals=[],editId=null,view='dash';
 function load(){try{deals=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){deals=[]}}
 async function loadWithSync(){
-  const ok=await fbLoad();
-  if(!ok)load();
+  // Laad lokaal eerst zodat dashboard meteen zichtbaar is
+  load();
   render();
+  // Sync Firebase op achtergrond
   const si=document.getElementById('sync-indicator');
-  if(si){si.textContent=ok?'☁ gesynchroniseerd':'☁ lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
+  if(si){si.textContent='☁ laden...';si.style.color='var(--hint)';}
+  const ok=await fbLoad();
+  if(ok){render();updateBadge();}
+  if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(deals));
@@ -322,7 +327,7 @@ async function kiesMap(){
     localStorage.setItem('qltrk_savepath',__fileHandle.name);
     document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
     await doSave();
-    alert('Map gekozen! Vanaf nu wordt automatisch opgeslagen.');
+    alert('Map gekozen! Vanaf nu wordt lokaal opgeslagen als backup.\nData wordt ook automatisch gesynchroniseerd via Firebase.');
   }catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
 }
 
@@ -333,7 +338,7 @@ async function doSave(){
     await writable.write(JSON.stringify(deals,null,2));
     await writable.close();
     const el=document.getElementById('savepath');
-    if(el){el.textContent=__fileHandle.name+' — opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+    if(el){el.textContent='💾 '+__fileHandle.name+' — backup opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
     return true;
   }catch(e){
     __fileHandle=null;
@@ -1399,182 +1404,75 @@ function exportMaandoverzicht(){
   a.click();
 }
 
-function runAiScoring(){
+async function analyseerContactTekst(contacts){
+  var tekst=contacts.map(function(c){return(c.nota||'').toLowerCase();}).join(' ');
+  var bonus=0;var signalen=[];var next_action='';
+  var pos=[
+    {w:['wanneer kunnen','wanneer start','wanneer lever'],b:20,s:'+ Klant vraagt naar planning'},
+    {w:['akkoord','gaan we doen','doen we','mooie prijs','goed voorstel'],b:20,s:'+ Akkoord signaal'},
+    {w:['bouwvergunning','vergunning','tekening','architect'],b:15,s:'+ Concreet aan de slag'},
+    {w:['heel geinteresseerd','zeer geinteresseerd','graag','absoluut'],b:15,s:'+ Sterke interesse'},
+    {w:['teruggebeld','heeft teruggebeld','zelf gebeld','belde terug'],b:15,s:'+ Klant belt zelf terug'},
+    {w:['deadline','voor de zomer','voor de winter','dit jaar nog'],b:10,s:'+ Urgentie aanwezig'},
+    {w:['budget','financiering','gespaard'],b:10,s:'+ Budget besproken'},
+    {w:['partner','man','vrouw','samen beslissen'],b:5,s:'+ Beslissers betrokken'}
+  ];
+  var neg=[
+    {w:['te duur','te hoog','concurrent','andere aanbieder','goedkoper'],b:-15,s:'- Prijsweerstand'},
+    {w:['geen reactie','niet opgenomen','voicemail','niet bereikbaar'],b:-10,s:'- Geen reactie'},
+    {w:['bedenktijd','nadenken','later','volgend jaar','uitstellen'],b:-15,s:'- Uitsteller'},
+    {w:['geen interesse','niet relevant','niet nodig','toch niet'],b:-25,s:'- Geen interesse'},
+    {w:['al gekocht','al besteld','al geregeld','anders gedaan'],b:-30,s:'- Al elders gekocht'}
+  ];
+  pos.forEach(function(p){p.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===p.s;})){bonus+=p.b;signalen.push(p.s);}});});
+  neg.forEach(function(n){n.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===n.s;})){bonus+=n.b;signalen.push(n.s);}});});
+  if(tekst.includes('wanneer kunnen')||tekst.includes('wanneer start'))next_action='Klant wil planning — stuur concrete startdatum en sluit deal!';
+  else if(tekst.includes('akkoord')||tekst.includes('gaan we doen'))next_action='Akkoord signaal — stuur opdrachtbevestiging vandaag!';
+  else if(tekst.includes('te duur')||tekst.includes('concurrent'))next_action='Prijsweerstand — bel en bespreek meerwaarde Q-Line vs concurrent.';
+  else if(tekst.includes('bedenktijd')||tekst.includes('nadenken'))next_action='Klant twijfelt — vraag direct: wat houdt je nog tegen?';
+  else if(tekst.includes('partner')||tekst.includes('samen beslissen'))next_action='Beide beslissers betrekken — plan afspraak met koppel/partner.';
+  else if(tekst.includes('vergunning')||tekst.includes('tekening'))next_action='Klant is concreet bezig — stay close en bied hulp aan bij vergunning.';
+  else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
+  else next_action='Follow-up sturen en concreet om beslissing vragen.';
+  return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
+}
+
+async function runAiScoring(){
   var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
+  actief.sort(function(a,b){return getScore(b)-getScore(a);});
   var el=document.getElementById('scoring-list');
   if(!el)return;
   if(!actief.length){
     el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';
     return;
   }
-
-  var results=actief.map(function(d){
-    var contacts=d.contacts||[];
-    var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
-
-    // Tel interacties voor redenering
-    var interaction_pairs=0;
-    var klant_replies=0;
-    var outbound_na_laatste_reply=0;
-    var laatste_was_reactie=false;
-    var outbound_streak=0;
-
-    for(var i=0;i<contacts.length;i++){
-      var cc=contacts[i];
-      if(cc.type==='reactie'){
-        klant_replies++;
-        if(outbound_streak>0)interaction_pairs++;
-        outbound_streak=0;
-        laatste_was_reactie=true;
-      } else {
-        outbound_streak++;
-        laatste_was_reactie=false;
-      }
-    }
-    outbound_na_laatste_reply=outbound_streak;
-    var score=getScore(d);
-    var voorspelling=getVoorspelling(d);
-
-    // Status
-    var status=score>=70?'HOT':score>=45?'WARM':score>=25?'COLD':'DEAD';
-
-    // Trend: kijk naar laatste 3 contacten
-    var trend='stabiel';
-    var recent=contacts.slice(-3);
-    var recent_reacties=recent.filter(function(cc){return cc.type==='reactie';}).length;
-    var recent_outbound=recent.filter(function(cc){return cc.type!=='reactie';}).length;
-    if(laatste_was_reactie)trend='stijgend';
-    else if(outbound_na_laatste_reply>=3)trend='dalend';
-    else if(recent_reacties>0)trend='stijgend';
-    else if(recent_outbound>=2&&recent_reacties===0)trend='dalend';
-
-    // Kans binnen 14 dagen
-    var closing14d=Math.round(score*(laatste_was_reactie?0.7:0.4));
-
-    // Lead rule toepassen
-    var regel=getLeadRule(d);
-
-    // Status override voor DEAD
-    if(regel&&regel.rule==='DEAD'){
-      status='DEAD';
-      score=0;
-      closing14d=0;
-    } else if(regel&&regel.rule==='REOPENED'){
-      status='HOT';
-    }
-
-    // Redenering
-    var reasoning='';
-    if(regel&&regel.rule==='DEAD'){
-      reasoning=outbound_na_laatste_reply+' outbound pogingen zonder reactie. Lead is automatisch gearchiveerd als DEAD.';
-    } else if(regel&&regel.rule==='REOPENED'){
-      reasoning='Lead was inactief maar klant heeft alsnog gereageerd. Herstart opvolgcyclus direct.';
-    } else if(contacts.length===0){
-      reasoning='Nog geen contactmomenten. Offerte staat open zonder opvolging.';
-    } else if(laatste_was_reactie){
-      reasoning='Klant heeft als laatste gereageerd ('+klant_replies+'x totaal). '+interaction_pairs+' volledige interacties. Momentum aanwezig.';
-    } else if(outbound_na_laatste_reply>=3){
-      reasoning=outbound_na_laatste_reply+' pogingen zonder reactie na laatste klantcontact. Nog '+Math.max(0,4-outbound_na_laatste_reply)+' poging(en) voor DEAD status.';
-    } else if(klant_replies===0){
-      reasoning='Nog geen reactie van klant na '+outbound_na_laatste_reply+' poging(en).';
-    } else {
-      reasoning=klant_replies+' klantreactie(s), '+interaction_pairs+' interacties. '+outbound_na_laatste_reply+' uitstaande pogingen.';
-    }
-
-    // Volgende actie op basis van regels
-    var next_action='';
-    if(regel&&regel.rule==='DEAD'){
-      next_action='Archiveer als verloren of stuur één laatste persoonlijke mail.';
-    } else if(regel&&regel.rule==='REOPENED'){
-      next_action='Direct bellen — klant heeft initiatief genomen!';
-    } else if(regel&&regel.rule==='FOLLOWUP'){
-      var wacht=regel.wacht||2;
-      next_action='Poging '+regel.outbound+' gedaan — wacht '+wacht+' dag(en) dan volgende follow-up.';
-    } else if(laatste_was_reactie&&score>=60){
-      next_action='Klant is actief — reageer snel en stuur naar beslissing.';
-    } else if(laatste_was_reactie){
-      next_action='Klant heeft gereageerd — pak momentum op en plan vervolgstap.';
-    } else if(contacts.length===0){
-      next_action='Eerste opvolging doen — bel of mail vandaag nog.';
-    } else {
-      next_action='Follow-up sturen en expliciet om reactie vragen.';
-    }
-
-    return Object.assign({},d,{
-      score:score,status:status,trend:trend,closing14d:closing14d,
-      reasoning:reasoning,next_action:next_action,
-      interaction_pairs:interaction_pairs,klant_replies:klant_replies,
-      outbound_na_laatste_reply:outbound_na_laatste_reply,
-      voorspelling:voorspelling
-    });
+  
+  // Toon loading indicator
+  el.innerHTML='<div style="text-align:center;padding:30px;color:#888"><div style="font-size:13px;margin-bottom:8px">🤖 AI analyseert contactlog teksten...</div><div style="font-size:11px;color:#aaa">Dit duurt 10-20 seconden</div></div>';
+  
+  // Bouw de data op voor AI analyse
+  var leadsData = actief.map(function(d){
+    var contacts = d.contacts||[];
+    return {
+      id: d.id,
+      klant: d.klant,
+      bedrag: d.bedrag,
+      status: d.status,
+      datum: d.datum,
+      datumOfferte: d.datumOfferte,
+      contactlog: contacts.map(function(c){
+        return '['+c.type+' op '+c.datum+']: '+c.nota;
+      }).join('\n')
+    };
   });
-
-  // Separate dead from active, sort each group
-  var actieve=results.filter(function(r){return r.status!=='DEAD';});
-  var dode=results.filter(function(r){return r.status==='DEAD';});
-  actieve.sort(function(a,b){return b.score-a.score;});
-  results=actieve.concat(dode);
-
-  var html='';
-  var deadShown=false;
-  for(var i=0;i<results.length;i++){
-    if(!deadShown&&results[i].status==='DEAD'){
-      deadShown=true;
-      html+='<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px"><div style="flex:1;height:1px;background:#e2e0d8"></div><span style="font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Dead leads — 4+ pogingen zonder reactie</span><div style="flex:1;height:1px;background:#e2e0d8"></div></div>';
-    }
-    var r=results[i];
-    var clr=r.status==='HOT'?'#c0392b':r.status==='WARM'?'#b8590a':r.status==='COLD'?'#1a3a6c':r.status==='DEAD'?'#aaa':'#888';
-    var isDead=r.status==='DEAD';
-    var bgClr=r.status==='HOT'?'#fdf0ee':r.status==='WARM'?'#fef3e8':r.status==='COLD'?'#eef2fa':'#f5f4f0';
-    var barClr=r.score>=70?'#1a5c3a':r.score>=40?'#b8590a':'#c0392b';
-    var trendIcon=r.trend==='stijgend'?'&#8593;':r.trend==='dalend'?'&#8595;':'&#8594;';
-    var trendClr=r.trend==='stijgend'?'#1a5c3a':r.trend==='dalend'?'#c0392b':'#888';
-    var voorspTekst='';
-    if(r.voorspelling){
-      var vp=r.voorspelling;
-      if(r.score>=85){
-        voorspTekst='<div style="font-size:11px;background:#eef5f0;border:1px solid #b8d4c2;border-radius:6px;padding:6px 10px;margin-top:8px;color:#1a5c3a">&#127919; Klant is slachtrijp — vraag om de opdracht.</div>';
-      } else if(vp.nog_interacties<=1&&vp.nog_reacties<=1){
-        voorspTekst='<div style="font-size:11px;background:#fef3e8;border:1px solid #f0d0a8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#b8590a">&#9202; Bijna klaar — nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig o.b.v. jouw gemiddelde.</div>';
-      } else {
-        voorspTekst='<div style="font-size:11px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:6px;padding:6px 10px;margin-top:8px;color:#888">Nog ~'+vp.nog_interacties+' interactie(s) en ~'+vp.nog_reacties+' reactie(s) nodig. Gem. winnende deal: '+vp.gem_interacties+' interacties / '+vp.gem_dagen+'d ('+vp.aantalWon+' gewonnen deals)</div>';
-      }
-    } else {
-      voorspTekst='<div style="font-size:11px;color:#ccc;margin-top:6px">Leerdata beschikbaar na 2+ gewonnen deals.</div>';
-    }
-    html+='<div style="border:1px solid #e2e0d8;border-radius:10px;padding:16px;margin-bottom:10px;background:#fff">'
-      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
-        +'<div style="flex:1">'
-          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
-            +'<span style="font-size:14px;font-weight:700;color:#111">'+r.klant+'</span>'
-            +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+bgClr+';color:'+clr+'">'+r.status+'</span>'
-            +'<span style="font-size:11px;font-weight:600;color:'+trendClr+'">'+trendIcon+' '+r.trend+'</span>'
-            +(r.bedrag?'<span style="font-size:11px;color:#888;font-family:monospace">&#8364;'+Math.round(Number(r.bedrag)).toLocaleString('nl-NL')+'</span>':'')
-          +'</div>'
-          +'<div style="display:flex;gap:16px;font-size:11px;color:#aaa;margin-bottom:8px;font-family:monospace">'
-            +'<span>'+r.interaction_pairs+' interacties</span>'
-            +'<span style="color:#1a5c3a">'+r.klant_replies+' klantreacties</span>'
-            +(r.outbound_na_laatste_reply>0?'<span style="color:'+( r.outbound_na_laatste_reply>=3?'#c0392b':'#b8590a')+'">'+r.outbound_na_laatste_reply+' uitstaand</span>':'')
-          +'</div>'
-          +'<div style="font-size:12px;color:#555;margin-bottom:6px;line-height:1.5">'+r.reasoning+'</div>'
-          +'<div style="font-size:12px;font-weight:600;color:#1a5c3a;background:#eef5f0;padding:6px 10px;border-radius:6px;display:inline-block">&#8594; '+r.next_action+'</div>'
-          +voorspTekst
-        +'</div>'
-        +'<div style="text-align:center;flex-shrink:0;min-width:80px">'
-          +'<div style="font-size:30px;font-weight:800;color:'+barClr+';font-family:monospace;line-height:1">'+r.score+'</div>'
-          +'<div style="font-size:10px;color:#aaa;margin-bottom:6px">/ 100</div>'
-          +'<div style="width:60px;height:6px;background:#f0ede6;border-radius:3px;margin:0 auto"><div style="height:100%;width:'+Math.min(100,r.score)+'%;background:'+barClr+';border-radius:3px"></div></div>'
-          +'<div style="font-size:10px;color:#888;margin-top:6px">'+r.closing14d+'%<br>binnen 14d</div>'
-        +'</div>'
-      +'</div>'
-      +'</div>';
-  }
-  el.innerHTML=html;
-}
+  
+  // Render resultaten
+  results.sort(function(a,b){return b.score-a.score;});
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
-load();render();loadWithSync();
+loadWithSync();
 
+}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>

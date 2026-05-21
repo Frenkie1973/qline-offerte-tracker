@@ -164,6 +164,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
   <div class="sidebar-foot">
     <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+      <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div>
       <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
       <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
       <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
@@ -296,7 +297,7 @@ async function loadWithSync(){
   if(!ok)load();
   render();
   const si=document.getElementById('sync-indicator');
-  if(si){si.textContent=ok?'☁ gesynchroniseerd':'☁ lokaal';si.style.color=ok?'var(--green)':'var(--hint)';}
+  if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(deals));
@@ -322,7 +323,7 @@ async function kiesMap(){
     localStorage.setItem('qltrk_savepath',__fileHandle.name);
     document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
     await doSave();
-    alert('Map gekozen! Vanaf nu wordt automatisch opgeslagen.');
+    alert('Map gekozen! Vanaf nu wordt lokaal opgeslagen als backup.\nData wordt ook automatisch gesynchroniseerd via Firebase.');
   }catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
 }
 
@@ -333,7 +334,7 @@ async function doSave(){
     await writable.write(JSON.stringify(deals,null,2));
     await writable.close();
     const el=document.getElementById('savepath');
-    if(el){el.textContent=__fileHandle.name+' — opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+    if(el){el.textContent='💾 '+__fileHandle.name+' — backup opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
     return true;
   }catch(e){
     __fileHandle=null;
@@ -1399,14 +1400,135 @@ function exportMaandoverzicht(){
   a.click();
 }
 
+async function analyseerContactTekst(contacts){
+  var tekst=contacts.map(function(c){return(c.nota||'').toLowerCase();}).join(' ');
+  var bonus=0;var signalen=[];var next_action='';
+  var pos=[
+    {w:['wanneer kunnen','wanneer start','wanneer lever'],b:20,s:'+ Klant vraagt naar planning'},
+    {w:['akkoord','gaan we doen','doen we','mooie prijs','goed voorstel'],b:20,s:'+ Akkoord signaal'},
+    {w:['bouwvergunning','vergunning','tekening','architect'],b:15,s:'+ Concreet aan de slag'},
+    {w:['heel geinteresseerd','zeer geinteresseerd','graag','absoluut'],b:15,s:'+ Sterke interesse'},
+    {w:['teruggebeld','heeft teruggebeld','zelf gebeld','belde terug'],b:15,s:'+ Klant belt zelf terug'},
+    {w:['deadline','voor de zomer','voor de winter','dit jaar nog'],b:10,s:'+ Urgentie aanwezig'},
+    {w:['budget','financiering','gespaard'],b:10,s:'+ Budget besproken'},
+    {w:['partner','man','vrouw','samen beslissen'],b:5,s:'+ Beslissers betrokken'}
+  ];
+  var neg=[
+    {w:['te duur','te hoog','concurrent','andere aanbieder','goedkoper'],b:-15,s:'- Prijsweerstand'},
+    {w:['geen reactie','niet opgenomen','voicemail','niet bereikbaar'],b:-10,s:'- Geen reactie'},
+    {w:['bedenktijd','nadenken','later','volgend jaar','uitstellen'],b:-15,s:'- Uitsteller'},
+    {w:['geen interesse','niet relevant','niet nodig','toch niet'],b:-25,s:'- Geen interesse'},
+    {w:['al gekocht','al besteld','al geregeld','anders gedaan'],b:-30,s:'- Al elders gekocht'}
+  ];
+  pos.forEach(function(p){p.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===p.s;})){bonus+=p.b;signalen.push(p.s);}});});
+  neg.forEach(function(n){n.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===n.s;})){bonus+=n.b;signalen.push(n.s);}});});
+  if(tekst.includes('wanneer kunnen')||tekst.includes('wanneer start'))next_action='Klant wil planning — stuur concrete startdatum en sluit deal!';
+  else if(tekst.includes('akkoord')||tekst.includes('gaan we doen'))next_action='Akkoord signaal — stuur opdrachtbevestiging vandaag!';
+  else if(tekst.includes('te duur')||tekst.includes('concurrent'))next_action='Prijsweerstand — bel en bespreek meerwaarde Q-Line vs concurrent.';
+  else if(tekst.includes('bedenktijd')||tekst.includes('nadenken'))next_action='Klant twijfelt — vraag direct: wat houdt je nog tegen?';
+  else if(tekst.includes('partner')||tekst.includes('samen beslissen'))next_action='Beide beslissers betrekken — plan afspraak met koppel/partner.';
+  else if(tekst.includes('vergunning')||tekst.includes('tekening'))next_action='Klant is concreet bezig — stay close en bied hulp aan bij vergunning.';
+  else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
+  else next_action='Follow-up sturen en concreet om beslissing vragen.';
+  return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
+}
+
 function runAiScoring(){
   var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
+  actief.sort(function(a,b){return getScore(b)-getScore(a);});
   var el=document.getElementById('scoring-list');
   if(!el)return;
   if(!actief.length){
     el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';
     return;
   }
+  
+  // Toon loading indicator
+  el.innerHTML='<div style="text-align:center;padding:30px;color:#888"><div style="font-size:13px;margin-bottom:8px">🤖 AI analyseert contactlog teksten...</div><div style="font-size:11px;color:#aaa">Dit duurt 10-20 seconden</div></div>';
+  
+  // Bouw de data op voor AI analyse
+  var leadsData = actief.map(function(d){
+    var contacts = d.contacts||[];
+    return {
+      id: d.id,
+      klant: d.klant,
+      bedrag: d.bedrag,
+      status: d.status,
+      datum: d.datum,
+      datumOfferte: d.datumOfferte,
+      contactlog: contacts.map(function(c){
+        return '['+c.type+' op '+c.datum+']: '+c.nota;
+      }).join('\n')
+    };
+  });
+  
+  // Stuur naar Claude API voor analyse
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        system: `Je bent een ervaren B2B verkoopcoach voor Q-Line, een bedrijf dat hoogwaardige paardensportaccommodaties verkoopt (rijbanen, overkappingen, stallen). Je analyseert leads op basis van hun contactlog teksten.
+
+Analyseer elke lead en geef terug als JSON array met per lead:
+- id: de lead ID
+- score: getal 0-100 (gebaseerd op tekst signalen)
+- status: HOT/WARM/COLD/DEAD
+- trend: stijgend/stabiel/dalend  
+- reasoning: 1-2 zinnen waarom deze score (in het Nederlands, concreet)
+- next_action: concrete volgende actie (in het Nederlands, specifiek en actionable)
+- signalen: array van maximaal 3 korte positieve of negatieve signalen uit de tekst
+
+Positieve signalen: "wanneer kunnen we starten", "budget ok", "partner enthousiast", "deadline", klant belt zelf terug, concrete vragen over product.
+Negatieve signalen: geen reactie, "bedenktijd nodig", concurrent genoemd, prijsweerstand, lange stiltes.
+
+Geef ALLEEN een JSON array terug, geen uitleg.`,
+        messages: [{
+          role: 'user',
+          content: 'Analyseer deze leads:\n\n' + JSON.stringify(leadsData, null, 2)
+        }]
+      })
+    });
+    
+    var data = await response.json();
+    var text = data.content[0].text;
+    var clean = text.replace(/```json|```/g, '').trim();
+    var aiResults = JSON.parse(clean);
+    
+    // Combineer AI resultaten met lokale data
+    var results = actief.map(function(d){
+      var ai = aiResults.find(function(r){ return r.id === d.id; }) || {};
+      var contacts = d.contacts||[];
+      var klant_replies = contacts.filter(function(c){ return c.type==='reactie'; }).length;
+      var outbound = contacts.filter(function(c){ return c.type!=='reactie'; }).length;
+      var laatste = contacts.length ? contacts[contacts.length-1] : null;
+      var laatste_was_reactie = laatste && laatste.type==='reactie';
+      var voorspelling = getVoorspelling(d);
+      
+      return Object.assign({}, d, {
+        score: ai.score || getScore(d),
+        status: ai.status || 'COLD',
+        trend: ai.trend || 'stabiel',
+        reasoning: ai.reasoning || 'Geen analyse beschikbaar',
+        next_action: ai.next_action || 'Follow-up sturen',
+        signalen: ai.signalen || [],
+        klant_replies: klant_replies,
+        outbound_na_laatste_reply: outbound,
+        interaction_pairs: Math.min(klant_replies, outbound),
+        laatste_was_reactie: laatste_was_reactie,
+        closing14d: Math.round((ai.score||getScore(d))*(laatste_was_reactie?0.7:0.4)),
+        voorspelling: voorspelling
+      });
+    });
+    
+    results.sort(function(a,b){ return b.score - a.score; });
+    
+    // Render resultaten
+    var html='';
+    for(var i=0;i<results.length;i++){
+      var r=results[i];
 
   var results=actief.map(function(d){
     var contacts=d.contacts||[];
@@ -1432,7 +1554,10 @@ function runAiScoring(){
       }
     }
     outbound_na_laatste_reply=outbound_streak;
-    var score=getScore(d);
+    var contacts=d.contacts||[];
+    var analyse=analyseerContactTekst(contacts);
+    var baseScore=getScore(d);
+    var score=Math.max(0,Math.min(100,baseScore+analyse.bonus));
     var voorspelling=getVoorspelling(d);
 
     // Status
@@ -1502,7 +1627,7 @@ function runAiScoring(){
 
     return Object.assign({},d,{
       score:score,status:status,trend:trend,closing14d:closing14d,
-      reasoning:reasoning,next_action:next_action,
+      reasoning:reasoning,next_action:(contacts.length?analyse.next_action:next_action),signalen:analyse.signalen,
       interaction_pairs:interaction_pairs,klant_replies:klant_replies,
       outbound_na_laatste_reply:outbound_na_laatste_reply,
       voorspelling:voorspelling
@@ -1557,6 +1682,8 @@ function runAiScoring(){
             +(r.outbound_na_laatste_reply>0?'<span style="color:'+( r.outbound_na_laatste_reply>=3?'#c0392b':'#b8590a')+'">'+r.outbound_na_laatste_reply+' uitstaand</span>':'')
           +'</div>'
           +'<div style="font-size:12px;color:#555;margin-bottom:6px;line-height:1.5">'+r.reasoning+'</div>'
+          +(r.signalen&&r.signalen.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+r.signalen.map(function(s){var pos=s.startsWith('+');return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid '+(pos?'#b8d4c2':'#f0c4be')+';background:'+(pos?'#eef5f0':'#fdf0ee')+';color:'+(pos?'#1a5c3a':'#c0392b')+'">'+s+'</span>';}).join('')+'</div>':'')
+          +(r.signalen&&r.signalen.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+r.signalen.map(function(s){var pos=s.startsWith('+')||s.toLowerCase().includes('positief');return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid '+(pos?'#b8d4c2':'#f0c4be')+';background:'+(pos?'#eef5f0':'#fdf0ee')+';color:'+(pos?'#1a5c3a':'#c0392b')+'">'+s+'</span>';}).join('')+'</div>':'')
           +'<div style="font-size:12px;font-weight:600;color:#1a5c3a;background:#eef5f0;padding:6px 10px;border-radius:6px;display:inline-block">&#8594; '+r.next_action+'</div>'
           +voorspTekst
         +'</div>'
@@ -1570,6 +1697,29 @@ function runAiScoring(){
       +'</div>';
   }
   el.innerHTML=html;
+  } catch(err) {
+    // Fallback naar lokale scoring als AI niet beschikbaar is
+    console.error('AI scoring error:', err);
+    el.innerHTML='<div style="font-size:12px;color:#c0392b;padding:12px;background:#fdf0ee;border-radius:8px;margin-bottom:12px">⚠ AI analyse niet beschikbaar — lokale score getoond</div>';
+    // Render met lokale scores als fallback
+    var fallbackResults = actief.map(function(d){
+      var contacts=d.contacts||[];
+      var klant_replies=contacts.filter(function(c){return c.type==="reactie";}).length;
+      var outbound=contacts.filter(function(c){return c.type!=="reactie";}).length;
+      var laatste=contacts.length?contacts[contacts.length-1]:null;
+      var laatste_was_reactie=laatste&&laatste.type==="reactie";
+      var score=getScore(d);
+      var status=score>=70?"HOT":score>=45?"WARM":score>=25?"COLD":"DEAD";
+      return Object.assign({},d,{score:score,status:status,trend:"stabiel",reasoning:"Lokale score (AI niet beschikbaar)",next_action:"Follow-up sturen",signalen:[],klant_replies:klant_replies,outbound_na_laatste_reply:outbound,interaction_pairs:Math.min(klant_replies,outbound),closing14d:Math.round(score*(laatste_was_reactie?0.7:0.4)),voorspelling:getVoorspelling(d)});
+    });
+    fallbackResults.sort(function(a,b){return b.score-a.score;});
+    var fbHtml='';
+    fallbackResults.forEach(function(r){
+      var barClr=r.score>=70?"#1a5c3a":r.score>=40?"#b8590a":"#c0392b";
+      fbHtml+='<div style="border:1px solid #e2e0d8;border-radius:10px;padding:16px;margin-bottom:10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">'+r.klant+'</span><span style="font-size:24px;font-weight:800;color:'+barClr+'">'+r.score+'</span></div><div style="font-size:12px;color:#555;margin-top:6px">'+r.reasoning+'</div></div>';
+    });
+    el.innerHTML=(el.innerHTML||'')+fbHtml;
+  }
 }
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});

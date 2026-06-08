@@ -1573,7 +1573,7 @@ function runAiScoring(){
 }
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
-load();render();fbLoad().then(ok=>{if(ok){render();updateBadge();}});
+load();render();loadWithSync();
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>

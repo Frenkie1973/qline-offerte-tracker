@@ -7,6 +7,9 @@
 // Benodigde secrets: MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
 
 const MAILBOX = 'store@q-line.com';
+// Verwerkte aanvragen worden door Frank verplaatst naar de map "Q-Line store
+// aanvragen" (archief). De bot moet dus ALLEEN de Postvak IN uitlezen, nooit
+// die archiefmap, anders komen al afgehandelde leads opnieuw binnen.
 const FB_BASE = 'https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app';
 const LEADS_URL = `${FB_BASE}/leads.json`;
 const STATE_URL = `${FB_BASE}/mailbotState.json`;
@@ -60,7 +63,9 @@ async function getAppToken() {
 async function fetchNewMessages(token, sinceISO) {
   const filter = encodeURIComponent(`receivedDateTime gt ${sinceISO}`);
   const select = 'id,subject,from,receivedDateTime,bodyPreview,body';
-  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/messages?$filter=${filter}&$select=${select}&$orderby=receivedDateTime asc&$top=50`;
+  // Expliciet de Postvak IN-map, nooit de hele mailbox (die bevat ook de
+  // archiefmap "Q-Line store aanvragen" met al afgehandelde mail).
+  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/inbox/messages?$filter=${filter}&$select=${select}&$orderby=receivedDateTime asc&$top=50`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`Mail ophalen mislukt: ${res.status} ${await res.text()}`);
   const data = await res.json();

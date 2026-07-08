@@ -425,9 +425,21 @@ function getLeadRule(d){
   return null;
 }
 
+// ===== Reden-tagging (win/verlies) — voor patroonherkenning in scoring =====
+const REDENEN_WIN=['Prijs/waarde overtuigend','Snelle levertijd','Persoonlijk contact/advies','Vertrouwd merk/kwaliteit','Anders'];
+const REDENEN_VERLOREN=['Te duur','Gekozen voor concurrent','Geen budget / uitgesteld','Geen reactie meer','Verkeerd product/paste niet','Anders'];
+
+function getRedenStats(){
+  const won=deals.filter(d=>d.status==='gewonnen'&&d.reden);
+  const lost=deals.filter(d=>d.status==='verloren'&&d.reden);
+  const count=arr=>{const m={};arr.forEach(d=>{m[d.reden]=(m[d.reden]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+  return{won:count(won),lost:count(lost),totWon:won.length,totLost:lost.length};
+}
+
 // Leer van gewonnen deals - bereken persoonlijk gemiddelde
 function getLeerData(){
   var won=deals.filter(function(d){return d.status==='gewonnen';});
+  var lost=deals.filter(function(d){return d.status==='verloren';});
   var deadends=deals.filter(function(d){return d.status==='deadend';});
   if(won.length===0)return null;
   var totaalInteracties=0, totaalReacties=0, totaalDagen=0, n=0;
@@ -450,7 +462,13 @@ function getLeerData(){
     gemInteracties:totaalInteracties/n,
     gemReacties:totaalReacties/n,
     gemDagen:totaalDagen/n,
-    aantalWon:n
+    aantalWon:n,
+    gemBedragWon:won.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/(won.length||1),
+    gemBedragLost:lost.length?lost.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/lost.length:null,
+    prijsIsTopReden:(function(){
+      var rs=getRedenStats();
+      return rs.totLost>=2&&rs.lost[0]&&rs.lost[0][0]==='Te duur'&&(rs.lost[0][1]/rs.totLost)>=0.4;
+    })()
   };
 }
 
@@ -494,6 +512,11 @@ function getScore(d){
     // Bonus/malus
     if(laatste_was_reactie)score+=10;
     if(outbound_streak>=3)score-=10;
+    // Patroonherkenning uit getagde verliesredenen: als "Te duur" de dominante verliesreden is
+    // en dit bedrag ruim boven het gemiddelde gewonnen bedrag ligt, extra voorzichtig scoren.
+    if(leer.prijsIsTopReden&&d.bedrag&&leer.gemBedragWon&&Number(d.bedrag)>leer.gemBedragWon*1.3){
+      score-=8;
+    }
     score=Math.min(95,Math.max(5,Math.round(score)));
   } else {
     // Nog niet genoeg data - gebruik basisformule
@@ -896,10 +919,56 @@ function quick(id,s,e){
   e&&e.stopPropagation();
   const d=deals.find(x=>x.id===id);
   if(!d)return;
+  if(s==='gewonnen'||s==='verloren'){showWinLossPopup(id,s);return;}
   d.status=s;
   if(s==='offerte'&&!d.datumOfferte)d.datumOfferte=new Date().toISOString().slice(0,10);
-  if(s==='gewonnen'||s==='verloren'||s==='deadend'){d.nextContact=null;save();render();}
+  if(s==='deadend'){d.nextContact=null;save();render();}
   else{save();showContactPopup(id);}
+}
+function showWinLossPopup(id,status){
+  const d=deals.find(x=>x.id===id);
+  if(!d)return;
+  window.__wlId=id;window.__wlStatus=status;window.__wlReden=null;
+  const redenen=status==='gewonnen'?REDENEN_WIN:REDENEN_VERLOREN;
+  const titel=status==='gewonnen'?`🎉 ${d.klant} — gewonnen!`:`${d.klant} — verloren`;
+  const box=document.querySelector('.mbox');
+  box.innerHTML=`
+    <div class="mhead"><div class="mtitle">${titel}</div></div>
+    <div class="ff">
+      <label>Wat was de belangrijkste reden?</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px" id="wl-btns">
+        ${redenen.map(r=>`<button class="btn" onclick="selectReden('${r.replace(/'/g,"\\'")}',this)">${r}</button>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--hint);margin-top:6px">Dit helpt de scoringskans van toekomstige leads te verbeteren.</div>
+    </div>
+    <div class="ff">
+      <label>Toelichting (optioneel)</label>
+      <textarea id="wl-detail" rows="2" placeholder="Extra context..."></textarea>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="saveWinLoss(true)">Overslaan</button>
+      <button class="btn btn-p" onclick="saveWinLoss(false)">Opslaan</button>
+    </div>`;
+  document.getElementById('mo').classList.add('open');
+}
+function selectReden(r,btn){
+  window.__wlReden=r;
+  document.querySelectorAll('#wl-btns .btn').forEach(b=>{b.style.background='';b.style.borderColor='';b.style.color='';});
+  btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';btn.style.color='var(--accent)';
+}
+function saveWinLoss(skip){
+  const d=deals.find(x=>x.id===window.__wlId);
+  if(!d)return;
+  d.status=window.__wlStatus;
+  d.nextContact=null;
+  if(!skip&&window.__wlReden)d.reden=window.__wlReden;
+  const detail=document.getElementById('wl-detail')?.value?.trim();
+  if(!skip&&detail)d.redenDetail=detail;
+  save();
+  window.__wlId=null;window.__wlStatus=null;window.__wlReden=null;
+  document.getElementById('mo').classList.remove('open');
+  restoreModal();
+  render();
 }
 
 function renderClog(contacts){
@@ -1393,6 +1462,31 @@ function rAnalyse(){
         </div>`).join(''):`<div style="font-size:12px;color:#aaa;padding:20px 0;text-align:center">Voeg email-adressen toe<br>om herkomst te zien</div>`}
     </div>
   </div>
+
+  ${(function(){
+    const rs=getRedenStats();
+    if(!rs.totWon&&!rs.totLost)return'';
+    const bar=(entries,tot,clr)=>entries.length?entries.map(([r,n])=>`
+      <div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px;color:#333">${r}</span>
+          <span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
+        </div>
+        <div style="height:6px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/tot*100)}%;background:${clr};border-radius:4px"></div></div>
+      </div>`).join(''):'<div style="font-size:12px;color:#aaa;padding:10px 0">Nog geen redenen getagd</div>';
+    return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">🎉 Waarom gewonnen</div>
+        <div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totWon} van de ${won.length} gewonnen deals getagd</div>
+        ${bar(rs.won,rs.totWon||1,'#27ae60')}
+      </div>
+      <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">Waarom verloren</div>
+        <div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totLost} van de ${lost.length} verloren deals getagd</div>
+        ${bar(rs.lost,rs.totLost||1,'#c0392b')}
+      </div>
+    </div>`;
+  })()}
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>

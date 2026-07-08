@@ -2,21 +2,20 @@ name: Mailbox verwerken
 
 on:
   schedule:
-      - cron: '*/15 * * * *'
-        workflow_dispatch: {}
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
 
-        jobs:
-          process-mailbox:
-              runs-on: ubuntu-latest
-                  steps:
-                        - uses: actions/checkout@v4
-                              - uses: actions/setup-node@v4
-                                      with:
-                                                node-version: '20'
-                                                      - name: Verwerk nieuwe mails
-                                                              env:
-                                                                        MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
-                                                                                  MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
-                                                                                            MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
-                                                                                                    run: node scripts/mailbot.js
-                                                                                                    
+jobs:
+  process-mailbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verwerk nieuwe mails
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+        run: node scripts/mailbot.js

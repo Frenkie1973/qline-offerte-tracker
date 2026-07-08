@@ -1004,7 +1004,10 @@ function rDash(){
     return new Date(s);
   }
   function heeftNieuweReactie(d){
-    return (d.contacts||[]).some(c=>c.type==='reactie'&&parseDatum(c.datum)>gisteren);
+    const contacts=d.contacts||[];
+    if(!contacts.length)return false;
+    const laatste=contacts[contacts.length-1];
+    return laatste.type==='reactie'&&parseDatum(laatste.datum)>gisteren;
   }
   function heeftNieuweContact(d){
     return (d.contacts||[]).some(c=>parseDatum(c.datum)>gisteren);
@@ -1042,7 +1045,26 @@ function rDash(){
     ${b.l}${b.n?` <span style="background:${f===b.k?'var(--accent)':'var(--border2)'};color:${f===b.k?'#fff':'var(--text)'};padding:1px 6px;border-radius:10px;font-size:10px;margin-left:4px">${b.n}</span>`:''}
   </button>`).join('');
 
+  // Reactie banner items
+  const reactieBanner=metReactie.map(d=>{
+    const laatste=(d.contacts||[]).slice(-1)[0];
+    return`<div onclick="openEdit('${d.id}')" style="background:#fff;border:2px solid var(--accent);border-radius:10px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+      <div style="font-size:24px">📩</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:var(--text)">${d.klant}</div>
+        <div style="font-size:12px;color:var(--accent);margin-top:2px">${(laatste?.tekst||'').slice(0,80)}${(laatste?.tekst||'').length>80?'…':''}</div>
+      </div>
+      <div style="font-size:11px;color:var(--hint);font-family:var(--mono);white-space:nowrap">${laatste?.datum||''} ${laatste?.tijd||''}</div>
+      <div style="background:var(--accent);color:#fff;font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;font-weight:600">Direct bellen</div>
+    </div>`;
+  }).join('');
+
   return`${dzHtml()}
+  ${metReactie.length?`
+  <div style="margin-bottom:20px">
+    <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--red);font-weight:600;margin-bottom:8px">⚡ Klant heeft gereageerd — direct opvolgen</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${reactieBanner}</div>
+  </div>`:''}
   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
     <div>
       <div class="ph-title">Goedemorgen Frank <em>— ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</em></div>

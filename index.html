@@ -978,12 +978,20 @@ function rDash(){
   }
   
   // Nieuwe mails = leads die in laatste 24u een reactie contact hebben
-  const gisteren=new Date(Date.now()-86400000*2);
+  const gisteren=new Date(Date.now()-86400000*7); // 7 dagen terug
+  const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
+  function parseDatum(s){
+    if(!s)return new Date(0);
+    if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);
+    const m=s.match(/^(\d+)\s+(\w+)(?:\s+(\d{4}))?$/);
+    if(m){const mnd=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mnd!==undefined?mnd:0),parseInt(m[1]));}
+    return new Date(s);
+  }
   function heeftNieuweReactie(d){
-    return (d.contacts||[]).some(c=>c.type==='reactie'&&new Date(c.datum+' '+(c.tijd||'00:00'))>gisteren);
+    return (d.contacts||[]).some(c=>c.type==='reactie'&&parseDatum(c.datum)>gisteren);
   }
   function heeftNieuweContact(d){
-    return (d.contacts||[]).some(c=>new Date(c.datum+' '+(c.tijd||'00:00'))>gisteren);
+    return (d.contacts||[]).some(c=>parseDatum(c.datum)>gisteren);
   }
   
   const actie=open.filter(d=>urg(d)==='urg'||urg(d)==='soon').sort((a,b)=>sortVal(a)-sortVal(b));

@@ -178,7 +178,10 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="mo" id="mo">
   <div class="mbox">
     <div class="mhead">
-      <div class="mtitle" id="mtitle">Lead toevoegen</div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div class="mtitle" id="mtitle">Lead toevoegen</div>
+        <a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
+      </div>
       <button class="mclose" onclick="closeMo()">×</button>
     </div>
     <div class="fg">
@@ -676,6 +679,7 @@ function openNew(pre){
   document.getElementById('fn').value=pre?.notitie||'';
   document.getElementById('cwrap').style.display='none';
   document.getElementById('bdel').style.display='none';
+  const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
   document.getElementById('mo').classList.add('open');
   toggleDatumOfferte();
 }
@@ -694,6 +698,8 @@ function openEdit(id){
   toggleDatumOfferte();
   document.getElementById('fe').value=d.email||'';
   document.getElementById('ftel').value=d.telefoon||'';
+  const mc=document.getElementById('mheadCall');
+  if(mc){if(d.telefoon){mc.href='tel:'+d.telefoon;mc.textContent='📞 '+d.telefoon;mc.style.display='inline-block';}else{mc.style.display='none';}}
   const fcw2=document.getElementById('fcw');if(fcw2)fcw2.value=d.contactWay||'';
   const fland2=document.getElementById('fland');if(fland2)fland2.value=d.land||'';
   document.getElementById('fn').value=d.notitie||'';
@@ -835,7 +841,10 @@ function restoreModal(){
   if(!box)return;
   box.innerHTML=`
     <div class="mhead">
-      <div class="mtitle" id="mtitle">Lead toevoegen</div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div class="mtitle" id="mtitle">Lead toevoegen</div>
+        <a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
+      </div>
       <button class="mclose" onclick="closeMo()">×</button>
     </div>
     <div class="fg">
@@ -1149,7 +1158,7 @@ function tbl(rows){
       <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
     </div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
     return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
-      <td><div class="cn">${d.klant}</div><div class="cs">${d.onderwerp||'—'}</div></td>
+      <td><div class="cn">${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
       <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
       <td><span class="cm">${fmt(d.bedrag)}</span></td>
       <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
@@ -1210,7 +1219,7 @@ function rPipe(){
     const cards=items.length?items.map(d=>{const u=urg(d),dc=u==='urg'?'var(--red)':u==='soon'?'var(--orange)':'var(--hint)';var ds=getDisplayStatus(d);
           var scoreVal=getScore(d);
           var scoreClr=scoreVal>=70?'#1a5c3a':scoreVal>=40?'#b8590a':'#c0392b';
-          var html='<div class="pcard" onclick="openEdit(\''+d.id+'\')"><div class="pcn">'+d.klant+'</div>';
+          var html='<div class="pcard" onclick="openEdit(\''+d.id+'\')"><div class="pcn">'+d.klant+(d.telefoon?' <a href="tel:'+d.telefoon+'" onclick="event.stopPropagation()" title="Bel '+d.telefoon+'" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>':'')+'</div>';
           if(d.bedrag)html+='<div class="pca">'+fmt(d.bedrag)+'</div>';
           html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">';
           html+='<span style="font-size:10px;color:#888">'+da(d.datum)+'d</span>';

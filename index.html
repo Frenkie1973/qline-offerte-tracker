@@ -738,7 +738,7 @@ function saveDeal(){
   const k=document.getElementById('fk').value.trim();
   if(!k){alert('Vul een naam in.');return}
   const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,datumOfferte:document.getElementById('fdo').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),contactWay:document.getElementById('fcw')?.value||'',land:document.getElementById('fland')?.value.trim()||'',notitie:document.getElementById('fn').value.trim()};
-  if(editId){Object.assign(deals.find(x=>x.id===editId),obj)}
+  if(editId){const target=deals.find(x=>x.id===editId);Object.assign(target,obj);delete target.auto;}
   else{deals.push({id:Date.now().toString(),...obj,contacts:[]})}
   save();closeMo();render();
 }
@@ -1227,7 +1227,7 @@ function tbl(rows){
       <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
     </div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
     return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
-      <td><div class="cn">${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
+      <td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
       <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
       <td><span class="cm">${fmt(d.bedrag)}</span></td>
       <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>

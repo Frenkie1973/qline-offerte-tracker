@@ -46,6 +46,48 @@ function extractPhone(text) {
   return '';
 }
 
+// Zoekt naar "Label: waarde" of "Label - waarde" op een eigen regel.
+// Dekt zowel gestructureerde (webshop/formulier-)mails als losse tekst waarin
+// de klant toevallig zulke labels gebruikt.
+function extractField(text, labelPatterns) {
+  for (const label of labelPatterns) {
+    const re = new RegExp(`^[\\s>*-]*${label}\\s*[:\\-]\\s*(.+)$`, 'im');
+    const m = text.match(re);
+    if (m) {
+      const v = m[1].trim().replace(/\s{2,}/g, ' ');
+      if (v) return v;
+    }
+  }
+  return '';
+}
+
+// Probeert een naam te vinden in de afsluiting van een losse mail
+// ("Met vriendelijke groet, Jan Jansen") als er geen expliciet naam-label is.
+function extractSignatureName(text) {
+  const m = text.match(/(?:met\s+vriendelijke\s+groet(?:en)?|groet(?:en)?|mvg|regards|kind\s+regards)[,.]?\s*\n+\s*([A-Z][A-Za-zÀ-ÿ'\-]+(?:\s+[A-Z][A-Za-zÀ-ÿ'\-]+){0,3})/i);
+  return m ? m[1].trim() : '';
+}
+
+function extractStructuredData(bodyText, fromName, fromEmail) {
+  const klant = extractField(bodyText, ['naam', 'name', 'klant', 'contactpersoon'])
+    || extractSignatureName(bodyText)
+    || fromName || '';
+  const email = extractField(bodyText, ['e-?mail(?:adres)?', 'email']) || fromEmail || '';
+  const telefoon = extractField(bodyText, ['telefoon(?:nummer)?', 'tel(?:efoonnr)?', 'phone', 'mobiel']) || extractPhone(bodyText);
+  const straat = extractField(bodyText, ['adres', 'address', 'straat']);
+  const postcode = extractField(bodyText, ['postcode', 'zip(?:code)?', 'plz']);
+  const plaats = extractField(bodyText, ['plaats', 'city', 'woonplaats', 'stadt']);
+  const landVeld = extractField(bodyText, ['land', 'country']);
+  const product = extractField(bodyText, ['product', 'interesse\\s*in', 'onderwerp']);
+  const contactWay = extractField(bodyText, ['contact\\s*voorkeur', 'voorkeur\\s*contact', 'preferred\\s*contact(?:\\s*way)?', 'liever\\s*(?:gebeld|gemaild)']);
+  const kooptermijn = extractField(bodyText, ['kooptermijn', 'wanneer.*(?:kopen|aanschaf)', 'when.*(?:buy|purchase)']);
+  const typeKlant = extractField(bodyText, ['type\\s*(?:bedrijf|klant)', 'soort\\s*bedrijf', 'business\\s*type']);
+
+  const adres = [straat, postcode, plaats, landVeld].filter(Boolean).join(', ');
+
+  return { klant, email, telefoon, land: landVeld, contactWay, product, kooptermijn, typeKlant, adres };
+}
+
 async function getAppToken() {
   const url = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`;
   const body = new URLSearchParams({
@@ -121,17 +163,36 @@ async function main() {
     const fromName = m.from?.emailAddress?.name || '';
     const fromEmail = m.from?.emailAddress?.address || '';
     const bodyText = m.body?.contentType === 'html' ? stripHtml(m.body.content) : (m.body?.content || m.bodyPreview || '');
-    const telefoon = extractPhone(bodyText) || extractPhone(m.bodyPreview || '');
+
+    const ex = extractStructuredData(bodyText, fromName, fromEmail);
+
+    const extraRegels = [
+      ex.kooptermijn ? `Kooptermijn: ${ex.kooptermijn}` : '',
+      ex.typeKlant ? `Type klant: ${ex.typeKlant}` : '',
+      ex.adres ? `Adres: ${ex.adres}` : '',
+      ex.contactWay ? `Voorkeur contact: ${ex.contactWay}` : '',
+    ].filter(Boolean).join('\n');
+
+    const notitie = [
+      '🤖 Automatisch verwerkt uit mailbox — controleer en vul aan.',
+      `Ontvangen: ${new Date(m.receivedDateTime).toLocaleString('nl-NL')}`,
+      extraRegels,
+      '',
+      'Oorspronkelijke tekst:',
+      bodyText.slice(0, 800),
+    ].filter(Boolean).join('\n');
 
     nieuwLeads.push({
       id: `mail_${m.id}`.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 40) + '_' + Date.now().toString(36),
-      klant: fromName || fromEmail || 'Onbekende afzender',
-      email: fromEmail,
-      telefoon,
-      onderwerp: m.subject || 'Mail zonder onderwerp',
+      klant: ex.klant || fromEmail || 'Onbekende afzender',
+      email: ex.email,
+      telefoon: ex.telefoon,
+      land: ex.land,
+      contactWay: ex.contactWay,
+      onderwerp: ex.product || m.subject || 'Mail zonder onderwerp',
       datum: todayISO(),
       status: 'nieuw',
-      notitie: `🤖 Automatisch verwerkt uit mailbox — controleer en vul aan.\n\nOnderwerp: ${m.subject || ''}\nOntvangen: ${new Date(m.receivedDateTime).toLocaleString('nl-NL')}\n\n${bodyText.slice(0, 800)}`,
+      notitie,
       contacts: [],
       auto: true,
     });

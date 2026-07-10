@@ -10,6 +10,10 @@ const MAILBOX = 'store@q-line.com';
 // Verwerkte aanvragen worden door Frank verplaatst naar de map "Q-Line store
 // aanvragen" (archief). De bot moet dus ALLEEN de Postvak IN uitlezen, nooit
 // die archiefmap, anders komen al afgehandelde leads opnieuw binnen.
+//
+// Frank beantwoordt klanten vanuit zijn EIGEN mailbox, niet vanuit
+// store@q-line.com — daarom apart uitgelezen voor "verzonden mail".
+const SENT_MAILBOX = 'f.timmerhuis@q-line.com';
 const FB_BASE = 'https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app';
 const LEADS_URL = `${FB_BASE}/leads.json`;
 const STATE_URL = `${FB_BASE}/mailbotState.json`;
@@ -123,7 +127,7 @@ async function fetchNewMessages(token, sinceISO) {
 async function fetchSentMessages(token, sinceISO) {
   const filter = encodeURIComponent(`sentDateTime gt ${sinceISO}`);
   const select = 'id,subject,toRecipients,sentDateTime,bodyPreview,body';
-  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=50`;
+  const url = `https://graph.microsoft.com/v1.0/users/${SENT_MAILBOX}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=50`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`Verzonden mail ophalen mislukt: ${res.status} ${await res.text()}`);
   const data = await res.json();

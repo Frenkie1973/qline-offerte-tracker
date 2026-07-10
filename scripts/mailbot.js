@@ -140,6 +140,66 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const AI_PROXY_URL = 'https://qline-ai-proxy.f-timmerhuis.workers.dev';
+
+// Genereert automatisch een concept-opvolgbericht zodra een klant reageert op
+// een bestaande lead, zodat Frank het al klaar ziet staan als hij de lead
+// opent — geen los knipwerk meer nodig.
+async function genereerAiVoorstel(lead, nieuweMailTekst) {
+  const contacts = lead.contacts || [];
+  const contactlog = contacts.length
+    ? contacts.map((c) => `- [${c.type}, ${c.datum} ${c.tijd || ''}] ${c.tekst || ''}`).join('\n')
+    : '(nog geen contactmomenten gelogd)';
+
+  let outboundStreak = 0;
+  for (const c of contacts) {
+    if (c.type === 'reactie') outboundStreak = 0;
+    else outboundStreak++;
+  }
+
+  const prompt = `Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kort antwoord te schrijven op een mail die een klant zojuist stuurde. Doel: soepel en snel reageren, in Franks eigen stijl: zakelijk maar informeel, direct en praktisch, geen overbodige poespas.
+
+KLANTGEGEVENS:
+- Naam/bedrijf: ${lead.klant}
+- Interesse/product: ${lead.onderwerp || 'onbekend'}
+- Bedrag offerte: ${lead.bedrag ? '€' + lead.bedrag : 'nog niet bekend'}
+- Land: ${lead.land || 'onbekend'}
+- Status: ${lead.status}
+
+CONTACTGESCHIEDENIS (chronologisch, wat er al verstuurd/besproken is):
+${contactlog}
+
+DE NIEUWE MAIL DIE DE KLANT ZOJUIST STUURDE (beantwoord deze specifiek):
+${nieuweMailTekst.slice(0, 2000)}
+
+Schrijf een kort antwoord (max ~120 woorden) dat:
+- direct ingaat op wat de klant nu vraagt/zegt
+- past bij het land/de taal van de klant (Duitse klant = Duits in de juiste formaliteit; Nederlandse klant = Nederlands)
+- Franks toon aanhoudt: direct, vriendelijk-zakelijk, geen overdreven verkooppraat
+- een concrete volgende stap voorstelt waar mogelijk
+
+Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
+
+  try {
+    const res = await fetch(AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error(`AI-proxy gaf ${res.status}`);
+    const data = await res.json();
+    const tekst = (data.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('\n').trim();
+    return tekst || null;
+  } catch (e) {
+    console.error('AI-opvolgvoorstel genereren mislukt:', e.message);
+    return null;
+  }
+}
+
 async function main() {
   if (!TENANT_ID || !CLIENT_ID || !CLIENT_SECRET) {
     console.error('Ontbrekende secrets (MS_TENANT_ID / MS_CLIENT_ID / MS_CLIENT_SECRET).');
@@ -229,6 +289,15 @@ async function main() {
       if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
       if (!bestaande.land && ex.land) bestaande.land = ex.land;
       if (!bestaande.contactWay && ex.contactWay) bestaande.contactWay = ex.contactWay;
+
+      // Klant reageerde op een bestaande lead -> alvast een concept-antwoord
+      // klaarzetten zodat Frank het meteen ziet staan bij het openen.
+      console.log(`Genereer AI-opvolgvoorstel voor ${bestaande.klant}...`);
+      const voorstel = await genereerAiVoorstel(bestaande, bodyText);
+      if (voorstel) {
+        bestaande.aiVoorstel = voorstel;
+        bestaande.aiVoorstelDatum = m.receivedDateTime;
+      }
       samengevoegdTeller++;
     } else {
       uniekTeller++;

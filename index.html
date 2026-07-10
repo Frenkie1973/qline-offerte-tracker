@@ -227,6 +227,15 @@ tr.row td{padding:12px 14px;vertical-align:middle}
           <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
         </div>
       </div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
+        <div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
+        <button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
+        <div id="aiVoorstelWrap" style="display:none">
+          <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+          <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
+        </div>
+      </div>
     </div>
     <div class="mfoot">
       <button class="btn" onclick="closeMo()">Annuleren</button>
@@ -790,6 +799,9 @@ function openEdit(id){
   document.getElementById('fn').value=d.notitie||'';
   document.getElementById('cwrap').style.display='block';
   document.getElementById('fnc').value='';
+  document.getElementById('aiLaatsteMail').value='';
+  document.getElementById('aiVoorstel').value='';
+  document.getElementById('aiVoorstelWrap').style.display='none';
   renderClog(d.contacts||[]);
   document.getElementById('bdel').style.display='inline-block';
   document.getElementById('mo').classList.add('open');
@@ -978,6 +990,15 @@ function restoreModal(){
         <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
         <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
           <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+        </div>
+      </div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
+        <div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
+        <button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
+        <div id="aiVoorstelWrap" style="display:none">
+          <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+          <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
         </div>
       </div>
     </div>
@@ -1758,6 +1779,71 @@ async function analyseerContactTekst(contacts){
   else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
   else next_action='Follow-up sturen en concreet om beslissing vragen.';
   return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
+}
+
+async function genereerOpvolgVoorstel(){
+  const d=deals.find(x=>x.id===editId);
+  if(!d){alert('Sla de lead eerst op voordat je een voorstel genereert.');return}
+  const btn=document.getElementById('aiGenBtn');
+  const wrap=document.getElementById('aiVoorstelWrap');
+  const laatsteMail=document.getElementById('aiLaatsteMail').value.trim();
+  const contacts=d.contacts||[];
+  const contactlog=contacts.length
+    ? contacts.map(c=>`- [${c.type}, ${c.datum} ${c.tijd||''}] ${c.tekst||c.nota||''}`).join('\n')
+    : '(nog geen contactmomenten gelogd)';
+
+  const prompt=`Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kort opvolgbericht te schrijven aan een klant. Doel: een reactie loskrijgen van een klant die stil is geworden — niet opdringerig, maar direct en praktisch, in Franks eigen stijl: zakelijk maar informeel, geen overbodige poespas.
+
+KLANTGEGEVENS:
+- Naam/bedrijf: ${d.klant}
+- Interesse/product: ${d.onderwerp||'onbekend'}
+- Bedrag offerte: ${d.bedrag?('€'+d.bedrag):'nog niet bekend'}
+- Land: ${d.land||'onbekend'}
+- Status: ${d.status}
+- Notities: ${d.notitie||'geen'}
+
+CONTACTGESCHIEDENIS (chronologisch, wat er al verstuurd/besproken is):
+${contactlog}
+
+${laatsteMail?`LAATSTE MAIL DIE DE KLANT STUURDE (haak hier specifiek op in):\n${laatsteMail}\n`:'(Frank heeft geen laatste mail van de klant geplakt — baseer je alleen op de contactgeschiedenis hierboven.)'}
+
+Schrijf een kort opvolgbericht (mail of app-bericht, max ~120 woorden) dat:
+- niet herhaalt wat al gezegd is, maar er op voortbouwt
+- een concrete, laagdrempelige vraag stelt zodat de klant makkelijk kan reageren (bijv. een simpele ja/nee-vraag of een keuze tussen 2 opties, in plaats van een open "hoe staat het ermee?")
+- past bij het land/de taal van de klant (Duitse klant = Duits, in de juiste formaliteit; Nederlandse klant = Nederlands)
+- Franks toon aanhoudt: direct, vriendelijk-zakelijk, geen overdreven verkooppraat
+
+Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
+
+  btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
+  try{
+    const response=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1000,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data=await response.json();
+    const tekst=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
+    if(!tekst)throw new Error('Geen tekst ontvangen');
+    document.getElementById('aiVoorstel').value=tekst;
+    wrap.style.display='block';
+  }catch(e){
+    alert('Genereren mislukt: '+e.message+'. Probeer het nog eens.');
+  }finally{
+    btn.disabled=false;btn.textContent='✨ Genereer opvolgvoorstel';
+  }
+}
+function kopieerVoorstel(){
+  const ta=document.getElementById('aiVoorstel');
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btns=document.querySelectorAll('#aiVoorstelWrap .btn');
+    if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!';setTimeout(()=>{btns[0].textContent=orig;},1500);}
+  });
 }
 
 async function runAiScoring(){

@@ -184,6 +184,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
       </div>
       <button class="mclose" onclick="closeMo()">×</button>
     </div>
+    <div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
     <div class="fg">
       <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
       <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
@@ -600,15 +601,15 @@ function urg(d){
 }
 // Migrate old fu1/fu2 statuses to offerte
 deals.forEach(function(d){if(d.status==='fu1'||d.status==='fu2')d.status='offerte';});
+const MAANDEN={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
+function pdContact(s){if(!s)return new Date(0);if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);const m=s.match(/^(\d+)\s+(\w+)/);if(m){const mn=MAANDEN[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mn!==undefined?mn:0),parseInt(m[1]));}return new Date(s);}
 function ns(d){
   if(d.status==='nieuw')return'Offerte nog niet verstuurd';
   // Check of klant recent heeft gereageerd
-  const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
-  function pd(s){if(!s)return new Date(0);if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);const m=s.match(/^(\d+)\s+(\w+)/);if(m){const mn=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mn!==undefined?mn:0),parseInt(m[1]));}return new Date(s);}
   const contacts=d.contacts||[];
   const laatste=contacts.length?contacts[contacts.length-1]:null;
   const gisteren=new Date(Date.now()-86400000*2);
-  if(laatste&&laatste.type==='reactie'&&pd(laatste.datum)>gisteren){
+  if(laatste&&laatste.type==='reactie'&&pdContact(laatste.datum)>gisteren){
     return'📩 Klant reageerde — direct contact opnemen!';
   }
   if(d.nextContact){
@@ -619,6 +620,53 @@ function ns(d){
   }
   return'Stel follow-up in';
 }
+
+// Advies of doorgaan of stoppen de moeite waard is, gebaseerd op bekende
+// sales-researchregels (niet afhankelijk van veel eigen won/lost-data):
+// - Snelheid van eerste opvolging (Lead Response Management-onderzoek: binnen
+//   5 min reageren geeft tot 4x hogere conversie dan na 30+ min)
+// - "Rule of 5-8 touches" (Brevet/Velocify): de meeste deals hebben 5-8
+//   contactmomenten nodig, maar na 5+ zonder enige reactie daalt de kans sterk
+// - Deal-veroudering: leads die 30-60+ dagen stilliggen sluiten zelden nog
+//   (gangbare B2B CRM-vuistregel, o.a. HubSpot-onderzoek naar lead-decay)
+function getAdvies(d){
+  if(['gewonnen','verloren','deadend'].includes(d.status))return null;
+  if(d.status==='nieuw'){
+    return{label:'Nog niet opgevolgd',kleur:'#888',uitleg:'Hoe sneller je reageert, hoe hoger de kans. Onderzoek naar lead-respons laat tot 4x hogere conversie zien bij reageren binnen 5 minuten t.o.v. 30+ minuten.'};
+  }
+  const contacts=d.contacts||[];
+  let outbound_streak=0,laatste_was_reactie=false;
+  for(let i=0;i<contacts.length;i++){
+    const cc=contacts[i];
+    if(cc.type==='reactie'){outbound_streak=0;laatste_was_reactie=true;}
+    else{outbound_streak++;laatste_was_reactie=false;}
+  }
+  const laatsteContact=contacts.length?contacts[contacts.length-1]:null;
+  const referentieDatum=laatsteContact?pdContact(laatsteContact.datum):new Date(d.datum||0);
+  const dagenStil=Math.floor((Date.now()-referentieDatum)/86400000);
+  const score=getScore(d);
+
+  if(laatste_was_reactie){
+    return{label:'Warm — klant reageerde net',kleur:'#1a5c3a',uitleg:'De klant heeft als laatste gereageerd. Pak dit snel op: momentum vasthouden is in vrijwel elk salesonderzoek de belangrijkste factor voor conversie.'};
+  }
+  if(outbound_streak>=5){
+    return{label:'Waarschijnlijk kansloos — overweeg te stoppen',kleur:'#c0392b',uitleg:`${outbound_streak} contactpogingen zonder enige reactie. Vuistregel uit onderzoek naar opvolggedrag: na 5-8 onbeantwoorde pogingen is de resterende kans doorgaans verwaarloosbaar. Dit lijkt zonde van je tijd.`};
+  }
+  if(dagenStil>60){
+    return{label:'Slapend — waarschijnlijk zonde van de tijd',kleur:'#c0392b',uitleg:`${dagenStil} dagen geen enkele beweging. Leads die 60+ dagen stilliggen zonder reactie sluiten in de praktijk zelden nog.`};
+  }
+  if(outbound_streak>=3){
+    return{label:'Laatste pogingen waard',kleur:'#c9820a',uitleg:`De meeste deals hebben 5-8 contactmomenten nodig voor een reactie — je zit op ${outbound_streak}. Probeer nog 1-2x via een ander kanaal (bijv. bellen i.p.v. mailen) voordat je afschrijft.`};
+  }
+  if(dagenStil>30){
+    return{label:'Wordt koud',kleur:'#c9820a',uitleg:`Al ${dagenStil} dagen geen contact. Plan snel een laatste opvolgmoment, anders koelt de kans verder af.`};
+  }
+  if(score>=60){
+    return{label:'Sterke kans — doorpakken',kleur:'#1a5c3a',uitleg:`Score ${score}/100 — dit traject verloopt beter dan gemiddeld voor je gewonnen deals.`};
+  }
+  return{label:'Normaal vervolgen',kleur:'#5a6b8c',uitleg:`Score ${score}/100. Geen bijzondere signalen — gewoon volgens plan opvolgen.`};
+}
+
 
 function parseXml(text){
   const doc=new DOMParser().parseFromString(text,'text/xml');
@@ -703,6 +751,7 @@ function openNew(pre){
   document.getElementById('cwrap').style.display='none';
   document.getElementById('bdel').style.display='none';
   const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
+  const adv0=document.getElementById('mAdvies');if(adv0)adv0.style.display='none';
   document.getElementById('mo').classList.add('open');
   toggleDatumOfferte();
 }
@@ -725,6 +774,19 @@ function openEdit(id){
   if(mc){if(d.telefoon){mc.href='tel:'+d.telefoon;mc.textContent='📞 '+d.telefoon;mc.style.display='inline-block';}else{mc.style.display='none';}}
   const fcw2=document.getElementById('fcw');if(fcw2)fcw2.value=d.contactWay||'';
   const fland2=document.getElementById('fland');if(fland2)fland2.value=d.land||'';
+  const adviesEl=document.getElementById('mAdvies');
+  if(adviesEl){
+    const advies=getAdvies(d);
+    if(advies){
+      adviesEl.style.display='block';
+      adviesEl.style.background=advies.kleur+'18';
+      adviesEl.style.border='1px solid '+advies.kleur+'40';
+      adviesEl.style.color=advies.kleur;
+      adviesEl.innerHTML='<strong>'+advies.label+'</strong><br><span style="color:var(--text);opacity:.8">'+advies.uitleg+'</span>';
+    } else {
+      adviesEl.style.display='none';
+    }
+  }
   document.getElementById('fn').value=d.notitie||'';
   document.getElementById('cwrap').style.display='block';
   document.getElementById('fnc').value='';
@@ -870,6 +932,7 @@ function restoreModal(){
       </div>
       <button class="mclose" onclick="closeMo()">×</button>
     </div>
+    <div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
     <div class="fg">
       <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
       <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
@@ -1242,6 +1305,7 @@ function tbl(rows){
           <div style="width:36px;height:5px;background:#f0ede6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,getScore(d))}%;background:${getScore(d)>=70?'#1a5c3a':getScore(d)>=40?'#b8590a':'#c0392b'};border-radius:3px"></div></div>
           <span class="cm" style="font-size:12px;color:${getScore(d)>=70?'var(--green)':getScore(d)>=40?'var(--orange)':'var(--red)'}">${getScore(d)}%</span>
         </div>
+        ${(function(){var a=getAdvies(d);return a?`<div style="font-size:10px;color:${a.kleur};font-weight:700;margin-top:2px;max-width:110px" title="${a.uitleg.replace(/"/g,'&quot;')}">${a.label}</div>`:'';})()}
       </td>
       <td>
         ${d.nextContact?`<div class="ch" style="color:var(--text);font-weight:600">${fd(d.nextContact)}</div><div class="ch">opvolgen</div>`:`<div class="ch">${fd(d.datum)}</div><div class="ch">binnenkomst</div>`}

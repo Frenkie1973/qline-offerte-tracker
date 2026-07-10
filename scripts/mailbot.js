@@ -63,15 +63,18 @@ function extractField(text, labelPatterns) {
 
 // Probeert een naam te vinden in de afsluiting van een losse mail
 // ("Met vriendelijke groet, Jan Jansen") als er geen expliciet naam-label is.
+// Let op: matcht bewust alleen binnen ÉÉN regel na de groet, anders wordt een
+// bedrijfsnaam op de regel eronder per ongeluk aan de naam vastgeplakt.
 function extractSignatureName(text) {
-  const m = text.match(/(?:met\s+vriendelijke\s+groet(?:en)?|groet(?:en)?|mvg|regards|kind\s+regards)[,.]?\s*\n+\s*([A-Z][A-Za-zÀ-ÿ'\-]+(?:\s+[A-Z][A-Za-zÀ-ÿ'\-]+){0,3})/i);
+  const m = text.match(/(?:met\s+vriendelijke\s+groet(?:en)?|groet(?:en)?|mvg|regards|kind\s+regards)[,.]?[ \t]*\n+[ \t]*([A-Z][A-Za-zÀ-ÿ'\-]+(?:[ \t]+[A-Z][A-Za-zÀ-ÿ'\-]+){0,3})/i);
   return m ? m[1].trim() : '';
 }
 
 function extractStructuredData(bodyText, fromName, fromEmail) {
+  const cleanFromName = (fromName || '').replace(/^namens\s+/i, '').trim();
   const klant = extractField(bodyText, ['naam', 'name', 'klant', 'contactpersoon'])
     || extractSignatureName(bodyText)
-    || fromName || '';
+    || cleanFromName || '';
   const email = extractField(bodyText, ['e-?mail(?:adres)?', 'email']) || fromEmail || '';
   const telefoon = extractField(bodyText, ['telefoon(?:nummer)?', 'tel(?:efoonnr)?', 'phone', 'mobiel']) || extractPhone(bodyText);
   const straat = extractField(bodyText, ['adres', 'address', 'straat']);

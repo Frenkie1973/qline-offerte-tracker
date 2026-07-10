@@ -192,19 +192,35 @@ async function main() {
 
     const onderwerp = ex.product || m.subject || 'Mail zonder onderwerp';
     const emailKey = (ex.email || '').toLowerCase().trim();
+    const klantKey = (ex.klant || fromEmail || '').toLowerCase().trim();
+    const GESLOTEN_STATUSSEN = ['gewonnen', 'verloren', 'deadend'];
 
-    // Zoek een nog openstaande (status "nieuw", nog niet afgehandelde) lead
-    // van dezelfde afzender, om te voorkomen dat één klant met meerdere
-    // mails/producten in meerdere losse leads terechtkomt.
-    const bestaande = emailKey
-      ? leadsArr.find((d) => d.status === 'nieuw' && (d.email || '').toLowerCase().trim() === emailKey)
-      : null;
+    // Zoek een nog openstaande lead (elke actieve status: nieuw, contact,
+    // offerte, dealer — alleen gewonnen/verloren/deadend telt niet mee) van
+    // dezelfde klant, op e-mail óf op naam, zodat een klant waar Frank al
+    // mee bezig is niet als nieuwe losse lead wordt aangemaakt.
+    const bestaande = leadsArr.find((d) => {
+      if (GESLOTEN_STATUSSEN.includes(d.status)) return false;
+      const dEmail = (d.email || '').toLowerCase().trim();
+      const dKlant = (d.klant || '').toLowerCase().trim();
+      if (emailKey && dEmail && dEmail === emailKey) return true;
+      if (klantKey && dKlant && dKlant === klantKey) return true;
+      return false;
+    });
 
     if (bestaande) {
       if (onderwerp && !bestaande.onderwerp.includes(onderwerp)) {
         bestaande.onderwerp = `${bestaande.onderwerp} + ${onderwerp}`;
       }
       bestaande.notitie = `${bestaande.notitie}\n\n--- Extra aanvraag van dezelfde klant ---\n${notitie}`;
+      bestaande.contacts = bestaande.contacts || [];
+      const nu = new Date();
+      bestaande.contacts.push({
+        type: 'reactie',
+        datum: nu.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
+        tijd: nu.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+        tekst: `🤖 Nieuwe mail binnengekomen: ${onderwerp}`,
+      });
       bestaande.datum = todayISO();
       if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
       if (!bestaande.land && ex.land) bestaande.land = ex.land;

@@ -1055,6 +1055,12 @@ function dzHtml(){
   </div>`;
 }
 
+function groet(){
+  const u=new Date().getHours();
+  if(u<12)return'Goedemorgen';
+  if(u<18)return'Goedemiddag';
+  return'Goedenavond';
+}
 function rDash(){
   const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
   const won=deals.filter(d=>d.status==='gewonnen');
@@ -1148,7 +1154,7 @@ function rDash(){
   </div>`:''}
   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
     <div>
-      <div class="ph-title">Goedemorgen Frank <em>— ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</em></div>
+      <div class="ph-title">${groet()} Frank <em>— ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</em></div>
       <div style="font-size:13px;color:var(--muted);margin-top:6px">${dagAdvies.join(' · ')}</div>
     </div>
     <button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>

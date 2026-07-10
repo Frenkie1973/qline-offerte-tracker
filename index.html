@@ -1125,7 +1125,7 @@ function render(){
   if(view==='dash')m.innerHTML=rDash();
   else if(view==='pipe')m.innerHTML=rPipe();
   else if(view==='alle')m.innerHTML=rAlle();
-  else if(view==='analyse'){m.innerHTML=rAnalyse();setTimeout(runAiScoring,100);}
+  else if(view==='analyse'){m.innerHTML=rAnalyse();}
 }
 function updateBadge(){
   const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;
@@ -1598,24 +1598,6 @@ function rAnalyse(){
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
     <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>
-  </div>
-
-  <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#111">Scoringskans per lead</div>
-        <div style="font-size:11px;color:#888;margin-top:2px">Op basis van contactmomenten, status en doorlooptijd</div>
-      </div>
-      <div style="font-size:11px;color:#888;font-family:monospace;text-align:right">Kans = contacten × status × tijd</div>
-    </div>
-    <div style="margin-top:14px">
-      <div style="display:grid;grid-template-columns:1fr 80px 80px 60px 120px;gap:0;font-size:10px;font-family:monospace;color:#aaa;text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px;border-bottom:1px solid #f0ede6;margin-bottom:4px">
-        <span>Klant</span><span style="text-align:center">Contacten</span><span style="text-align:center">Doorlooptijd</span><span style="text-align:right">Bedrag</span><span style="text-align:right">Scoringskans</span>
-      </div>
-      <div id="scoring-list"><div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Klik op "Score berekenen" om AI-analyse te starten</div></div>
-    <div style="margin-top:14px">
-      <div style="font-size:11px;color:#ccc">AI-scoring via contactlog — interaction pairs, klantreacties, recency</div>
-    </div>
   </div>`;
 }
 
@@ -1846,38 +1828,7 @@ function kopieerVoorstel(){
   });
 }
 
-async function runAiScoring(){
-  var actief=deals.filter(function(d){return !['gewonnen','verloren','deadend','nieuw','dealer'].includes(d.status);});
-  actief.sort(function(a,b){return getScore(b)-getScore(a);});
-  var el=document.getElementById('scoring-list');
-  if(!el)return;
-  if(!actief.length){
-    el.innerHTML='<div style="font-size:13px;color:#aaa;padding:20px 0;text-align:center">Geen actieve leads met offerte</div>';
-    return;
-  }
-  
-  // Toon loading indicator
-  el.innerHTML='<div style="text-align:center;padding:30px;color:#888"><div style="font-size:13px;margin-bottom:8px">🤖 AI analyseert contactlog teksten...</div><div style="font-size:11px;color:#aaa">Dit duurt 10-20 seconden</div></div>';
-  
-  // Bouw de data op voor AI analyse
-  var leadsData = actief.map(function(d){
-    var contacts = d.contacts||[];
-    return {
-      id: d.id,
-      klant: d.klant,
-      bedrag: d.bedrag,
-      status: d.status,
-      datum: d.datum,
-      datumOfferte: d.datumOfferte,
-      contactlog: contacts.map(function(c){
-        return '['+c.type+' op '+c.datum+']: '+c.nota;
-      }).join('\n')
-    };
-  });
-  
-  // Render resultaten
-  results.sort(function(a,b){return b.score-a.score;});
-}
+
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
 loadWithSync();

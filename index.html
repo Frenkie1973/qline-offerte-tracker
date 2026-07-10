@@ -800,9 +800,18 @@ function saveDeal(){
   const k=document.getElementById('fk').value.trim();
   if(!k){alert('Vul een naam in.');return}
   const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,datumOfferte:document.getElementById('fdo').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),contactWay:document.getElementById('fcw')?.value||'',land:document.getElementById('fland')?.value.trim()||'',notitie:document.getElementById('fn').value.trim()};
+  let targetId=editId;
   if(editId){const target=deals.find(x=>x.id===editId);Object.assign(target,obj);delete target.auto;}
-  else{deals.push({id:Date.now().toString(),...obj,contacts:[]})}
-  save();closeMo();render();
+  else{targetId=Date.now().toString();deals.push({id:targetId,...obj,contacts:[]})}
+  save();
+  const targetDeal=deals.find(x=>x.id===targetId);
+  if(targetDeal&&(obj.status==='gewonnen'||obj.status==='verloren')&&!targetDeal.reden){
+    // Nog geen reden getagd voor deze gewonnen/verloren deal (ook bij het
+    // achteraf nalopen van oudere, al gesloten deals) — vraag ernaar.
+    showWinLossPopup(targetId,obj.status);
+    return;
+  }
+  closeMo();render();
 }
 function delDeal(){
   const d=deals.find(x=>x.id===editId);

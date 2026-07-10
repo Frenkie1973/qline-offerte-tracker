@@ -117,6 +117,19 @@ async function fetchNewMessages(token, sinceISO) {
   return data.value || [];
 }
 
+// Zelfde principe, maar dan voor mail die Frank zelf heeft verstuurd, zodat
+// die ook automatisch als contactmoment gelogd wordt — hij hoeft dat dan
+// niet meer met de hand te doen via "Gebeld/Geappt/Gemaild".
+async function fetchSentMessages(token, sinceISO) {
+  const filter = encodeURIComponent(`sentDateTime gt ${sinceISO}`);
+  const select = 'id,subject,toRecipients,sentDateTime,bodyPreview,body';
+  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=50`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`Verzonden mail ophalen mislukt: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  return data.value || [];
+}
+
 async function getJson(url, fallback) {
   try {
     const res = await fetch(url);
@@ -322,9 +335,51 @@ async function main() {
     nieuweTeller++;
   }
 
+  // === Verzonden mail (Frank -> klant) automatisch loggen ===
+  console.log('Ophalen verzonden mail...');
+  const sentMessages = await fetchSentMessages(token, sinceISO);
+  console.log(`${sentMessages.length} verzonden mail(s) gevonden.`);
+  let verzondenGelogd = 0;
+
+  for (const sm of sentMessages) {
+    if (processedIds.has(sm.id)) continue;
+    processedIds.add(sm.id);
+    if (sm.sentDateTime > latest) latest = sm.sentDateTime;
+
+    const ontvangers = (sm.toRecipients || []).map((r) => (r.emailAddress?.address || '').toLowerCase().trim());
+    if (!ontvangers.length) continue;
+
+    // Zoek een lead (ongeacht status, ook al gesloten deals mogen nazorg-mail
+    // gelogd krijgen) waarvan het e-mailadres overeenkomt met een ontvanger.
+    const doelLead = leadsArr.find((d) => ontvangers.includes((d.email || '').toLowerCase().trim()));
+    if (!doelLead) continue;
+
+    const sentBodyText = sm.body?.contentType === 'html' ? stripHtml(sm.body.content) : (sm.body?.content || sm.bodyPreview || '');
+    const verzonden = new Date(sm.sentDateTime);
+    doelLead.contacts = doelLead.contacts || [];
+    doelLead.contacts.push({
+      type: 'mail',
+      datum: verzonden.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
+      tijd: verzonden.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+      tekst: sentBodyText.slice(0, 800) || sm.subject || 'Mail verstuurd',
+    });
+    // Frank heeft zelf gereageerd -> een eventueel klaarstaand AI-voorstel is
+    // niet meer actueel.
+    if (doelLead.aiVoorstel) {
+      delete doelLead.aiVoorstel;
+      delete doelLead.aiVoorstelDatum;
+    }
+    verzondenGelogd++;
+    nieuweTeller++;
+  }
+
+  if (verzondenGelogd) {
+    console.log(`${verzondenGelogd} verzonden mail(s) automatisch gelogd bij bestaande leads.`);
+  }
+
   if (nieuweTeller) {
     await putJson(LEADS_URL, leadsArr);
-    console.log(`${nieuweTeller} mail(s) verwerkt: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} samengevoegd met bestaande lead.`);
+    console.log(`${nieuweTeller} mail(s) verwerkt: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} samengevoegd met bestaande lead, ${verzondenGelogd} verzonden mail(s) gelogd.`);
   } else {
     console.log('Geen nieuwe leads om toe te voegen.');
   }

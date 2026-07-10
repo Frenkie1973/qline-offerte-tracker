@@ -1799,7 +1799,7 @@ Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commenta
 
   btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
   try{
-    const response=await fetch("https://api.anthropic.com/v1/messages",{
+    const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({

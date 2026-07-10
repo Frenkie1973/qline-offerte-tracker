@@ -1222,6 +1222,14 @@ function rDash(){
     </div>
     <button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>
   </div>
+  ${(function(){
+    const afgesloten=deals.filter(d=>d.status==='gewonnen'||d.status==='verloren');
+    const zonderReden=afgesloten.filter(d=>!d.reden);
+    if(zonderReden.length===0)return'';
+    return`<div onclick="show('analyse')" style="cursor:pointer;background:#fff8e6;border:1px solid #f0dca0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#8a6a1a;display:flex;align-items:center;gap:8px">
+      💡 <span><strong>${zonderReden.length} afgesloten deal${zonderReden.length===1?'':'s'}</strong> nog zonder reden getagd — dit voedt de score-voorspelling. Klik hier om ze aan te vullen op de Analyse-pagina.</span>
+    </div>`;
+  })()}
   
   <div class="kpis">
     <div class="kpi" onclick="window.__dashFilter='bellen';render()" style="cursor:pointer">

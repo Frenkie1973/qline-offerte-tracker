@@ -214,14 +214,18 @@ async function main() {
       }
       bestaande.notitie = `${bestaande.notitie}\n\n--- Extra aanvraag van dezelfde klant ---\n${notitie}`;
       bestaande.contacts = bestaande.contacts || [];
-      const nu = new Date();
+      const ontvangen = new Date(m.receivedDateTime);
       bestaande.contacts.push({
         type: 'reactie',
-        datum: nu.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
-        tijd: nu.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+        datum: ontvangen.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
+        tijd: ontvangen.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
         tekst: `🤖 Nieuwe mail binnengekomen: ${onderwerp}`,
       });
-      bestaande.datum = todayISO();
+      // Alleen vooruit schuiven, nooit terug (bij de eenmalige inbox-inhaalslag
+      // kunnen mails niet-chronologisch verwerkt worden).
+      if (m.receivedDateTime.slice(0, 10) > bestaande.datum) {
+        bestaande.datum = m.receivedDateTime.slice(0, 10);
+      }
       if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
       if (!bestaande.land && ex.land) bestaande.land = ex.land;
       if (!bestaande.contactWay && ex.contactWay) bestaande.contactWay = ex.contactWay;
@@ -239,7 +243,7 @@ async function main() {
         land: ex.land,
         contactWay: ex.contactWay,
         onderwerp,
-        datum: todayISO(),
+        datum: m.receivedDateTime.slice(0, 10),
         status: 'nieuw',
         notitie,
         contacts: [],

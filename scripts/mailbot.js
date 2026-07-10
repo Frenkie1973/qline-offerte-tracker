@@ -155,8 +155,13 @@ async function main() {
   const messages = await fetchNewMessages(token, sinceISO);
   console.log(`${messages.length} mail(s) gevonden.`);
 
-  const nieuwLeads = [];
+  const leads = await getJson(LEADS_URL, []);
+  const leadsArr = Array.isArray(leads) ? leads : [];
+
   let latest = sinceISO;
+  let nieuweTeller = 0;
+  let samengevoegdTeller = 0;
+  let uniekTeller = 0;
 
   for (const m of messages) {
     if (processedIds.has(m.id)) continue;
@@ -185,27 +190,52 @@ async function main() {
       bodyText.slice(0, 800),
     ].filter(Boolean).join('\n');
 
-    nieuwLeads.push({
-      id: `mail_${m.id}`.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 40) + '_' + Date.now().toString(36),
-      klant: ex.klant || fromEmail || 'Onbekende afzender',
-      email: ex.email,
-      telefoon: ex.telefoon,
-      land: ex.land,
-      contactWay: ex.contactWay,
-      onderwerp: ex.product || m.subject || 'Mail zonder onderwerp',
-      datum: todayISO(),
-      status: 'nieuw',
-      notitie,
-      contacts: [],
-      auto: true,
-    });
+    const onderwerp = ex.product || m.subject || 'Mail zonder onderwerp';
+    const emailKey = (ex.email || '').toLowerCase().trim();
+
+    // Zoek een nog openstaande (status "nieuw", nog niet afgehandelde) lead
+    // van dezelfde afzender, om te voorkomen dat één klant met meerdere
+    // mails/producten in meerdere losse leads terechtkomt.
+    const bestaande = emailKey
+      ? leadsArr.find((d) => d.status === 'nieuw' && (d.email || '').toLowerCase().trim() === emailKey)
+      : null;
+
+    if (bestaande) {
+      if (onderwerp && !bestaande.onderwerp.includes(onderwerp)) {
+        bestaande.onderwerp = `${bestaande.onderwerp} + ${onderwerp}`;
+      }
+      bestaande.notitie = `${bestaande.notitie}\n\n--- Extra aanvraag van dezelfde klant ---\n${notitie}`;
+      bestaande.datum = todayISO();
+      if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
+      if (!bestaande.land && ex.land) bestaande.land = ex.land;
+      if (!bestaande.contactWay && ex.contactWay) bestaande.contactWay = ex.contactWay;
+      samengevoegdTeller++;
+    } else {
+      uniekTeller++;
+      leadsArr.push({
+        // Gegarandeerd uniek: hash van het volledige Graph-ID + teller + random,
+        // in plaats van het bericht-ID af te kappen (dat gaf collisions bij
+        // berichten uit dezelfde mailthread met een gedeeld ID-prefix).
+        id: `mail_${Date.now().toString(36)}_${uniekTeller}_${Math.random().toString(36).slice(2, 8)}`,
+        klant: ex.klant || fromEmail || 'Onbekende afzender',
+        email: ex.email,
+        telefoon: ex.telefoon,
+        land: ex.land,
+        contactWay: ex.contactWay,
+        onderwerp,
+        datum: todayISO(),
+        status: 'nieuw',
+        notitie,
+        contacts: [],
+        auto: true,
+      });
+    }
+    nieuweTeller++;
   }
 
-  if (nieuwLeads.length) {
-    const leads = await getJson(LEADS_URL, []);
-    const updated = Array.isArray(leads) ? leads.concat(nieuwLeads) : nieuwLeads;
-    await putJson(LEADS_URL, updated);
-    console.log(`${nieuwLeads.length} nieuwe lead(s) toegevoegd aan Firebase.`);
+  if (nieuweTeller) {
+    await putJson(LEADS_URL, leadsArr);
+    console.log(`${nieuweTeller} mail(s) verwerkt: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} samengevoegd met bestaande lead.`);
   } else {
     console.log('Geen nieuwe leads om toe te voegen.');
   }

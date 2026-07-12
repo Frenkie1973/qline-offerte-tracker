@@ -77,6 +77,29 @@ function extractSignatureName(text) {
   return m ? m[1].trim() : '';
 }
 
+// Zoekt het webshop aanvraag-/bestelnummer in de mailtekst. Webshopmails
+// gebruiken hiervoor uiteenlopende labels (aanvraagnr, bestelnummer,
+// ordernummer, referentie, request id...) — we proberen ze allemaal.
+function extractAanvraagnr(text) {
+  return extractField(text, [
+    'aanvraag\\s*nr\\.?',
+    'aanvraag\\s*nummer',
+    'aanvraagnr\\.?',
+    'aanvraagnummer',
+    'bestel\\s*nr\\.?',
+    'bestelnummer',
+    'order\\s*nr\\.?',
+    'ordernummer',
+    'order\\s*id',
+    'order\\s*number',
+    'request\\s*id',
+    'referentie\\s*nummer',
+    'referentienummer',
+    'referentie',
+    'reference',
+  ]);
+}
+
 function extractStructuredData(bodyText, fromName, fromEmail) {
   const cleanFromName = (fromName || '').replace(/^namens\s+/i, '').trim();
   const klant = extractField(bodyText, ['naam', 'name', 'klant', 'contactpersoon'])
@@ -92,10 +115,11 @@ function extractStructuredData(bodyText, fromName, fromEmail) {
   const contactWay = extractField(bodyText, ['contact\\s*voorkeur', 'voorkeur\\s*contact', 'preferred\\s*contact(?:\\s*way)?', 'liever\\s*(?:gebeld|gemaild)']);
   const kooptermijn = extractField(bodyText, ['kooptermijn', 'wanneer.*(?:kopen|aanschaf)', 'when.*(?:buy|purchase)']);
   const typeKlant = extractField(bodyText, ['type\\s*(?:bedrijf|klant)', 'soort\\s*bedrijf', 'business\\s*type']);
+  const aanvraagnr = extractAanvraagnr(bodyText);
 
   const adres = [straat, postcode, plaats, landVeld].filter(Boolean).join(', ');
 
-  return { klant, email, telefoon, land: landVeld, contactWay, product, kooptermijn, typeKlant, adres };
+  return { klant, email, telefoon, land: landVeld, contactWay, product, kooptermijn, typeKlant, adres, aanvraagnr };
 }
 
 async function getAppToken() {
@@ -323,6 +347,7 @@ async function main() {
       if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
       if (!bestaande.land && ex.land) bestaande.land = ex.land;
       if (!bestaande.contactWay && ex.contactWay) bestaande.contactWay = ex.contactWay;
+      if (!bestaande.aanvraagnr && ex.aanvraagnr) bestaande.aanvraagnr = ex.aanvraagnr;
 
       // Klant reageerde op een bestaande lead -> alvast een concept-antwoord
       // klaarzetten zodat Frank het meteen ziet staan bij het openen.
@@ -345,6 +370,7 @@ async function main() {
         telefoon: ex.telefoon,
         land: ex.land,
         contactWay: ex.contactWay,
+        aanvraagnr: ex.aanvraagnr,
         onderwerp,
         datum: m.receivedDateTime.slice(0, 10),
         status: 'nieuw',

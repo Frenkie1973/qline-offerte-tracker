@@ -80,24 +80,46 @@ function extractSignatureName(text) {
 // Zoekt het webshop aanvraag-/bestelnummer in de mailtekst. Webshopmails
 // gebruiken hiervoor uiteenlopende labels (aanvraagnr, bestelnummer,
 // ordernummer, referentie, request id...) — we proberen ze allemaal.
+const AANVRAAGNR_LABELS = [
+  'aanvraag\\s*nr\\.?',
+  'aanvraag\\s*nummer',
+  'aanvraagnr\\.?',
+  'aanvraagnummer',
+  'bestel\\s*nr\\.?',
+  'bestelnummer',
+  'order\\s*nr\\.?',
+  'ordernummer',
+  'order\\s*id',
+  'order\\s*number',
+  'request\\s*id',
+  'referentie\\s*nr\\.?',
+  'referentie\\s*nummer',
+  'referentienummer',
+  'referentie',
+  'reference\\s*nr\\.?',
+  'reference\\s*number',
+  'reference',
+  'referenz\\s*nr\\.?',
+  'referenz\\s*nummer',
+  'referenznummer',
+  'referenz',
+];
+
 function extractAanvraagnr(text) {
-  return extractField(text, [
-    'aanvraag\\s*nr\\.?',
-    'aanvraag\\s*nummer',
-    'aanvraagnr\\.?',
-    'aanvraagnummer',
-    'bestel\\s*nr\\.?',
-    'bestelnummer',
-    'order\\s*nr\\.?',
-    'ordernummer',
-    'order\\s*id',
-    'order\\s*number',
-    'request\\s*id',
-    'referentie\\s*nummer',
-    'referentienummer',
-    'referentie',
-    'reference',
-  ]);
+  // Eerst het strikte "Label: waarde" formaat proberen (zelfde als andere velden).
+  // Alleen accepteren als de waarde er ook echt als een nummer uitziet — anders
+  // vangt bv. een algemeen "Reference:"-veld per ongeluk een bedrijfs-/plaatsnaam.
+  const strikt = extractField(text, AANVRAAGNR_LABELS);
+  if (strikt && /\d/.test(strikt) && strikt.length <= 20) return strikt;
+  // Sommige webshopmails gebruiken géén dubbele punt/streepje, bv.
+  // "Referenznummer 24821" — daarom ook zoeken naar label direct gevolgd
+  // door een waarde die met een cijfer begint, zonder scheidingsteken-eis.
+  for (const label of AANVRAAGNR_LABELS) {
+    const re = new RegExp(`${label}\\s*[:\\-]?\\s*(\\d[\\w\\/\\-]*)`, 'i');
+    const m = text.match(re);
+    if (m) return m[1].trim();
+  }
+  return '';
 }
 
 function extractStructuredData(bodyText, fromName, fromEmail) {

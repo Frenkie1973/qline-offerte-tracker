@@ -4,28 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Q-Line Offerte Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f4f0;--white:#ffffff;--border:#e2e0d8;--border2:#cccac0;
-  --text:#111110;--muted:#444440;--hint:#888880;
-  --accent:#1a5c3a;--accent-bg:#eef5f0;--accent-border:#b8d4c2;
-  --red:#c0392b;--red-bg:#fdf0ee;--red-border:#f0c4be;
-  --orange:#b8590a;--orange-bg:#fef3e8;--orange-border:#f0d0a8;
-  --green:#1a5c3a;--green-bg:#eef5f0;--green-border:#b8d4c2;
-  --blue:#1a3a6c;--blue-bg:#eef2fa;--blue-border:#b8c8e8;
-  --sans:'Geist',sans-serif;--mono:'Geist Mono',monospace;
+--bg:#f5f4f0;--white:#ffffff;--border:#e2e0d8;--border2:#cccac0;
+--text:#111110;--muted:#444440;--hint:#888880;
+--accent:#ff2300;--accent-bg:#ffece8;--accent-border:#ffb8a8;
+--red:#c0392b;--red-bg:#fdf0ee;--red-border:#f0c4be;
+--orange:#b8590a;--orange-bg:#fef3e8;--orange-border:#f0d0a8;
+--green:#1a5c3a;--green-bg:#eef5f0;--green-border:#b8d4c2;
+--blue:#1a3a6c;--blue-bg:#eef2fa;--blue-border:#b8c8e8;
+--sans:'Roboto',sans-serif;--mono:'Roboto Condensed',sans-serif;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
 .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 .sidebar{background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column}
 .main{padding:32px 36px;overflow-y:auto}
-
 .logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
 .logo-name{font-size:15px;font-weight:600;color:var(--text)}
 .logo-sub{font-size:11px;color:var(--hint);margin-top:2px;font-family:var(--mono)}
@@ -36,40 +34,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .nav-badge{font-family:var(--mono);font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:20px}
 .sidebar-foot{padding:16px 20px;border-top:1px solid var(--border)}
 .sidebar-hint{font-size:11px;color:var(--hint);line-height:1.7}
-
 .dropzone{border:1.5px dashed var(--border2);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;background:var(--white)}
 .dropzone:hover,.dropzone.over{border-color:var(--accent);background:var(--accent-bg)}
 .dz-icon{width:36px;height:36px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border)}
 .dz-title{font-size:13px;font-weight:500;color:var(--text)}
 .dz-sub{font-size:11px;color:var(--hint);margin-top:2px;font-family:var(--mono)}
-
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
-.ph-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.03em}
+.ph-title{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.03em;font-family:var(--mono)}
 .ph-title em{color:var(--accent);font-style:normal}
 .ph-sub{font-size:12px;color:var(--hint);margin-top:3px}
-
 .btn{font-family:var(--sans);font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--border2);font-weight:500;transition:all .12s;background:var(--white);color:var(--text)}
 .btn:hover{background:var(--bg)}
-.btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btn-p:hover{background:#155030}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent);font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.btn-p:hover{background:#c71c00}
 .btn-d{background:transparent;border-color:var(--red-border);color:var(--red)}
 .btn-d:hover{background:var(--red-bg)}
-
 .alert{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;display:flex;align-items:center;gap:10px;color:var(--red)}
 .alert-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0;animation:pulse 1.5s infinite}
-
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .kpi{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
 .kpi-l{font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .kpi-n{font-size:28px;font-weight:600;color:var(--text);letter-spacing:-.03em;font-family:var(--mono)}
 .kpi-n.red{color:var(--red)}.kpi-n.green{color:var(--green)}.kpi-n.acc{color:var(--accent)}
 .kpi-s{font-size:12px;color:var(--hint);margin-top:3px}
-
 .sh{display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:24px}
 .sl{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--hint)}
 .sline{flex:1;height:1px;background:var(--border)}
 .sn{font-size:10px;font-family:var(--mono);color:var(--hint)}
-
 table.t{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;border:1px solid var(--border);overflow:hidden}
 table.t th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:400;background:var(--bg)}
 tr.row{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
@@ -83,7 +74,6 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 .cs{font-size:12px;color:var(--muted);margin-top:2px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cm{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
 .ch{font-family:var(--mono);font-size:12px;color:var(--muted)}
-
 .pill{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono);white-space:nowrap;border:1px solid}
 .pn{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}.pc{background:#f0eafa;color:#6b3fa0;border-color:#d4b8f0}.pd{background:#e8f4fd;color:#1a6090;border-color:#a8d4f0}
 .po{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
@@ -92,17 +82,14 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 .pw{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
 .pl{background:var(--bg);color:var(--hint);border-color:var(--border)}
 .pde{background:#f0f0ee;color:#666660;border-color:#d0d0c8;text-decoration:line-through}
-
 .ul{font-size:12px;color:var(--red);font-family:var(--mono);font-weight:500}
 .us{font-size:12px;color:var(--orange);font-family:var(--mono);font-weight:500}
 .uo{font-size:12px;color:var(--muted);font-family:var(--mono)}
-
 .qbs{display:flex;gap:5px;flex-wrap:wrap}
 .qb{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--white);color:var(--muted);transition:all .1s;white-space:nowrap}
 .qb:hover{background:var(--bg);color:var(--text)}
 .qb.w{border-color:var(--green-border);color:var(--green)}.qb.w:hover{background:var(--green-bg)}
 .qb.l{border-color:var(--red-border);color:var(--red)}.qb.l:hover{background:var(--red-bg)}
-
 .pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .pcol{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px}
 .pch{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--hint);margin-bottom:10px;display:flex;justify-content:space-between}
@@ -111,12 +98,11 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 .pcn{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
 .pca{font-family:var(--mono);font-size:11px;color:var(--accent)}
 .pcd{font-size:10px;color:var(--hint);margin-top:3px}
-
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
 .mo.open{display:flex}
 .mbox{background:var(--white);border-radius:14px;padding:28px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12);animation:fadein .15s ease}
 .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-.mtitle{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.mtitle{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.02em;font-family:var(--mono)}
 .mclose{background:none;border:none;color:var(--hint);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:5px}
 .mclose:hover{background:var(--bg)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
@@ -125,7 +111,6 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 .ff input,.ff select,.ff textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s}
 .ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--accent);background:var(--white)}
 .mfoot{display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);align-items:center}
-
 .clog-entry{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:8px;font-size:12px}
 .clog-head{display:flex;justify-content:space-between;margin-bottom:4px}
 .clog-badge{font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:500}
@@ -134,7 +119,6 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 .clog-add{display:flex;gap:8px;margin-top:8px}
 .clog-add textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:none;transition:border-color .15s}
 .clog-add textarea:focus{border-color:var(--accent);background:var(--white)}
-
 .gc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:14px}
 .gt{font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px}
 .gs{display:flex;gap:14px;margin-bottom:14px}
@@ -149,157 +133,153 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <body>
 <div class="app">
 <aside class="sidebar">
-  <div class="logo">
-    <div class="logo-name">Q-Line Tracker</div>
-    <div class="logo-sub">offerte follow-up</div>
-
-  </div>
-  <nav class="nav">
-    <button class="nav-btn active" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
-    <button class="nav-btn" onclick="show('pipe')">Pipeline</button>
-    <button class="nav-btn" onclick="show('alle')">Alle leads</button>
-    <button class="nav-btn" onclick="show('analyse')">Analyse</button>
-
-  </nav>
-  <div class="sidebar-foot">
-    <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
-    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-      <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div>
-      <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
-      <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
-      <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
-      <div id="savepath" style="font-size:10px;color:var(--hint);margin-top:6px;font-family:var(--mono);word-break:break-all"></div>
-    </div>
-  </div>
+<div class="logo">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="width:9px;height:24px;background:var(--accent);border-radius:2px;flex-shrink:0"></div>
+<div class="logo-name" style="font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:-.01em;text-transform:uppercase">Q-Line <span style="color:var(--accent)">Tracker</span></div>
+</div>
+<div class="logo-sub" style="margin-top:5px;text-transform:uppercase;letter-spacing:.08em">Offerte follow-up</div>
+</div>
+<nav class="nav">
+<button class="nav-btn active" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
+<button class="nav-btn" onclick="show('pipe')">Pipeline</button>
+<button class="nav-btn" onclick="show('alle')">Alle leads</button>
+<button class="nav-btn" onclick="show('analyse')">Analyse</button>
+</nav>
+<div class="sidebar-foot">
+<div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
+<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+<div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div>
+<button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
+<button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
+<label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+<div id="savepath" style="font-size:10px;color:var(--hint);margin-top:6px;font-family:var(--mono);word-break:break-all"></div>
+</div>
+</div>
 </aside>
 <main class="main" id="main"></main>
 </div>
-
 <div class="mo" id="mo">
-  <div class="mbox">
-    <div class="mhead">
-      <div style="display:flex;align-items:center;gap:10px;min-width:0">
-        <div class="mtitle" id="mtitle">Lead toevoegen</div>
-        <a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
-      </div>
-      <button class="mclose" onclick="closeMo()">×</button>
-    </div>
-    <div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
-    <div class="fg">
-      <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
-      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
-    </div>
-    <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
-    <div class="fg">
-      <div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
-      <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
-    </div>
-    <div class="fg">
-      <div class="ff"><label>Datum</label><input id="fd" type="date"></div>
-      <div class="ff"><label>Status</label>
-        <select id="fst" onchange="toggleDatumOfferte()">
-          <option value="nieuw">Nieuwe lead</option>
-          <option value="contact">Contact gelegd</option>
-          <option value="offerte">Offerte verstuurd</option>
-          <option value="dealer">Doorgestuurd naar dealer</option>
-          <option value="gewonnen">Gewonnen</option>
-          <option value="verloren">Verloren</option>
-          <option value="deadend">Dead end</option>
-        </select>
-      </div>
-    </div>
-    <div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
-    <div class="fg">
-      <div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
-      <div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
-    </div>
-    <div class="fg">
-      <div class="ff"><label>Voorkeur contact</label><select id="fcw"><option value="">— onbekend —</option><option value="Telefonisch">📞 Telefonisch</option><option value="E-mail">✉ E-mail</option><option value="WhatsApp">💬 WhatsApp</option><option value="Anders">Anders</option></select></div>
-      <div class="ff"><label>Land</label><input id="fland" placeholder="bijv. Nederland"></div>
-    </div>
-    <div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
-    <div id="cwrap" style="display:none">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
-      <div id="clist"></div>
-      <div class="clog-add">
-        <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
-        <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
-        </div>
-      </div>
-      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
-        <div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
-        <div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
-        <button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
-        <div id="aiVoorstelWrap" style="display:none">
-          <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
-          <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
-        </div>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn" onclick="closeMo()">Annuleren</button>
-      <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
-      <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
-    </div>
-  </div>
+<div class="mbox">
+<div class="mhead">
+<div style="display:flex;align-items:center;gap:10px;min-width:0">
+<div class="mtitle" id="mtitle">Lead toevoegen</div>
+<a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
 </div>
-
+<button class="mclose" onclick="closeMo()">×</button>
+</div>
+<div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
+<div class="fg">
+<div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
+<div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
+</div>
+<div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
+<div class="fg">
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+<div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
+</div>
+<div class="fg">
+<div class="ff"><label>Datum</label><input id="fd" type="date"></div>
+<div class="ff"><label>Status</label>
+<select id="fst" onchange="toggleDatumOfferte()">
+<option value="nieuw">Nieuwe lead</option>
+<option value="contact">Contact gelegd</option>
+<option value="offerte">Offerte verstuurd</option>
+<option value="dealer">Doorgestuurd naar dealer</option>
+<option value="gewonnen">Gewonnen</option>
+<option value="verloren">Verloren</option>
+<option value="deadend">Dead end</option>
+</select>
+</div>
+</div>
+<div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
+<div class="fg">
+<div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
+<div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
+</div>
+<div class="fg">
+<div class="ff"><label>Voorkeur contact</label><select id="fcw"><option value="">— onbekend —</option><option value="Telefonisch">📞 Telefonisch</option><option value="E-mail">✉ E-mail</option><option value="WhatsApp">💬 WhatsApp</option><option value="Anders">Anders</option></select></div>
+<div class="ff"><label>Land</label><input id="fland" placeholder="bijv. Nederland"></div>
+</div>
+<div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
+<div id="cwrap" style="display:none">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
+<div id="clist"></div>
+<div class="clog-add">
+<textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
+<div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
+<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+</div>
+</div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
+<div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
+<div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
+<button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
+<div id="aiVoorstelWrap" style="display:none">
+<textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+<button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
+</div>
+</div>
+</div>
+<div class="mfoot">
+<button class="btn" onclick="closeMo()">Annuleren</button>
+<button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+<button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
+</div>
+</div>
+</div>
 <div id="fu-mo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:14px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
-    <div style="font-size:16px;font-weight:600;color:#111;margin-bottom:8px">Wanneer opvolgen?</div>
-    <div id="fu-intro" style="font-size:13px;color:#444;margin-bottom:18px;line-height:1.6"></div>
-    <div id="fu-note-wrap" style="margin-bottom:14px;display:none">
-      <label style="font-size:11px;font-family:monospace;color:#888;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Notitie</label>
-      <textarea id="fu-note" rows="2" style="width:100%;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;resize:none" placeholder="Wat besproken?"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="fu-btns">
-      <button onclick="setFuDays(3,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 dagen</button>
-      <button onclick="setFuDays(7,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 week</button>
-      <button onclick="setFuDays(14,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">2 weken</button>
-      <button onclick="setFuDays(30,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 maand</button>
-      <button onclick="setFuDays(90,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 maanden</button>
-      <button onclick="setFuDays(180,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">6 maanden</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
-      <input type="number" id="fu-custom" placeholder="Eigen aantal..." min="1" style="width:140px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;outline:none">
-      <span style="font-size:13px;color:#888">dagen</span>
-      <button onclick="setFuCustom()" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">OK</button>
-    </div>
-    <div style="display:flex;gap:8px;border-top:1px solid #e2e0d8;padding-top:16px">
-      <button onclick="closeFuDialog(false)" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#888">Geen reminder</button>
-      <button onclick="closeFuDialog(true)" style="padding:8px 16px;border-radius:8px;border:none;background:#1a5c3a;color:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Opslaan</button>
-    </div>
-  </div>
+<div style="background:#fff;border-radius:14px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+<div style="font-size:16px;font-weight:600;color:#111;margin-bottom:8px">Wanneer opvolgen?</div>
+<div id="fu-intro" style="font-size:13px;color:#444;margin-bottom:18px;line-height:1.6"></div>
+<div id="fu-note-wrap" style="margin-bottom:14px;display:none">
+<label style="font-size:11px;font-family:monospace;color:#888;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Notitie</label>
+<textarea id="fu-note" rows="2" style="width:100%;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;resize:none" placeholder="Wat besproken?"></textarea>
 </div>
-
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="fu-btns">
+<button onclick="setFuDays(3,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 dagen</button>
+<button onclick="setFuDays(7,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 week</button>
+<button onclick="setFuDays(14,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">2 weken</button>
+<button onclick="setFuDays(30,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">1 maand</button>
+<button onclick="setFuDays(90,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">3 maanden</button>
+<button onclick="setFuDays(180,this)" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">6 maanden</button>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+<input type="number" id="fu-custom" placeholder="Eigen aantal..." min="1" style="width:140px;background:#f5f4f0;border:1px solid #e2e0d8;border-radius:7px;padding:8px 10px;font-size:13px;outline:none">
+<span style="font-size:13px;color:#888">dagen</span>
+<button onclick="setFuCustom()" style="padding:8px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f4f0;font-size:13px;cursor:pointer;font-family:inherit">OK</button>
+</div>
+<div style="display:flex;gap:8px;border-top:1px solid #e2e0d8;padding-top:16px">
+<button onclick="closeFuDialog(false)" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#888">Geen reminder</button>
+<button onclick="closeFuDialog(true)" style="padding:8px 16px;border-radius:8px;border:none;background:#1a5c3a;color:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Opslaan</button>
+</div>
+</div>
+</div>
 <script>
 const KEY='qltrk2';
 const FB_URL='https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app/leads.json';
-
 async function fbSave(data){
-  try{
-    await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-    const si=document.getElementById('sync-indicator');
-    if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
-  }catch(e){
-    const si=document.getElementById('sync-indicator');
-    if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
-  }
+try{
+await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+const si=document.getElementById('sync-indicator');
+if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
+}catch(e){
+const si=document.getElementById('sync-indicator');
+if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
 }
-
+}
 async function fbLoad(){
-  try{
-    const res=await fetch(FB_URL);
-    const data=await res.json();
-    if(Array.isArray(data)&&data.length>0){
-      deals=data;
-      localStorage.setItem(KEY,JSON.stringify(deals));
-      return true;
-    }
-  }catch(e){}
-  return false;
+try{
+const res=await fetch(FB_URL);
+const data=await res.json();
+if(Array.isArray(data)&&data.length>0){
+deals=data;
+localStorage.setItem(KEY,JSON.stringify(deals));
+return true;
+}
+}catch(e){}
+return false;
 }
 const SKEY='qltrk2_settings';
 function getSettings(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
@@ -307,1522 +287,1431 @@ function getDays(){const s=getSettings();return{fu1:Number(s.fu1)||3,fu2:Number(
 let deals=[],editId=null,view='dash';
 function load(){try{deals=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){deals=[]}}
 async function loadWithSync(){
-  // Laad lokaal eerst zodat dashboard meteen zichtbaar is
-  load();
-  render();
-  // Sync Firebase op achtergrond
-  const si=document.getElementById('sync-indicator');
-  if(si){si.textContent='☁ laden...';si.style.color='var(--hint)';}
-  const ok=await fbLoad();
-  if(ok){render();updateBadge();}
-  if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
+// Laad lokaal eerst zodat dashboard meteen zichtbaar is
+load();
+render();
+// Sync Firebase op achtergrond
+const si=document.getElementById('sync-indicator');
+if(si){si.textContent='☁ laden...';si.style.color='var(--hint)';}
+const ok=await fbLoad();
+if(ok){render();updateBadge();}
+if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
 }
 function save(){
-  localStorage.setItem(KEY,JSON.stringify(deals));
-  const bkey='qltrk2_backups';
-  try{
-    const backups=JSON.parse(localStorage.getItem(bkey)||'[]');
-    backups.unshift({ts:new Date().toISOString(),data:JSON.stringify(deals)});
-    if(backups.length>10)backups.length=10;
-    localStorage.setItem(bkey,JSON.stringify(backups));
-  }catch(e){}
-  if(__fileHandle)doSave();
-  fbSave(deals);
+localStorage.setItem(KEY,JSON.stringify(deals));
+const bkey='qltrk2_backups';
+try{
+const backups=JSON.parse(localStorage.getItem(bkey)||'[]');
+backups.unshift({ts:new Date().toISOString(),data:JSON.stringify(deals)});
+if(backups.length>10)backups.length=10;
+localStorage.setItem(bkey,JSON.stringify(backups));
+}catch(e){}
+if(__fileHandle)doSave();
+fbSave(deals);
 }
 let __fileHandle=null;
-
 async function kiesMap(){
-  try{
-    __fileHandle=await window.showSaveFilePicker({
-      suggestedName:'qline-leads.json',
-      types:[{description:'JSON bestand',accept:{'application/json':['.json']}}],
-      startIn:'desktop'
-    });
-    localStorage.setItem('qltrk_savepath',__fileHandle.name);
-    document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
-    await doSave();
-    alert('Map gekozen! Vanaf nu wordt lokaal opgeslagen als backup.\nData wordt ook automatisch gesynchroniseerd via Firebase.');
-  }catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
+try{
+__fileHandle=await window.showSaveFilePicker({
+suggestedName:'qline-leads.json',
+types:[{description:'JSON bestand',accept:{'application/json':['.json']}}],
+startIn:'desktop'
+});
+localStorage.setItem('qltrk_savepath',__fileHandle.name);
+document.getElementById('savepath').textContent='Opslaan naar: '+__fileHandle.name;
+await doSave();
+alert('Map gekozen! Vanaf nu wordt lokaal opgeslagen als backup.\nData wordt ook automatisch gesynchroniseerd via Firebase.');
+}catch(e){if(e.name!=='AbortError')alert('Kon map niet kiezen: '+e.message);}
 }
-
 async function doSave(){
-  if(!__fileHandle)return false;
-  try{
-    const writable=await __fileHandle.createWritable();
-    await writable.write(JSON.stringify(deals,null,2));
-    await writable.close();
-    const el=document.getElementById('savepath');
-    if(el){el.textContent='💾 '+__fileHandle.name+' — backup opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
-    return true;
-  }catch(e){
-    __fileHandle=null;
-    return false;
-  }
+if(!__fileHandle)return false;
+try{
+const writable=await __fileHandle.createWritable();
+await writable.write(JSON.stringify(deals,null,2));
+await writable.close();
+const el=document.getElementById('savepath');
+if(el){el.textContent='💾 '+__fileHandle.name+' — backup opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+return true;
+}catch(e){
+__fileHandle=null;
+return false;
 }
-
+}
 async function autoSave(){
-  if(__fileHandle){
-    const ok=await doSave();
-    if(!ok)await kiesMap();
-  } else {
-    await kiesMap();
-  }
+if(__fileHandle){
+const ok=await doSave();
+if(!ok)await kiesMap();
+} else {
+await kiesMap();
 }
-
+}
 function exportBackup(){
-  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/[/]/g,'-');
-  const blob=new Blob([JSON.stringify(deals,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='qline-backup-'+datum+'.json';
-  a.click();
+const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/[/]/g,'-');
+const blob=new Blob([JSON.stringify(deals,null,2)],{type:'application/json'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='qline-backup-'+datum+'.json';
+a.click();
 }
 function importBackup(input){
-  const file=input.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const data=JSON.parse(e.target.result);
-      if(!Array.isArray(data)){alert('Ongeldig backup bestand.');return}
-      if(!confirm(`Backup terugzetten? Dit overschrijft ${deals.length} huidige leads met ${data.length} leads uit de backup.`))return;
-      deals=data;save();render();
-      alert('Backup teruggezet!');
-    }catch(err){alert('Kon backup niet lezen.');}
-  };
-  reader.readAsText(file);
+const file=input.files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=e=>{
+try{
+const data=JSON.parse(e.target.result);
+if(!Array.isArray(data)){alert('Ongeldig backup bestand.');return}
+if(!confirm(`Backup terugzetten? Dit overschrijft ${deals.length} huidige leads met ${data.length} leads uit de backup.`))return;
+deals=data;save();render();
+alert('Backup teruggezet!');
+}catch(err){alert('Kon backup niet lezen.');}
+};
+reader.readAsText(file);
 }
 const td=()=>new Date().toISOString().slice(0,10);
 const da=d=>Math.floor((Date.now()-new Date(d))/86400000);
 const fmt=n=>n?'€'+Number(n).toLocaleString('nl-NL'):'—';
 const fd=d=>new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
 const SL={nieuw:'Nieuwe lead',contact:'Contact gelegd',offerte:'Offerte verstuurd',dealer:'Naar dealer',gewonnen:'Gewonnen',verloren:'Verloren',deadend:'Dead end'};
-
 // DEAD LEAD RULE: 4+ outbound zonder reactie + laatste poging 3+ dagen geleden
 function getLeadRule(d){
-  if(d.status==='gewonnen'||d.status==='verloren'||d.status==='deadend')return null;
-  var contacts=d.contacts||[];
-  if(contacts.length===0)return null;
-
-  var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-  var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
-
-  // REOPEN: was dead maar heeft nu gereageerd
-  if(d._was_dead&&klant_replies>0){
-    return{rule:'REOPENED',label:'Heropend',color:'#2980b9',bg:'#eef2fa'};
-  }
-
-  // DEAD: 4+ outbound, 0 reacties, laatste contact 3+ dagen geleden
-  if(outbound>=4&&klant_replies===0){
-    // Check dagen sinds laatste contact
-    var laatste=contacts[contacts.length-1];
-    // We don't have exact date objects, so use nextContact or just count
-    var dagenOpen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
-    if(dagenOpen>=3){
-      return{rule:'DEAD',label:'Dead lead',color:'#888',bg:'#f5f4f0'};
-    }
-  }
-
-  // FOLLOW-UP STRATEGY: geef wachttijd advies
-  if(klant_replies===0&&outbound>0){
-    var wacht=[0,2,3,4,3][outbound]||3;
-    return{rule:'FOLLOWUP',label:'Follow-up',outbound:outbound,wacht:wacht,color:'#b8590a',bg:'#fef3e8'};
-  }
-
-  // ACTIVE: klant heeft gereageerd
-  if(klant_replies>0){
-    return{rule:'ACTIVE',label:'Actief',color:'#1a5c3a',bg:'#eef5f0'};
-  }
-  return null;
+if(d.status==='gewonnen'||d.status==='verloren'||d.status==='deadend')return null;
+var contacts=d.contacts||[];
+if(contacts.length===0)return null;
+var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+// REOPEN: was dead maar heeft nu gereageerd
+if(d._was_dead&&klant_replies>0){
+return{rule:'REOPENED',label:'Heropend',color:'#2980b9',bg:'#eef2fa'};
 }
-
+// DEAD: 4+ outbound, 0 reacties, laatste contact 3+ dagen geleden
+if(outbound>=4&&klant_replies===0){
+// Check dagen sinds laatste contact
+var laatste=contacts[contacts.length-1];
+// We don't have exact date objects, so use nextContact or just count
+var dagenOpen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+if(dagenOpen>=3){
+return{rule:'DEAD',label:'Dead lead',color:'#888',bg:'#f5f4f0'};
+}
+}
+// FOLLOW-UP STRATEGY: geef wachttijd advies
+if(klant_replies===0&&outbound>0){
+var wacht=[0,2,3,4,3][outbound]||3;
+return{rule:'FOLLOWUP',label:'Follow-up',outbound:outbound,wacht:wacht,color:'#b8590a',bg:'#fef3e8'};
+}
+// ACTIVE: klant heeft gereageerd
+if(klant_replies>0){
+return{rule:'ACTIVE',label:'Actief',color:'#1a5c3a',bg:'#eef5f0'};
+}
+return null;
+}
 // ===== Reden-tagging (win/verlies) — voor patroonherkenning in scoring =====
 const REDENEN_WIN=['Prijs/waarde overtuigend','Snelle levertijd','Persoonlijk contact/advies','Vertrouwd merk/kwaliteit','Anders'];
 const REDENEN_VERLOREN=['Te duur','Gekozen voor concurrent','Geen budget / uitgesteld','Geen reactie meer','Verkeerd product/paste niet','Anders'];
-
 function getRedenStats(){
-  const won=deals.filter(d=>d.status==='gewonnen'&&d.reden);
-  const lost=deals.filter(d=>d.status==='verloren'&&d.reden);
-  const count=arr=>{const m={};arr.forEach(d=>{m[d.reden]=(m[d.reden]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
-  return{won:count(won),lost:count(lost),totWon:won.length,totLost:lost.length};
+const won=deals.filter(d=>d.status==='gewonnen'&&d.reden);
+const lost=deals.filter(d=>d.status==='verloren'&&d.reden);
+const count=arr=>{const m={};arr.forEach(d=>{m[d.reden]=(m[d.reden]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+return{won:count(won),lost:count(lost),totWon:won.length,totLost:lost.length};
 }
-
 // Leer van gewonnen deals - bereken persoonlijk gemiddelde
 function getLeerData(){
-  var won=deals.filter(function(d){return d.status==='gewonnen';});
-  var lost=deals.filter(function(d){return d.status==='verloren';});
-  var deadends=deals.filter(function(d){return d.status==='deadend';});
-  if(won.length===0)return null;
-  var totaalInteracties=0, totaalReacties=0, totaalDagen=0, n=0;
-  won.forEach(function(d){
-    var contacts=d.contacts||[];
-    var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-    var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
-    var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
-    var pairs=0, streak=0;
-    contacts.forEach(function(cc){
-      if(cc.type==='reactie'){if(streak>0)pairs++;streak=0;}
-      else streak++;
-    });
-    totaalInteracties+=pairs;
-    totaalReacties+=reacties;
-    totaalDagen+=dagen;
-    n++;
-  });
-  return{
-    gemInteracties:totaalInteracties/n,
-    gemReacties:totaalReacties/n,
-    gemDagen:totaalDagen/n,
-    aantalWon:n,
-    gemBedragWon:won.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/(won.length||1),
-    gemBedragLost:lost.length?lost.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/lost.length:null,
-    prijsIsTopReden:(function(){
-      var rs=getRedenStats();
-      return rs.totLost>=2&&rs.lost[0]&&rs.lost[0][0]==='Te duur'&&(rs.lost[0][1]/rs.totLost)>=0.4;
-    })()
-  };
+var won=deals.filter(function(d){return d.status==='gewonnen';});
+var lost=deals.filter(function(d){return d.status==='verloren';});
+var deadends=deals.filter(function(d){return d.status==='deadend';});
+if(won.length===0)return null;
+var totaalInteracties=0, totaalReacties=0, totaalDagen=0, n=0;
+won.forEach(function(d){
+var contacts=d.contacts||[];
+var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+var pairs=0, streak=0;
+contacts.forEach(function(cc){
+if(cc.type==='reactie'){if(streak>0)pairs++;streak=0;}
+else streak++;
+});
+totaalInteracties+=pairs;
+totaalReacties+=reacties;
+totaalDagen+=dagen;
+n++;
+});
+return{
+gemInteracties:totaalInteracties/n,
+gemReacties:totaalReacties/n,
+gemDagen:totaalDagen/n,
+aantalWon:n,
+gemBedragWon:won.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/(won.length||1),
+gemBedragLost:lost.length?lost.reduce(function(s,d){return s+(Number(d.bedrag)||0);},0)/lost.length:null,
+prijsIsTopReden:(function(){
+var rs=getRedenStats();
+return rs.totLost>=2&&rs.lost[0]&&rs.lost[0][0]==='Te duur'&&(rs.lost[0][1]/rs.totLost)>=0.4;
+})()
+};
 }
-
 // Compute score from contact log + historical learning
 function getScore(d){
-  var contacts=d.contacts||[];
-  if(d.status==='nieuw')return 0;
-  if(d.status==='contact')return Math.min(30,((d.contacts||[]).filter(function(cc){return cc.type==='reactie';}).length)*10+5);
-  if(d.status==='gewonnen')return 100;
-  if(d.status==='verloren')return 0;
-  if(d.status==='deadend')return 0;
-
-  var interaction_pairs=0;
-  var klant_replies=0;
-  var outbound_streak=0;
-  var laatste_was_reactie=false;
-  for(var i=0;i<contacts.length;i++){
-    var cc=contacts[i];
-    if(cc.type==='reactie'){
-      klant_replies++;
-      if(outbound_streak>0)interaction_pairs++;
-      outbound_streak=0;
-      laatste_was_reactie=true;
-    } else {
-      outbound_streak++;
-      laatste_was_reactie=false;
-    }
-  }
-  var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
-
-  var leer=getLeerData();
-  var score;
-
-  if(leer&&leer.aantalWon>=2){
-    // Score op basis van hoe ver je bent t.o.v. jouw gemiddelde winnende deal
-    var interactie_pct=leer.gemInteracties>0?Math.min(1,interaction_pairs/leer.gemInteracties):0;
-    var reactie_pct=leer.gemReacties>0?Math.min(1,klant_replies/leer.gemReacties):0;
-    var tijd_pct=leer.gemDagen>0?Math.min(1,dagen/leer.gemDagen):0;
-    // Gewogen: interacties 40%, reacties 40%, tijd 20%
-    score=(interactie_pct*40)+(reactie_pct*40)+(tijd_pct*20);
-    // Bonus/malus
-    if(laatste_was_reactie)score+=10;
-    if(outbound_streak>=3)score-=10;
-    // Patroonherkenning uit getagde verliesredenen: als "Te duur" de dominante verliesreden is
-    // en dit bedrag ruim boven het gemiddelde gewonnen bedrag ligt, extra voorzichtig scoren.
-    if(leer.prijsIsTopReden&&d.bedrag&&leer.gemBedragWon&&Number(d.bedrag)>leer.gemBedragWon*1.3){
-      score-=8;
-    }
-    score=Math.min(95,Math.max(5,Math.round(score)));
-  } else {
-    // Nog niet genoeg data - gebruik basisformule
-    score=(interaction_pairs*25)+(klant_replies*15)-(outbound_streak*5)-(Math.max(0,dagen-30)*0.5)+(laatste_was_reactie?15:0);
-    score=Math.min(95,Math.max(5,Math.round(score)));
-  }
-  return score;
+var contacts=d.contacts||[];
+if(d.status==='nieuw')return 0;
+if(d.status==='contact')return Math.min(30,((d.contacts||[]).filter(function(cc){return cc.type==='reactie';}).length)*10+5);
+if(d.status==='gewonnen')return 100;
+if(d.status==='verloren')return 0;
+if(d.status==='deadend')return 0;
+var interaction_pairs=0;
+var klant_replies=0;
+var outbound_streak=0;
+var laatste_was_reactie=false;
+for(var i=0;i<contacts.length;i++){
+var cc=contacts[i];
+if(cc.type==='reactie'){
+klant_replies++;
+if(outbound_streak>0)interaction_pairs++;
+outbound_streak=0;
+laatste_was_reactie=true;
+} else {
+outbound_streak++;
+laatste_was_reactie=false;
 }
-
+}
+var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+var leer=getLeerData();
+var score;
+if(leer&&leer.aantalWon>=2){
+// Score op basis van hoe ver je bent t.o.v. jouw gemiddelde winnende deal
+var interactie_pct=leer.gemInteracties>0?Math.min(1,interaction_pairs/leer.gemInteracties):0;
+var reactie_pct=leer.gemReacties>0?Math.min(1,klant_replies/leer.gemReacties):0;
+var tijd_pct=leer.gemDagen>0?Math.min(1,dagen/leer.gemDagen):0;
+// Gewogen: interacties 40%, reacties 40%, tijd 20%
+score=(interactie_pct*40)+(reactie_pct*40)+(tijd_pct*20);
+// Bonus/malus
+if(laatste_was_reactie)score+=10;
+if(outbound_streak>=3)score-=10;
+// Patroonherkenning uit getagde verliesredenen: als "Te duur" de dominante verliesreden is
+// en dit bedrag ruim boven het gemiddelde gewonnen bedrag ligt, extra voorzichtig scoren.
+if(leer.prijsIsTopReden&&d.bedrag&&leer.gemBedragWon&&Number(d.bedrag)>leer.gemBedragWon*1.3){
+score-=8;
+}
+score=Math.min(95,Math.max(5,Math.round(score)));
+} else {
+// Nog niet genoeg data - gebruik basisformule
+score=(interaction_pairs*25)+(klant_replies*15)-(outbound_streak*5)-(Math.max(0,dagen-30)*0.5)+(laatste_was_reactie?15:0);
+score=Math.min(95,Math.max(5,Math.round(score)));
+}
+return score;
+}
 // Voorspel wanneer lead slachtrijp is
 function getVoorspelling(d){
-  var leer=getLeerData();
-  if(!leer||leer.aantalWon<2)return null;
-  var contacts=d.contacts||[];
-  var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-  var interaction_pairs=0, streak=0;
-  contacts.forEach(function(cc){
-    if(cc.type==='reactie'){if(streak>0)interaction_pairs++;streak=0;}
-    else streak++;
-  });
-  var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
-
-  var nog_interacties=Math.max(0,Math.ceil(leer.gemInteracties-interaction_pairs));
-  var nog_reacties=Math.max(0,Math.ceil(leer.gemReacties-klant_replies));
-  var nog_dagen=Math.max(0,Math.ceil(leer.gemDagen-dagen));
-
-  return{
-    nog_interacties:nog_interacties,
-    nog_reacties:nog_reacties,
-    nog_dagen:nog_dagen,
-    gem_interacties:Math.round(leer.gemInteracties*10)/10,
-    gem_reacties:Math.round(leer.gemReacties*10)/10,
-    gem_dagen:Math.round(leer.gemDagen),
-    aantalWon:leer.aantalWon
-  };
+var leer=getLeerData();
+if(!leer||leer.aantalWon<2)return null;
+var contacts=d.contacts||[];
+var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+var interaction_pairs=0, streak=0;
+contacts.forEach(function(cc){
+if(cc.type==='reactie'){if(streak>0)interaction_pairs++;streak=0;}
+else streak++;
+});
+var dagen=Math.floor((Date.now()-new Date(d.datumOfferte||d.datum))/86400000);
+var nog_interacties=Math.max(0,Math.ceil(leer.gemInteracties-interaction_pairs));
+var nog_reacties=Math.max(0,Math.ceil(leer.gemReacties-klant_replies));
+var nog_dagen=Math.max(0,Math.ceil(leer.gemDagen-dagen));
+return{
+nog_interacties:nog_interacties,
+nog_reacties:nog_reacties,
+nog_dagen:nog_dagen,
+gem_interacties:Math.round(leer.gemInteracties*10)/10,
+gem_reacties:Math.round(leer.gemReacties*10)/10,
+gem_dagen:Math.round(leer.gemDagen),
+aantalWon:leer.aantalWon
+};
 }
-
 // Compute display status from contact log
 function getDisplayStatus(d){
-  if(d.status==='nieuw')return{key:'nieuw',label:'Nieuwe lead',pill:'pn'};
-  if(d.status==='contact'){
-    var contacts=d.contacts||[];
-    var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-    if(reacties>0)return{key:'contact',label:'Reageert',pill:'pc'};
-    return{key:'contact',label:'Contact gelegd',pill:'pc'};
-  }
-  if(d.status==='dealer')return{key:'dealer',label:'Naar dealer',pill:'pd'};
-  if(d.status==='gewonnen')return{key:'gewonnen',label:'Gewonnen',pill:'pw'};
-  if(d.status==='verloren')return{key:'verloren',label:'Verloren',pill:'pl'};
-  if(d.status==='deadend')return{key:'deadend',label:'Dead end',pill:'pde'};
-  // offerte verstuurd - compute FU level from contacts
-  var contacts=d.contacts||[];
-  var outbound=contacts.filter(function(cc){return cc.type==='bel'||cc.type==='mail';}).length;
-  var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-  if(outbound===0)return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
-  if(reacties===0&&outbound===1)return{key:'fu1',label:'Follow-up 1',pill:'pf1'};
-  if(reacties===0&&outbound>=2)return{key:'fu2',label:'Follow-up 2+',pill:'pf2'};
-  if(reacties>0&&outbound>reacties)return{key:'fu1',label:'In gesprek',pill:'pf1'};
-  if(reacties>0)return{key:'offerte',label:'Actief gesprek',pill:'po'};
-  return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
+if(d.status==='nieuw')return{key:'nieuw',label:'Nieuwe lead',pill:'pn'};
+if(d.status==='contact'){
+var contacts=d.contacts||[];
+var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+if(reacties>0)return{key:'contact',label:'Reageert',pill:'pc'};
+return{key:'contact',label:'Contact gelegd',pill:'pc'};
+}
+if(d.status==='dealer')return{key:'dealer',label:'Naar dealer',pill:'pd'};
+if(d.status==='gewonnen')return{key:'gewonnen',label:'Gewonnen',pill:'pw'};
+if(d.status==='verloren')return{key:'verloren',label:'Verloren',pill:'pl'};
+if(d.status==='deadend')return{key:'deadend',label:'Dead end',pill:'pde'};
+// offerte verstuurd - compute FU level from contacts
+var contacts=d.contacts||[];
+var outbound=contacts.filter(function(cc){return cc.type==='bel'||cc.type==='mail';}).length;
+var reacties=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+if(outbound===0)return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
+if(reacties===0&&outbound===1)return{key:'fu1',label:'Follow-up 1',pill:'pf1'};
+if(reacties===0&&outbound>=2)return{key:'fu2',label:'Follow-up 2+',pill:'pf2'};
+if(reacties>0&&outbound>reacties)return{key:'fu1',label:'In gesprek',pill:'pf1'};
+if(reacties>0)return{key:'offerte',label:'Actief gesprek',pill:'po'};
+return{key:'offerte',label:'Offerte verstuurd',pill:'po'};
 }
 const SP={nieuw:'pn',offerte:'po',fu1:'pf1',fu2:'pf2',gewonnen:'pw',verloren:'pl'}; // legacy
-
 function urg(d){
-  if(['gewonnen','verloren','deadend'].includes(d.status))return'none';
-  if(d.status==='nieuw'||d.status==='contact'||d.status==='dealer')return'ok';
-  // Recente klantreactie = altijd urgent
-  const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
-  function pd2(s){if(!s)return new Date(0);if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);const m=s.match(/^(\d+)\s+(\w+)/);if(m){const mn=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mn!==undefined?mn:0),parseInt(m[1]));}return new Date(s);}
-  const contacts=d.contacts||[];
-  const laatste=contacts.length?contacts[contacts.length-1]:null;
-  const gisteren=new Date(Date.now()-86400000*2);
-  if(laatste&&laatste.type==='reactie'&&pd2(laatste.datum)>gisteren)return'urg';
-  if(d.nextContact){
-    const days=Math.floor((new Date(d.nextContact)-Date.now())/86400000);
-    if(days<0)return'urg';
-    if(days<=2)return'soon';
-    return'ok';
-  }
-  return'ok';
+if(['gewonnen','verloren','deadend'].includes(d.status))return'none';
+if(d.status==='nieuw'||d.status==='contact'||d.status==='dealer')return'ok';
+// Recente klantreactie = altijd urgent
+const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
+function pd2(s){if(!s)return new Date(0);if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);const m=s.match(/^(\d+)\s+(\w+)/);if(m){const mn=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mn!==undefined?mn:0),parseInt(m[1]));}return new Date(s);}
+const contacts=d.contacts||[];
+const laatste=contacts.length?contacts[contacts.length-1]:null;
+const gisteren=new Date(Date.now()-86400000*2);
+if(laatste&&laatste.type==='reactie'&&pd2(laatste.datum)>gisteren)return'urg';
+if(d.nextContact){
+const days=Math.floor((new Date(d.nextContact)-Date.now())/86400000);
+if(days<0)return'urg';
+if(days<=2)return'soon';
+return'ok';
+}
+return'ok';
 }
 // Migrate old fu1/fu2 statuses to offerte
 deals.forEach(function(d){if(d.status==='fu1'||d.status==='fu2')d.status='offerte';});
 const MAANDEN={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
 function pdContact(s){if(!s)return new Date(0);if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);const m=s.match(/^(\d+)\s+(\w+)/);if(m){const mn=MAANDEN[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mn!==undefined?mn:0),parseInt(m[1]));}return new Date(s);}
 function ns(d){
-  if(d.status==='nieuw')return'Offerte nog niet verstuurd';
-  // Check of klant recent heeft gereageerd
-  const contacts=d.contacts||[];
-  const laatste=contacts.length?contacts[contacts.length-1]:null;
-  const gisteren=new Date(Date.now()-86400000*2);
-  if(laatste&&laatste.type==='reactie'&&pdContact(laatste.datum)>gisteren){
-    return'📩 Klant reageerde — direct contact opnemen!';
-  }
-  if(d.nextContact){
-    const days=Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
-    if(days<0)return`${Math.abs(days)}d te laat`;
-    if(days===0)return'Vandaag opvolgen';
-    return`Over ${days}d opvolgen`;
-  }
-  return'Stel follow-up in';
+if(d.status==='nieuw')return'Offerte nog niet verstuurd';
+// Check of klant recent heeft gereageerd
+const contacts=d.contacts||[];
+const laatste=contacts.length?contacts[contacts.length-1]:null;
+const gisteren=new Date(Date.now()-86400000*2);
+if(laatste&&laatste.type==='reactie'&&pdContact(laatste.datum)>gisteren){
+return'📩 Klant reageerde — direct contact opnemen!';
 }
-
+if(d.nextContact){
+const days=Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
+if(days<0)return`${Math.abs(days)}d te laat`;
+if(days===0)return'Vandaag opvolgen';
+return`Over ${days}d opvolgen`;
+}
+return'Stel follow-up in';
+}
 // Advies of doorgaan of stoppen de moeite waard is, gebaseerd op bekende
 // sales-researchregels (niet afhankelijk van veel eigen won/lost-data):
 // - Snelheid van eerste opvolging (Lead Response Management-onderzoek: binnen
-//   5 min reageren geeft tot 4x hogere conversie dan na 30+ min)
+// 5 min reageren geeft tot 4x hogere conversie dan na 30+ min)
 // - "Rule of 5-8 touches" (Brevet/Velocify): de meeste deals hebben 5-8
-//   contactmomenten nodig, maar na 5+ zonder enige reactie daalt de kans sterk
+// contactmomenten nodig, maar na 5+ zonder enige reactie daalt de kans sterk
 // - Deal-veroudering: leads die 30-60+ dagen stilliggen sluiten zelden nog
-//   (gangbare B2B CRM-vuistregel, o.a. HubSpot-onderzoek naar lead-decay)
+// (gangbare B2B CRM-vuistregel, o.a. HubSpot-onderzoek naar lead-decay)
 function getAdvies(d){
-  if(['gewonnen','verloren','deadend'].includes(d.status))return null;
-  if(d.status==='nieuw'){
-    return{label:'Nog niet opgevolgd',kleur:'#888',uitleg:'Hoe sneller je reageert, hoe hoger de kans. Onderzoek naar lead-respons laat tot 4x hogere conversie zien bij reageren binnen 5 minuten t.o.v. 30+ minuten.'};
-  }
-  const contacts=d.contacts||[];
-  let outbound_streak=0,laatste_was_reactie=false;
-  for(let i=0;i<contacts.length;i++){
-    const cc=contacts[i];
-    if(cc.type==='reactie'){outbound_streak=0;laatste_was_reactie=true;}
-    else{outbound_streak++;laatste_was_reactie=false;}
-  }
-  const laatsteContact=contacts.length?contacts[contacts.length-1]:null;
-  const referentieDatum=laatsteContact?pdContact(laatsteContact.datum):new Date(d.datum||0);
-  const dagenStil=Math.floor((Date.now()-referentieDatum)/86400000);
-  const score=getScore(d);
-
-  if(laatste_was_reactie){
-    return{label:'Warm — klant reageerde net',kleur:'#1a5c3a',uitleg:'De klant heeft als laatste gereageerd. Pak dit snel op: momentum vasthouden is in vrijwel elk salesonderzoek de belangrijkste factor voor conversie.'};
-  }
-  if(outbound_streak>=5){
-    return{label:'Waarschijnlijk kansloos — overweeg te stoppen',kleur:'#c0392b',uitleg:`${outbound_streak} contactpogingen zonder enige reactie. Vuistregel uit onderzoek naar opvolggedrag: na 5-8 onbeantwoorde pogingen is de resterende kans doorgaans verwaarloosbaar. Dit lijkt zonde van je tijd.`};
-  }
-  if(dagenStil>60){
-    return{label:'Slapend — waarschijnlijk zonde van de tijd',kleur:'#c0392b',uitleg:`${dagenStil} dagen geen enkele beweging. Leads die 60+ dagen stilliggen zonder reactie sluiten in de praktijk zelden nog.`};
-  }
-  if(outbound_streak>=3){
-    return{label:'Laatste pogingen waard',kleur:'#c9820a',uitleg:`De meeste deals hebben 5-8 contactmomenten nodig voor een reactie — je zit op ${outbound_streak}. Probeer nog 1-2x via een ander kanaal (bijv. bellen i.p.v. mailen) voordat je afschrijft.`};
-  }
-  if(dagenStil>30){
-    return{label:'Wordt koud',kleur:'#c9820a',uitleg:`Al ${dagenStil} dagen geen contact. Plan snel een laatste opvolgmoment, anders koelt de kans verder af.`};
-  }
-  if(score>=60){
-    return{label:'Sterke kans — doorpakken',kleur:'#1a5c3a',uitleg:`Score ${score}/100 — dit traject verloopt beter dan gemiddeld voor je gewonnen deals.`};
-  }
-  return{label:'Normaal vervolgen',kleur:'#5a6b8c',uitleg:`Score ${score}/100. Geen bijzondere signalen — gewoon volgens plan opvolgen.`};
+if(['gewonnen','verloren','deadend'].includes(d.status))return null;
+if(d.status==='nieuw'){
+return{label:'Nog niet opgevolgd',kleur:'#888',uitleg:'Hoe sneller je reageert, hoe hoger de kans. Onderzoek naar lead-respons laat tot 4x hogere conversie zien bij reageren binnen 5 minuten t.o.v. 30+ minuten.'};
 }
-
-
+const contacts=d.contacts||[];
+let outbound_streak=0,laatste_was_reactie=false;
+for(let i=0;i<contacts.length;i++){
+const cc=contacts[i];
+if(cc.type==='reactie'){outbound_streak=0;laatste_was_reactie=true;}
+else{outbound_streak++;laatste_was_reactie=false;}
+}
+const laatsteContact=contacts.length?contacts[contacts.length-1]:null;
+const referentieDatum=laatsteContact?pdContact(laatsteContact.datum):new Date(d.datum||0);
+const dagenStil=Math.floor((Date.now()-referentieDatum)/86400000);
+const score=getScore(d);
+if(laatste_was_reactie){
+return{label:'Warm — klant reageerde net',kleur:'#1a5c3a',uitleg:'De klant heeft als laatste gereageerd. Pak dit snel op: momentum vasthouden is in vrijwel elk salesonderzoek de belangrijkste factor voor conversie.'};
+}
+if(outbound_streak>=5){
+return{label:'Waarschijnlijk kansloos — overweeg te stoppen',kleur:'#c0392b',uitleg:`${outbound_streak} contactpogingen zonder enige reactie. Vuistregel uit onderzoek naar opvolggedrag: na 5-8 onbeantwoorde pogingen is de resterende kans doorgaans verwaarloosbaar. Dit lijkt zonde van je tijd.`};
+}
+if(dagenStil>60){
+return{label:'Slapend — waarschijnlijk zonde van de tijd',kleur:'#c0392b',uitleg:`${dagenStil} dagen geen enkele beweging. Leads die 60+ dagen stilliggen zonder reactie sluiten in de praktijk zelden nog.`};
+}
+if(outbound_streak>=3){
+return{label:'Laatste pogingen waard',kleur:'#c9820a',uitleg:`De meeste deals hebben 5-8 contactmomenten nodig voor een reactie — je zit op ${outbound_streak}. Probeer nog 1-2x via een ander kanaal (bijv. bellen i.p.v. mailen) voordat je afschrijft.`};
+}
+if(dagenStil>30){
+return{label:'Wordt koud',kleur:'#c9820a',uitleg:`Al ${dagenStil} dagen geen contact. Plan snel een laatste opvolgmoment, anders koelt de kans verder af.`};
+}
+if(score>=60){
+return{label:'Sterke kans — doorpakken',kleur:'#1a5c3a',uitleg:`Score ${score}/100 — dit traject verloopt beter dan gemiddeld voor je gewonnen deals.`};
+}
+return{label:'Normaal vervolgen',kleur:'#5a6b8c',uitleg:`Score ${score}/100. Geen bijzondere signalen — gewoon volgens plan opvolgen.`};
+}
 function parseXml(text){
-  const doc=new DOMParser().parseFromString(text,'text/xml');
-  const g=t=>doc.querySelector(t)?.textContent?.trim()||'';
-
-  // Formaat 1: webshop aanvraag (Naam, E-mailadres, Product, ID)
-  if(g('Naam')){
-    const adres=[g('Address'),g('Zipcode'),g('City'),g('Country')].filter(Boolean).join(', ');
-    const wanneer=g('WannPlanenSieDenKauf')||g('WhenDoYouPlanToBuy')||'';
-    const type=g('WelcheArtVonBetriebOderSituationTrifftAufSieZu')||g('TypeOfBusiness')||'';
-    const notitie=[wanneer?`Kooptermijn: ${wanneer}`:'',type?`Type klant: ${type}`:'',adres?`Adres: ${adres}`:''].filter(Boolean).join('\n');
-    const contactWay=g('PreferredContactWay')||'';
-    const kooptermijn=g('WannPlanenSieDenKauf')||'';
-    const land=g('Country')||'';
-    const extraNotitie=[contactWay?`Voorkeur contact: ${contactWay}`:'',kooptermijn?`Kooptermijn: ${kooptermijn}`:'',land?`Land: ${land}`:''].filter(Boolean).join('\n');
-    const notitieXml=[notitie,extraNotitie].filter(Boolean).join('\n');
-    return{klant:g('Naam'),email:g('E-mailadres'),sub:g('Product')||g('Onderwerp'),aanvraagnr:g('ID'),telefoon:g('Phone'),land,contactWay,kooptermijn,datum:td(),status:'nieuw',notitie:notitieXml};
-  }
-
-  // Formaat 2: contactformulier (fromName, fromEmail, message als JSON)
-  const naam=g('fromName');
-  const email=g('fromEmail');
-  const aanvraagnr=g('id');
-  const datumRaw=g('dateCreated');
-  const datum=datumRaw?datumRaw.slice(0,10):td();
-  const subject=g('subject');
-
-  let telefoon='',bericht='',notitie='';
-  try{
-    const msg=JSON.parse(g('message'));
-    telefoon=msg.Telefoonnummer||msg.Phone||msg.telefoon||'';
-    bericht=msg.body||msg.message||msg.bericht||'';
-  }catch(e){
-    bericht=g('message');
-  }
-  notitie=[subject?`Onderwerp: ${subject}`:'',bericht?`Bericht:\n${bericht}`:'',telefoon?`Tel: ${telefoon}`:''].filter(Boolean).join('\n');
-
-  return{klant:naam,email,sub:subject||'Contactaanvraag',aanvraagnr,telefoon,datum,status:'nieuw',notitie};
+const doc=new DOMParser().parseFromString(text,'text/xml');
+const g=t=>doc.querySelector(t)?.textContent?.trim()||'';
+// Formaat 1: webshop aanvraag (Naam, E-mailadres, Product, ID)
+if(g('Naam')){
+const adres=[g('Address'),g('Zipcode'),g('City'),g('Country')].filter(Boolean).join(', ');
+const wanneer=g('WannPlanenSieDenKauf')||g('WhenDoYouPlanToBuy')||'';
+const type=g('WelcheArtVonBetriebOderSituationTrifftAufSieZu')||g('TypeOfBusiness')||'';
+const notitie=[wanneer?`Kooptermijn: ${wanneer}`:'',type?`Type klant: ${type}`:'',adres?`Adres: ${adres}`:''].filter(Boolean).join('\n');
+const contactWay=g('PreferredContactWay')||'';
+const kooptermijn=g('WannPlanenSieDenKauf')||'';
+const land=g('Country')||'';
+const extraNotitie=[contactWay?`Voorkeur contact: ${contactWay}`:'',kooptermijn?`Kooptermijn: ${kooptermijn}`:'',land?`Land: ${land}`:''].filter(Boolean).join('\n');
+const notitieXml=[notitie,extraNotitie].filter(Boolean).join('\n');
+return{klant:g('Naam'),email:g('E-mailadres'),sub:g('Product')||g('Onderwerp'),aanvraagnr:g('ID'),telefoon:g('Phone'),land,contactWay,kooptermijn,datum:td(),status:'nieuw',notitie:notitieXml};
 }
-
+// Formaat 2: contactformulier (fromName, fromEmail, message als JSON)
+const naam=g('fromName');
+const email=g('fromEmail');
+const aanvraagnr=g('id');
+const datumRaw=g('dateCreated');
+const datum=datumRaw?datumRaw.slice(0,10):td();
+const subject=g('subject');
+let telefoon='',bericht='',notitie='';
+try{
+const msg=JSON.parse(g('message'));
+telefoon=msg.Telefoonnummer||msg.Phone||msg.telefoon||'';
+bericht=msg.body||msg.message||msg.bericht||'';
+}catch(e){
+bericht=g('message');
+}
+notitie=[subject?`Onderwerp: ${subject}`:'',bericht?`Bericht:\n${bericht}`:'',telefoon?`Tel: ${telefoon}`:''].filter(Boolean).join('\n');
+return{klant:naam,email,sub:subject||'Contactaanvraag',aanvraagnr,telefoon,datum,status:'nieuw',notitie};
+}
 function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('dz').classList.remove('over');
-  const f=e.dataTransfer.files[0];
-  if(f)processFile(f);
+e.preventDefault();
+document.getElementById('dz').classList.remove('over');
+const f=e.dataTransfer.files[0];
+if(f)processFile(f);
 }
 function handleFile(input){if(input.files[0])processFile(input.files[0])}
 async function processFile(file){
-  const dz=document.getElementById('dz');
-  if(dz)dz.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:2px"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div><span style="font-size:13px;color:var(--accent)">Verwerken...</span></div>`;
-  try{
-    if(file.name.endsWith('.xml')){
-      const data=parseXml(await file.text());
-      openNew(data);
-    }
-  }catch(err){console.error(err);}
-  render();
+const dz=document.getElementById('dz');
+if(dz)dz.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:2px"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div><span style="font-size:13px;color:var(--accent)">Verwerken...</span></div>`;
+try{
+if(file.name.endsWith('.xml')){
+const data=parseXml(await file.text());
+openNew(data);
 }
-
+}catch(err){console.error(err);}
+render();
+}
 function toggleDatumOfferte(){
-  const wrap=document.getElementById('fdo-wrap');
-  if(!wrap)return;
-  const s=document.getElementById('fst')?.value||'';
-  wrap.style.display=['offerte','fu1','fu2'].includes(s)?'block':'none';
+const wrap=document.getElementById('fdo-wrap');
+if(!wrap)return;
+const s=document.getElementById('fst')?.value||'';
+wrap.style.display=['offerte','fu1','fu2'].includes(s)?'block':'none';
 }
 function openNew(pre){
-  editId=null;
-  document.getElementById('mtitle').textContent='Lead toevoegen';
-  document.getElementById('fk').value=pre?.klant||'';
-  document.getElementById('fb').value=pre?.bedrag||'';
-  document.getElementById('fs').value=pre?.sub||'';
-  document.getElementById('fon').value=pre?.offertenr||'';
-  document.getElementById('fan').value=pre?.aanvraagnr||'';
-  document.getElementById('fd').value=pre?.datum||td();
-  document.getElementById('fst').value=pre?.status||'nieuw';
-  document.getElementById('fdo').value=pre?.datumOfferte||'';
-  document.getElementById('fe').value=pre?.email||'';
-  document.getElementById('ftel').value=pre?.telefoon||'';
-  const fcw=document.getElementById('fcw');if(fcw&&pre?.contactWay){fcw.value=pre.contactWay;}
-  const fland=document.getElementById('fland');if(fland)fland.value=pre?.land||'';
-  document.getElementById('fn').value=pre?.notitie||'';
-  document.getElementById('cwrap').style.display='none';
-  document.getElementById('bdel').style.display='none';
-  const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
-  const adv0=document.getElementById('mAdvies');if(adv0)adv0.style.display='none';
-  document.getElementById('mo').classList.add('open');
-  toggleDatumOfferte();
+editId=null;
+document.getElementById('mtitle').textContent='Lead toevoegen';
+document.getElementById('fk').value=pre?.klant||'';
+document.getElementById('fb').value=pre?.bedrag||'';
+document.getElementById('fs').value=pre?.sub||'';
+document.getElementById('fon').value=pre?.offertenr||'';
+document.getElementById('fan').value=pre?.aanvraagnr||'';
+document.getElementById('fd').value=pre?.datum||td();
+document.getElementById('fst').value=pre?.status||'nieuw';
+document.getElementById('fdo').value=pre?.datumOfferte||'';
+document.getElementById('fe').value=pre?.email||'';
+document.getElementById('ftel').value=pre?.telefoon||'';
+const fcw=document.getElementById('fcw');if(fcw&&pre?.contactWay){fcw.value=pre.contactWay;}
+const fland=document.getElementById('fland');if(fland)fland.value=pre?.land||'';
+document.getElementById('fn').value=pre?.notitie||'';
+document.getElementById('cwrap').style.display='none';
+document.getElementById('bdel').style.display='none';
+const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
+const adv0=document.getElementById('mAdvies');if(adv0)adv0.style.display='none';
+document.getElementById('mo').classList.add('open');
+toggleDatumOfferte();
 }
 function openEdit(id){
-  editId=id;
-  const d=deals.find(x=>x.id===id);
-  document.getElementById('mtitle').textContent=d.klant;
-  document.getElementById('fk').value=d.klant;
-  document.getElementById('fb').value=d.bedrag||'';
-  document.getElementById('fs').value=d.onderwerp||'';
-  document.getElementById('fon').value=d.offertenr||'';
-  document.getElementById('fan').value=d.aanvraagnr||'';
-  document.getElementById('fd').value=d.datum;
-  document.getElementById('fst').value=d.status;
-  document.getElementById('fdo').value=d.datumOfferte||'';
-  toggleDatumOfferte();
-  document.getElementById('fe').value=d.email||'';
-  document.getElementById('ftel').value=d.telefoon||'';
-  const mc=document.getElementById('mheadCall');
-  if(mc){if(d.telefoon){mc.href='tel:'+d.telefoon;mc.textContent='📞 '+d.telefoon;mc.style.display='inline-block';}else{mc.style.display='none';}}
-  const fcw2=document.getElementById('fcw');if(fcw2)fcw2.value=d.contactWay||'';
-  const fland2=document.getElementById('fland');if(fland2)fland2.value=d.land||'';
-  const adviesEl=document.getElementById('mAdvies');
-  if(adviesEl){
-    const advies=getAdvies(d);
-    if(advies){
-      adviesEl.style.display='block';
-      adviesEl.style.background=advies.kleur+'18';
-      adviesEl.style.border='1px solid '+advies.kleur+'40';
-      adviesEl.style.color=advies.kleur;
-      adviesEl.innerHTML='<strong>'+advies.label+'</strong><br><span style="color:var(--text);opacity:.8">'+advies.uitleg+'</span>';
-    } else {
-      adviesEl.style.display='none';
-    }
-  }
-  document.getElementById('fn').value=d.notitie||'';
-  document.getElementById('cwrap').style.display='block';
-  document.getElementById('fnc').value='';
-  document.getElementById('aiLaatsteMail').value='';
-  const aiVoorstelTa=document.getElementById('aiVoorstel');
-  const aiWrap=document.getElementById('aiVoorstelWrap');
-  if(d.aiVoorstel){
-    aiVoorstelTa.value=d.aiVoorstel;
-    aiWrap.style.display='block';
-    let label=aiWrap.querySelector('.ai-auto-label');
-    if(!label){
-      label=document.createElement('div');
-      label.className='ai-auto-label';
-      label.style.cssText='font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px';
-      aiWrap.insertBefore(label,aiWrap.firstChild);
-    }
-    label.textContent='🤖 Automatisch klaargezet na binnengekomen reactie'+(d.aiVoorstelDatum?(' — '+new Date(d.aiVoorstelDatum).toLocaleString('nl-NL')):'');
-  } else {
-    aiVoorstelTa.value='';
-    aiWrap.style.display='none';
-    const label=aiWrap.querySelector('.ai-auto-label');
-    if(label)label.remove();
-  }
-  const pogingEl=document.getElementById('aiPogingInfo');
-  if(pogingEl){
-    let streak=0;
-    (d.contacts||[]).forEach(c=>{if(c.type==='reactie')streak=0;else streak++;});
-    if(streak>0){
-      pogingEl.style.display='block';
-      pogingEl.style.background=streak>=5?'#fdecea':streak>=3?'#fff4e0':'#eef3ff';
-      pogingEl.style.color=streak>=5?'#c0392b':streak>=3?'#8a6a1a':'#3b5bdb';
-      pogingEl.textContent=`📊 Dit wordt opvolgpoging ${streak+1} zonder reactie van de klant — de AI houdt hier rekening mee in de toon.`;
-    } else {
-      pogingEl.style.display='none';
-    }
-  }
-  renderClog(d.contacts||[]);
-  document.getElementById('bdel').style.display='inline-block';
-  document.getElementById('mo').classList.add('open');
-  toggleDatumOfferte();
+editId=id;
+const d=deals.find(x=>x.id===id);
+document.getElementById('mtitle').textContent=d.klant;
+document.getElementById('fk').value=d.klant;
+document.getElementById('fb').value=d.bedrag||'';
+document.getElementById('fs').value=d.onderwerp||'';
+document.getElementById('fon').value=d.offertenr||'';
+document.getElementById('fan').value=d.aanvraagnr||'';
+document.getElementById('fd').value=d.datum;
+document.getElementById('fst').value=d.status;
+document.getElementById('fdo').value=d.datumOfferte||'';
+toggleDatumOfferte();
+document.getElementById('fe').value=d.email||'';
+document.getElementById('ftel').value=d.telefoon||'';
+const mc=document.getElementById('mheadCall');
+if(mc){if(d.telefoon){mc.href='tel:'+d.telefoon;mc.textContent='📞 '+d.telefoon;mc.style.display='inline-block';}else{mc.style.display='none';}}
+const fcw2=document.getElementById('fcw');if(fcw2)fcw2.value=d.contactWay||'';
+const fland2=document.getElementById('fland');if(fland2)fland2.value=d.land||'';
+const adviesEl=document.getElementById('mAdvies');
+if(adviesEl){
+const advies=getAdvies(d);
+if(advies){
+adviesEl.style.display='block';
+adviesEl.style.background=advies.kleur+'18';
+adviesEl.style.border='1px solid '+advies.kleur+'40';
+adviesEl.style.color=advies.kleur;
+adviesEl.innerHTML='<strong>'+advies.label+'</strong><br><span style="color:var(--text);opacity:.8">'+advies.uitleg+'</span>';
+} else {
+adviesEl.style.display='none';
+}
+}
+document.getElementById('fn').value=d.notitie||'';
+document.getElementById('cwrap').style.display='block';
+document.getElementById('fnc').value='';
+document.getElementById('aiLaatsteMail').value='';
+const aiVoorstelTa=document.getElementById('aiVoorstel');
+const aiWrap=document.getElementById('aiVoorstelWrap');
+if(d.aiVoorstel){
+aiVoorstelTa.value=d.aiVoorstel;
+aiWrap.style.display='block';
+let label=aiWrap.querySelector('.ai-auto-label');
+if(!label){
+label=document.createElement('div');
+label.className='ai-auto-label';
+label.style.cssText='font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px';
+aiWrap.insertBefore(label,aiWrap.firstChild);
+}
+label.textContent='🤖 Automatisch klaargezet na binnengekomen reactie'+(d.aiVoorstelDatum?(' — '+new Date(d.aiVoorstelDatum).toLocaleString('nl-NL')):'');
+} else {
+aiVoorstelTa.value='';
+aiWrap.style.display='none';
+const label=aiWrap.querySelector('.ai-auto-label');
+if(label)label.remove();
+}
+const pogingEl=document.getElementById('aiPogingInfo');
+if(pogingEl){
+let streak=0;
+(d.contacts||[]).forEach(c=>{if(c.type==='reactie')streak=0;else streak++;});
+if(streak>0){
+pogingEl.style.display='block';
+pogingEl.style.background=streak>=5?'#fdecea':streak>=3?'#fff4e0':'#eef3ff';
+pogingEl.style.color=streak>=5?'#c0392b':streak>=3?'#8a6a1a':'#3b5bdb';
+pogingEl.textContent=`📊 Dit wordt opvolgpoging ${streak+1} zonder reactie van de klant — de AI houdt hier rekening mee in de toon.`;
+} else {
+pogingEl.style.display='none';
+}
+}
+renderClog(d.contacts||[]);
+document.getElementById('bdel').style.display='inline-block';
+document.getElementById('mo').classList.add('open');
+toggleDatumOfferte();
 }
 function closeMo(){document.getElementById('mo').classList.remove('open');editId=null}
 function saveDeal(){
-  const k=document.getElementById('fk').value.trim();
-  if(!k){alert('Vul een naam in.');return}
-  const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,datumOfferte:document.getElementById('fdo').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),contactWay:document.getElementById('fcw')?.value||'',land:document.getElementById('fland')?.value.trim()||'',notitie:document.getElementById('fn').value.trim()};
-  let targetId=editId;
-  if(editId){const target=deals.find(x=>x.id===editId);Object.assign(target,obj);delete target.auto;}
-  else{targetId=Date.now().toString();deals.push({id:targetId,...obj,contacts:[]})}
-  save();
-  const targetDeal=deals.find(x=>x.id===targetId);
-  if(targetDeal&&(obj.status==='gewonnen'||obj.status==='verloren')&&!targetDeal.reden){
-    // Nog geen reden getagd voor deze gewonnen/verloren deal (ook bij het
-    // achteraf nalopen van oudere, al gesloten deals) — vraag ernaar.
-    showWinLossPopup(targetId,obj.status);
-    return;
-  }
-  closeMo();render();
+const k=document.getElementById('fk').value.trim();
+if(!k){alert('Vul een naam in.');return}
+const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,datumOfferte:document.getElementById('fdo').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),contactWay:document.getElementById('fcw')?.value||'',land:document.getElementById('fland')?.value.trim()||'',notitie:document.getElementById('fn').value.trim()};
+let targetId=editId;
+if(editId){const target=deals.find(x=>x.id===editId);Object.assign(target,obj);delete target.auto;}
+else{targetId=Date.now().toString();deals.push({id:targetId,...obj,contacts:[]})}
+save();
+const targetDeal=deals.find(x=>x.id===targetId);
+if(targetDeal&&(obj.status==='gewonnen'||obj.status==='verloren')&&!targetDeal.reden){
+// Nog geen reden getagd voor deze gewonnen/verloren deal (ook bij het
+// achteraf nalopen van oudere, al gesloten deals) — vraag ernaar.
+showWinLossPopup(targetId,obj.status);
+return;
+}
+closeMo();render();
 }
 function delDeal(){
-  const d=deals.find(x=>x.id===editId);
-  if(!d)return;
-  const footer=document.querySelector('.mfoot');
-  footer.innerHTML=`
-    <span style="font-size:13px;color:var(--red);font-weight:500">Weet je het zeker?</span>
-    <button class="btn btn-d" style="margin-left:8px" onclick="confirmDel()">Ja, verwijder</button>
-    <button class="btn" onclick="cancelDel()">Annuleer</button>`;
+const d=deals.find(x=>x.id===editId);
+if(!d)return;
+const footer=document.querySelector('.mfoot');
+footer.innerHTML=`
+<span style="font-size:13px;color:var(--red);font-weight:500">Weet je het zeker?</span>
+<button class="btn btn-d" style="margin-left:8px" onclick="confirmDel()">Ja, verwijder</button>
+<button class="btn" onclick="cancelDel()">Annuleer</button>`;
 }
 function confirmDel(){
-  deals=deals.filter(x=>x.id!==editId);
-  save();closeMo();render();
+deals=deals.filter(x=>x.id!==editId);
+save();closeMo();render();
 }
 function cancelDel(){
-  const footer=document.querySelector('.mfoot');
-  footer.innerHTML=`
-    <button class="btn" onclick="closeMo()">Annuleren</button>
-    <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
-    <button class="btn btn-d" id="bdel" style="margin-left:auto" onclick="delDeal()">Verwijder</button>`;
+const footer=document.querySelector('.mfoot');
+footer.innerHTML=`
+<button class="btn" onclick="closeMo()">Annuleren</button>
+<button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+<button class="btn btn-d" id="bdel" style="margin-left:auto" onclick="delDeal()">Verwijder</button>`;
 }
 function quickBel(id,e){e&&e.stopPropagation();showContactPopup(id,'bel');}
 function quickReactie(id,e){e&&e.stopPropagation();showContactPopup(id,'reactie');}
 function quickMail(id,e){e&&e.stopPropagation();showContactPopup(id);}
 function showContactPopup(id,preselect){
-  const d=deals.find(x=>x.id===id);
-  if(!d)return;
-  window.__fuId=id;
-  window.__fuDate=null;
-  window.__contactType=null;
-  const box=document.querySelector('.mbox');
-  box.innerHTML=`
-    <div class="mhead"><div class="mtitle">Contact met ${d.klant}</div></div>
-    <div class="ff">
-      <label>Wat heb je gedaan?</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <button class="btn" id="btn-bel" onclick="selectType('bel')">📞 Gebeld</button>
-        <button class="btn" id="btn-app" onclick="selectType('app')">💬 Geappt</button>
-        <button class="btn" id="btn-mail" onclick="selectType('mail')">✉ Gemaild</button>
-        <button class="btn" id="btn-reactie" onclick="selectType('reactie')">📩 Reactie ontvangen</button>
-      </div>
-    </div>
-    <div class="ff">
-      <label>Notitie (optioneel)</label>
-      <textarea id="fu-note" rows="3" placeholder="Wat besproken? Wat afgesproken?"></textarea>
-    </div>
-    <div class="ff">
-      <label>Wanneer weer opvolgen?</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <button class="btn" onclick="pickDays(3,this)">3 dagen</button>
-        <button class="btn" onclick="pickDays(7,this)">1 week</button>
-        <button class="btn" onclick="pickDays(14,this)">2 weken</button>
-        <button class="btn" onclick="pickDays(30,this)">1 maand</button>
-        <button class="btn" onclick="pickDays(90,this)">3 maanden</button>
-        <button class="btn" onclick="pickDays(180,this)">6 maanden</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="number" id="fu-eigen" placeholder="Eigen aantal" min="1" style="width:130px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--text);outline:none">
-        <span style="font-size:14px;color:var(--muted)">dagen</span>
-        <button class="btn" onclick="pickEigen()">OK</button>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn" onclick="saveContact(false)">Opslaan zonder reminder</button>
-      <button class="btn btn-p" onclick="saveContact(true)">Opslaan</button>
-    </div>`;
-  document.getElementById('mo').classList.add('open');
-  if(preselect)setTimeout(()=>selectType(preselect),10);
+const d=deals.find(x=>x.id===id);
+if(!d)return;
+window.__fuId=id;
+window.__fuDate=null;
+window.__contactType=null;
+const box=document.querySelector('.mbox');
+box.innerHTML=`
+<div class="mhead"><div class="mtitle">Contact met ${d.klant}</div></div>
+<div class="ff">
+<label>Wat heb je gedaan?</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<button class="btn" id="btn-bel" onclick="selectType('bel')">📞 Gebeld</button>
+<button class="btn" id="btn-app" onclick="selectType('app')">💬 Geappt</button>
+<button class="btn" id="btn-mail" onclick="selectType('mail')">✉ Gemaild</button>
+<button class="btn" id="btn-reactie" onclick="selectType('reactie')">📩 Reactie ontvangen</button>
+</div>
+</div>
+<div class="ff">
+<label>Notitie (optioneel)</label>
+<textarea id="fu-note" rows="3" placeholder="Wat besproken? Wat afgesproken?"></textarea>
+</div>
+<div class="ff">
+<label>Wanneer weer opvolgen?</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+<button class="btn" onclick="pickDays(3,this)">3 dagen</button>
+<button class="btn" onclick="pickDays(7,this)">1 week</button>
+<button class="btn" onclick="pickDays(14,this)">2 weken</button>
+<button class="btn" onclick="pickDays(30,this)">1 maand</button>
+<button class="btn" onclick="pickDays(90,this)">3 maanden</button>
+<button class="btn" onclick="pickDays(180,this)">6 maanden</button>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<input type="number" id="fu-eigen" placeholder="Eigen aantal" min="1" style="width:130px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;color:var(--text);outline:none">
+<span style="font-size:14px;color:var(--muted)">dagen</span>
+<button class="btn" onclick="pickEigen()">OK</button>
+</div>
+</div>
+<div class="mfoot">
+<button class="btn" onclick="saveContact(false)">Opslaan zonder reminder</button>
+<button class="btn btn-p" onclick="saveContact(true)">Opslaan</button>
+</div>`;
+document.getElementById('mo').classList.add('open');
+if(preselect)setTimeout(()=>selectType(preselect),10);
 }
 function selectType(type){
-  window.__contactType=type;
-  ['bel','app','mail','reactie'].forEach(t=>{
-    const btn=document.getElementById('btn-'+t);
-    if(!btn)return;
-    btn.style.background=type===t?'var(--accent-bg)':'';
-    btn.style.borderColor=type===t?'var(--accent-border)':'';
-    btn.style.color=type===t?'var(--accent)':'';
-  });
+window.__contactType=type;
+['bel','app','mail','reactie'].forEach(t=>{
+const btn=document.getElementById('btn-'+t);
+if(!btn)return;
+btn.style.background=type===t?'var(--accent-bg)':'';
+btn.style.borderColor=type===t?'var(--accent-border)':'';
+btn.style.color=type===t?'var(--accent)':'';
+});
 }
 function pickDays(days,btn){
-  document.querySelectorAll('#mo .btn').forEach(b=>{b.style.background='';b.style.borderColor='';});
-  if(btn){btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';}
-  const d=new Date();d.setDate(d.getDate()+days);
-  window.__fuDate=d.toISOString().slice(0,10);
+document.querySelectorAll('#mo .btn').forEach(b=>{b.style.background='';b.style.borderColor='';});
+if(btn){btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';}
+const d=new Date();d.setDate(d.getDate()+days);
+window.__fuDate=d.toISOString().slice(0,10);
 }
 function pickEigen(){
-  const days=parseInt(document.getElementById('fu-eigen')?.value);
-  if(!days||days<1)return;
-  const d=new Date();d.setDate(d.getDate()+days);
-  window.__fuDate=d.toISOString().slice(0,10);
-  saveContact(true);
+const days=parseInt(document.getElementById('fu-eigen')?.value);
+if(!days||days<1)return;
+const d=new Date();d.setDate(d.getDate()+days);
+window.__fuDate=d.toISOString().slice(0,10);
+saveContact(true);
 }
 function closeFuDialog(metDatum){
-  saveContact(metDatum);
+saveContact(metDatum);
 }
 function showFuPopup(id){
-  showContactPopup(id);
+showContactPopup(id);
 }
 function saveContact(metDatum){
-  const d=deals.find(x=>x.id===window.__fuId);
-  if(!d)return;
-  if(!d.contacts)d.contacts=[];
-  const now=new Date();
-  const type=window.__contactType||'bel';
-  const tekst=document.getElementById('fu-note')?.value?.trim()||'';
-  if(type||tekst){
-    d.contacts.push({type,datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
-  }
-  if(metDatum&&window.__fuDate)d.nextContact=window.__fuDate;
-  save();
-  window.__fuDate=null;
-  window.__contactType=null;
-  window.__fuId=null;
-  document.getElementById('mo').classList.remove('open');
-  restoreModal();
-  render();
+const d=deals.find(x=>x.id===window.__fuId);
+if(!d)return;
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+const type=window.__contactType||'bel';
+const tekst=document.getElementById('fu-note')?.value?.trim()||'';
+if(type||tekst){
+d.contacts.push({type,datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
 }
-
+if(metDatum&&window.__fuDate)d.nextContact=window.__fuDate;
+save();
+window.__fuDate=null;
+window.__contactType=null;
+window.__fuId=null;
+document.getElementById('mo').classList.remove('open');
+restoreModal();
+render();
+}
 function restoreModal(){
-  const box=document.querySelector('.mbox');
-  if(!box)return;
-  box.innerHTML=`
-    <div class="mhead">
-      <div style="display:flex;align-items:center;gap:10px;min-width:0">
-        <div class="mtitle" id="mtitle">Lead toevoegen</div>
-        <a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
-      </div>
-      <button class="mclose" onclick="closeMo()">×</button>
-    </div>
-    <div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
-    <div class="fg">
-      <div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
-      <div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
-    </div>
-    <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
-    <div class="fg">
-      <div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
-      <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
-    </div>
-    <div class="fg">
-      <div class="ff"><label>Datum</label><input id="fd" type="date"></div>
-      <div class="ff"><label>Status</label>
-        <select id="fst" onchange="toggleDatumOfferte()">
-          <option value="nieuw">Nieuwe lead</option>
-          <option value="contact">Contact gelegd</option>
-          <option value="offerte">Offerte verstuurd</option>
-          <option value="dealer">Doorgestuurd naar dealer</option>
-          <option value="gewonnen">Gewonnen</option>
-          <option value="verloren">Verloren</option>
-          <option value="deadend">Dead end</option>
-        </select>
-      </div>
-    </div>
-    <div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
-    <div class="fg">
-      <div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
-      <div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
-    </div>
-    <div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
-    <div id="cwrap" style="display:none">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
-      <div id="clist"></div>
-      <div class="clog-add">
-        <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
-        <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-          <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
-        </div>
-      </div>
-      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
-        <div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
-        <div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
-        <button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
-        <div id="aiVoorstelWrap" style="display:none">
-          <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
-          <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
-        </div>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn" onclick="closeMo()">Annuleren</button>
-      <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
-      <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
-    </div>`;
+const box=document.querySelector('.mbox');
+if(!box)return;
+box.innerHTML=`
+<div class="mhead">
+<div style="display:flex;align-items:center;gap:10px;min-width:0">
+<div class="mtitle" id="mtitle">Lead toevoegen</div>
+<a id="mheadCall" href="#" style="display:none;flex-shrink:0;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;text-decoration:none">📞 Bel</a>
+</div>
+<button class="mclose" onclick="closeMo()">×</button>
+</div>
+<div id="mAdvies" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:14px;font-size:12.5px;line-height:1.4"></div>
+<div class="fg">
+<div class="ff"><label>Naam / bedrijf</label><input id="fk" placeholder="Klantnaam"></div>
+<div class="ff"><label>Bedrag excl. BTW (€)</label><input id="fb" type="number" placeholder="0"></div>
+</div>
+<div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
+<div class="fg">
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+<div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
+</div>
+<div class="fg">
+<div class="ff"><label>Datum</label><input id="fd" type="date"></div>
+<div class="ff"><label>Status</label>
+<select id="fst" onchange="toggleDatumOfferte()">
+<option value="nieuw">Nieuwe lead</option>
+<option value="contact">Contact gelegd</option>
+<option value="offerte">Offerte verstuurd</option>
+<option value="dealer">Doorgestuurd naar dealer</option>
+<option value="gewonnen">Gewonnen</option>
+<option value="verloren">Verloren</option>
+<option value="deadend">Dead end</option>
+</select>
+</div>
+</div>
+<div class="ff" id="fdo-wrap" style="display:none"><label>Datum offerte verstuurd</label><input id="fdo" type="date"></div>
+<div class="fg">
+<div class="ff"><label>E-mail</label><input id="fe" type="email" placeholder="klant@bedrijf.nl"></div>
+<div class="ff"><label>Telefoon</label><input id="ftel" type="tel" placeholder="+31 6..."></div>
+</div>
+<div class="ff"><label>Notitie</label><textarea id="fn" rows="5" placeholder="Kooptermijn, situatie, opmerkingen..."></textarea></div>
+<div id="cwrap" style="display:none">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Contactlog</div>
+<div id="clist"></div>
+<div class="clog-add">
+<textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
+<div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
+<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+</div>
+</div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
+<div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
+<div class="ff"><label>Laatste mail van de klant (plak hier, optioneel)</label><textarea id="aiLaatsteMail" rows="4" placeholder="Plak hier de tekst van de laatste mail die je van de klant kreeg — helpt de AI om er specifiek op in te haken..."></textarea></div>
+<button class="btn btn-p" style="margin-bottom:10px" onclick="genereerOpvolgVoorstel()" id="aiGenBtn">✨ Genereer opvolgvoorstel</button>
+<div id="aiVoorstelWrap" style="display:none">
+<textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+<button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
+</div>
+</div>
+</div>
+<div class="mfoot">
+<button class="btn" onclick="closeMo()">Annuleren</button>
+<button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+<button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
+</div>`;
 }
 function quick(id,s,e){
-  e&&e.stopPropagation();
-  const d=deals.find(x=>x.id===id);
-  if(!d)return;
-  if(s==='gewonnen'||s==='verloren'){showWinLossPopup(id,s);return;}
-  d.status=s;
-  if(s==='offerte'&&!d.datumOfferte)d.datumOfferte=new Date().toISOString().slice(0,10);
-  if(s==='deadend'){d.nextContact=null;save();render();}
-  else{save();showContactPopup(id);}
+e&&e.stopPropagation();
+const d=deals.find(x=>x.id===id);
+if(!d)return;
+if(s==='gewonnen'||s==='verloren'){showWinLossPopup(id,s);return;}
+d.status=s;
+if(s==='offerte'&&!d.datumOfferte)d.datumOfferte=new Date().toISOString().slice(0,10);
+if(s==='deadend'){d.nextContact=null;save();render();}
+else{save();showContactPopup(id);}
 }
 function showWinLossPopup(id,status){
-  const d=deals.find(x=>x.id===id);
-  if(!d)return;
-  window.__wlId=id;window.__wlStatus=status;window.__wlReden=null;
-  const redenen=status==='gewonnen'?REDENEN_WIN:REDENEN_VERLOREN;
-  const titel=status==='gewonnen'?`🎉 ${d.klant} — gewonnen!`:`${d.klant} — verloren`;
-  const box=document.querySelector('.mbox');
-  box.innerHTML=`
-    <div class="mhead"><div class="mtitle">${titel}</div></div>
-    <div class="ff">
-      <label>Wat was de belangrijkste reden?</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px" id="wl-btns">
-        ${redenen.map(r=>`<button class="btn" onclick="selectReden('${r.replace(/'/g,"\\'")}',this)">${r}</button>`).join('')}
-      </div>
-      <div style="font-size:11px;color:var(--hint);margin-top:6px">Dit helpt de scoringskans van toekomstige leads te verbeteren.</div>
-    </div>
-    <div class="ff">
-      <label>Toelichting (optioneel)</label>
-      <textarea id="wl-detail" rows="2" placeholder="Extra context..."></textarea>
-    </div>
-    <div class="mfoot">
-      <button class="btn" onclick="saveWinLoss(true)">Overslaan</button>
-      <button class="btn btn-p" onclick="saveWinLoss(false)">Opslaan</button>
-    </div>`;
-  document.getElementById('mo').classList.add('open');
+const d=deals.find(x=>x.id===id);
+if(!d)return;
+window.__wlId=id;window.__wlStatus=status;window.__wlReden=null;
+const redenen=status==='gewonnen'?REDENEN_WIN:REDENEN_VERLOREN;
+const titel=status==='gewonnen'?`🎉 ${d.klant} — gewonnen!`:`${d.klant} — verloren`;
+const box=document.querySelector('.mbox');
+box.innerHTML=`
+<div class="mhead"><div class="mtitle">${titel}</div></div>
+<div class="ff">
+<label>Wat was de belangrijkste reden?</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px" id="wl-btns">
+${redenen.map(r=>`<button class="btn" onclick="selectReden('${r.replace(/'/g,"\\'")}',this)">${r}</button>`).join('')}
+</div>
+<div style="font-size:11px;color:var(--hint);margin-top:6px">Dit helpt de scoringskans van toekomstige leads te verbeteren.</div>
+</div>
+<div class="ff">
+<label>Toelichting (optioneel)</label>
+<textarea id="wl-detail" rows="2" placeholder="Extra context..."></textarea>
+</div>
+<div class="mfoot">
+<button class="btn" onclick="saveWinLoss(true)">Overslaan</button>
+<button class="btn btn-p" onclick="saveWinLoss(false)">Opslaan</button>
+</div>`;
+document.getElementById('mo').classList.add('open');
 }
 function selectReden(r,btn){
-  window.__wlReden=r;
-  document.querySelectorAll('#wl-btns .btn').forEach(b=>{b.style.background='';b.style.borderColor='';b.style.color='';});
-  btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';btn.style.color='var(--accent)';
+window.__wlReden=r;
+document.querySelectorAll('#wl-btns .btn').forEach(b=>{b.style.background='';b.style.borderColor='';b.style.color='';});
+btn.style.background='var(--accent-bg)';btn.style.borderColor='var(--accent-border)';btn.style.color='var(--accent)';
 }
 function saveWinLoss(skip){
-  const d=deals.find(x=>x.id===window.__wlId);
-  if(!d)return;
-  d.status=window.__wlStatus;
-  d.nextContact=null;
-  if(!skip&&window.__wlReden)d.reden=window.__wlReden;
-  const detail=document.getElementById('wl-detail')?.value?.trim();
-  if(!skip&&detail)d.redenDetail=detail;
-  save();
-  window.__wlId=null;window.__wlStatus=null;window.__wlReden=null;
-  document.getElementById('mo').classList.remove('open');
-  restoreModal();
-  render();
+const d=deals.find(x=>x.id===window.__wlId);
+if(!d)return;
+d.status=window.__wlStatus;
+d.nextContact=null;
+if(!skip&&window.__wlReden)d.reden=window.__wlReden;
+const detail=document.getElementById('wl-detail')?.value?.trim();
+if(!skip&&detail)d.redenDetail=detail;
+save();
+window.__wlId=null;window.__wlStatus=null;window.__wlReden=null;
+document.getElementById('mo').classList.remove('open');
+restoreModal();
+render();
 }
-
 function renderClog(contacts){
-  const el=document.getElementById('clist');
-  if(!el)return;
-  if(!contacts.length){el.innerHTML=`<div style="font-size:12px;color:var(--hint);margin-bottom:8px">Nog geen contactmomenten.</div>`;return}
-  el.innerHTML=contacts.map((c,i)=>{
-    const icon=c.type==='mail'?'Mail':c.type==='reactie'?'Reactie':c.type==='app'?'App':'Bel';
-    const clr=c.type==='mail'?'color:var(--blue)':c.type==='reactie'?'color:var(--orange)':c.type==='app'?'color:#6b3fa0':'color:var(--accent)';
-    return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" style="${clr}">${icon} ${i+1} &mdash; ${c.datum} ${c.tijd}</span><button onclick="deleteContact(${i})" style="margin-left:auto;background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px" title="Verwijder">✕</button></div><div class="clog-text">${c.tekst||''}</div></div>`;
-  }).join('');
+const el=document.getElementById('clist');
+if(!el)return;
+if(!contacts.length){el.innerHTML=`<div style="font-size:12px;color:var(--hint);margin-bottom:8px">Nog geen contactmomenten.</div>`;return}
+el.innerHTML=contacts.map((c,i)=>{
+const icon=c.type==='mail'?'Mail':c.type==='reactie'?'Reactie':c.type==='app'?'App':'Bel';
+const clr=c.type==='mail'?'color:var(--blue)':c.type==='reactie'?'color:var(--orange)':c.type==='app'?'color:#6b3fa0':'color:var(--accent)';
+return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" style="${clr}">${icon} ${i+1} &mdash; ${c.datum} ${c.tijd}</span><button onclick="deleteContact(${i})" style="margin-left:auto;background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px" title="Verwijder">✕</button></div><div class="clog-text">${c.tekst||''}</div></div>`;
+}).join('');
 }
 function deleteContact(i){
-  const d=deals.find(x=>x.id===editId);
-  if(!d||!d.contacts)return;
-  d.contacts.splice(i,1);
-  save();
-  renderClog(d.contacts);
+const d=deals.find(x=>x.id===editId);
+if(!d||!d.contacts)return;
+d.contacts.splice(i,1);
+save();
+renderClog(d.contacts);
 }
 function mailKlant(){
-  const d=deals.find(x=>x.id===editId);
-  if(!d||!d.email){alert('Geen e-mailadres bekend voor deze klant.');return}
-  const tekst=document.getElementById('fnc').value.trim();
-  if(!d.contacts)d.contacts=[];
-  const now=new Date();
-  d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:tekst||'Mail verstuurd'});
-  document.getElementById('fnc').value='';
-  save();renderClog(d.contacts);
-  window.location.href=`mailto:${d.email}?subject=Offerte ${d.offertenr||d.onderwerp||''}`;
+const d=deals.find(x=>x.id===editId);
+if(!d||!d.email){alert('Geen e-mailadres bekend voor deze klant.');return}
+const tekst=document.getElementById('fnc').value.trim();
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:tekst||'Mail verstuurd'});
+document.getElementById('fnc').value='';
+save();renderClog(d.contacts);
+window.location.href=`mailto:${d.email}?subject=Offerte ${d.offertenr||d.onderwerp||''}`;
 }
 function openContactFromModal(){
-  // Save current form data first
-  const k=document.getElementById('fk').value.trim();
-  if(!k){alert('Vul een naam in.');return}
-  const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),notitie:document.getElementById('fn').value.trim()};
-  if(editId){Object.assign(deals.find(x=>x.id===editId),obj)}
-  else{const id=Date.now().toString();deals.push({id,...obj,contacts:[]});editId=id;}
-  save();
-  document.getElementById('mo').classList.remove('open');
-  showContactPopup(editId);
+// Save current form data first
+const k=document.getElementById('fk').value.trim();
+if(!k){alert('Vul een naam in.');return}
+const obj={klant:k,datum:document.getElementById('fd').value||td(),bedrag:document.getElementById('fb').value,onderwerp:document.getElementById('fs').value.trim(),offertenr:document.getElementById('fon').value.trim(),aanvraagnr:document.getElementById('fan').value.trim(),status:document.getElementById('fst').value,email:document.getElementById('fe').value.trim(),telefoon:document.getElementById('ftel').value.trim(),notitie:document.getElementById('fn').value.trim()};
+if(editId){Object.assign(deals.find(x=>x.id===editId),obj)}
+else{const id=Date.now().toString();deals.push({id,...obj,contacts:[]});editId=id;}
+save();
+document.getElementById('mo').classList.remove('open');
+showContactPopup(editId);
 }
 function addContact(){
-  const tekst=document.getElementById('fnc').value.trim();
-  const d=deals.find(x=>x.id===editId);
-  if(!d)return;
-  if(!d.contacts)d.contacts=[];
-  const now=new Date();
-  d.contacts.push({type:'bel',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
-  document.getElementById('fnc').value='';
-  save();renderClog(d.contacts);
+const tekst=document.getElementById('fnc').value.trim();
+const d=deals.find(x=>x.id===editId);
+if(!d)return;
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+d.contacts.push({type:'bel',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
+document.getElementById('fnc').value='';
+save();renderClog(d.contacts);
 }
-
 function show(v){
-  view=v;
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['dash','pipe','alle','analyse'][i]===v));
-  render();
+view=v;
+document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['dash','pipe','alle','analyse'][i]===v));
+render();
 }
 function render(){
-  updateBadge();
-  const m=document.getElementById('main');
-  if(view==='dash')m.innerHTML=rDash();
-  else if(view==='pipe')m.innerHTML=rPipe();
-  else if(view==='alle')m.innerHTML=rAlle();
-  else if(view==='analyse'){m.innerHTML=rAnalyse();}
+updateBadge();
+const m=document.getElementById('main');
+if(view==='dash')m.innerHTML=rDash();
+else if(view==='pipe')m.innerHTML=rPipe();
+else if(view==='alle')m.innerHTML=rAlle();
+else if(view==='analyse'){m.innerHTML=rAnalyse();}
 }
 function updateBadge(){
-  const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;
-  const b=document.getElementById('badge');
-  b.textContent=n;b.style.display=n?'inline':'none';
+const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;
+const b=document.getElementById('badge');
+b.textContent=n;b.style.display=n?'inline':'none';
 }
-
 function dzHtml(){
-  return`<div class="dropzone" id="dz"
-    ondragover="event.preventDefault();this.classList.add('over')"
-    ondragleave="this.classList.remove('over')"
-    ondrop="handleDrop(event)"
-    onclick="document.getElementById('fi').click()">
-    <div class="dz-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
-    <div>
-      <div class="dz-title">Sleep de webshop XML hiernaartoe</div>
-      <div class="dz-sub">Alle klantgegevens worden automatisch ingelezen · of klik om te bladeren</div>
-    </div>
-    <input id="fi" type="file" accept=".xml" style="display:none" onchange="handleFile(this)">
-  </div>`;
+return`<div class="dropzone" id="dz"
+ondragover="event.preventDefault();this.classList.add('over')"
+ondragleave="this.classList.remove('over')"
+ondrop="handleDrop(event)"
+onclick="document.getElementById('fi').click()">
+<div class="dz-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+<div>
+<div class="dz-title">Sleep de webshop XML hiernaartoe</div>
+<div class="dz-sub">Alle klantgegevens worden automatisch ingelezen · of klik om te bladeren</div>
+</div>
+<input id="fi" type="file" accept=".xml" style="display:none" onchange="handleFile(this)">
+</div>`;
 }
-
 function groet(){
-  const u=new Date().getHours();
-  if(u<12)return'Goedemorgen';
-  if(u<18)return'Goedemiddag';
-  return'Goedenavond';
+const u=new Date().getHours();
+if(u<12)return'Goedemorgen';
+if(u<18)return'Goedemiddag';
+return'Goedenavond';
 }
 function rDash(){
-  const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
-  const won=deals.filter(d=>d.status==='gewonnen');
-  const laat=deals.filter(d=>urg(d)==='urg');
-  const bk=deals.filter(d=>urg(d)==='soon');
-  const conv=deals.length?Math.round(won.length/deals.length*100):0;
-  const openVal=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
-  
-  // Actieve filter state
-  const f=window.__dashFilter||'alle';
-  
-  function sortVal(d){
-    if(!d.nextContact)return 99999;
-    return Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
-  }
-  
-  // Nieuwe mails = leads die in laatste 24u een reactie contact hebben
-  const gisteren=new Date(Date.now()-86400000*7); // 7 dagen terug
-  const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
-  function parseDatum(s){
-    if(!s)return new Date(0);
-    if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);
-    const m=s.match(/^(\d+)\s+(\w+)(?:\s+(\d{4}))?$/);
-    if(m){const mnd=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mnd!==undefined?mnd:0),parseInt(m[1]));}
-    return new Date(s);
-  }
-  function heeftNieuweReactie(d){
-    const contacts=d.contacts||[];
-    if(!contacts.length)return false;
-    const laatste=contacts[contacts.length-1];
-    return laatste.type==='reactie'&&parseDatum(laatste.datum)>gisteren;
-  }
-  function heeftNieuweContact(d){
-    return (d.contacts||[]).some(c=>parseDatum(c.datum)>gisteren);
-  }
-  
-  const actie=open.filter(d=>urg(d)==='urg'||urg(d)==='soon').sort((a,b)=>sortVal(a)-sortVal(b));
-  const metReactie=open.filter(d=>heeftNieuweReactie(d));
-  const nieuweMails=open.filter(d=>heeftNieuweContact(d)&&!heeftNieuweReactie(d));
-  const rest=open.filter(d=>urg(d)==='ok').sort((a,b)=>sortVal(a)-sortVal(b));
-  const geenDatum=open.filter(d=>d.status!=='nieuw'&&!d.nextContact);
-  const nieuweLeads=open.filter(d=>d.status==='nieuw').sort((a,b)=>new Date(a.datum)-new Date(b.datum));
-  
-  // Filter toepassen
-  let gefilterd=null;
-  let filterTitel='';
-  if(f==='bellen'){gefilterd=actie;filterTitel='Vandaag bellen / opvolgen';}
-  else if(f==='reactie'){gefilterd=metReactie;filterTitel='Reactie ontvangen';}
-  else if(f==='offerte'){gefilterd=open.filter(d=>d.status==='offerte');filterTitel='Offerte verstuurd';}
-  else if(f==='nieuw'){gefilterd=nieuweLeads;filterTitel='Nieuwe leads';}
-  
-  // Dagstart advies
-  const dagAdvies=[];
-  if(laat.length)dagAdvies.push(`<span style="color:var(--red);font-weight:600">${laat.length} te laat</span> — pak vandaag de telefoon`);
-  if(metReactie.length)dagAdvies.push(`<span style="color:var(--accent);font-weight:600">${metReactie.length} reactie${metReactie.length>1?'s':''}</span> ontvangen — direct opvolgen`);
-  if(bk.length&&!laat.length)dagAdvies.push(`<span style="color:var(--orange);font-weight:600">${bk.length} lead${bk.length>1?'s':''}</span> binnenkort opvolgen`);
-  if(!dagAdvies.length)dagAdvies.push('<span style="color:var(--green);font-weight:600">Alles op schema</span> — geen urgente acties');
-  
-  const filterBtns=[
-    {k:'alle',l:'Alle leads',n:open.length},
-    {k:'bellen',l:'📞 Bellen nu',n:actie.length,clr:actie.length?'var(--red)':''},
-    {k:'reactie',l:'📩 Reactie ontvangen',n:metReactie.length,clr:metReactie.length?'var(--accent)':''},
-    {k:'offerte',l:'📄 Offerte verstuurd',n:open.filter(d=>d.status==='offerte').length},
-    {k:'nieuw',l:'🆕 Nieuwe leads',n:nieuweLeads.length},
-  ].map(b=>`<button onclick="window.__dashFilter='${b.k}';render()" style="padding:8px 14px;border-radius:8px;font-size:12px;font-family:var(--mono);cursor:pointer;border:1.5px solid ${f===b.k?'var(--accent)':'var(--border)'};background:${f===b.k?'var(--accent-bg)':'var(--white)'};color:${b.clr||(f===b.k?'var(--accent)':'var(--muted)')};font-weight:${f===b.k?'600':'400'};white-space:nowrap">
-    ${b.l}${b.n?` <span style="background:${f===b.k?'var(--accent)':'var(--border2)'};color:${f===b.k?'#fff':'var(--text)'};padding:1px 6px;border-radius:10px;font-size:10px;margin-left:4px">${b.n}</span>`:''}
-  </button>`).join('');
-
-  // Reactie banner items
-  const reactieBanner=metReactie.map(d=>{
-    const laatste=(d.contacts||[]).slice(-1)[0];
-    return`<div onclick="openEdit('${d.id}')" style="background:#fff;border:2px solid var(--accent);border-radius:10px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
-      <div style="font-size:24px">📩</div>
-      <div style="flex:1">
-        <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-          <span style="font-weight:700;font-size:14px;color:var(--text)">${d.klant}</span>
-          ${d.aiVoorstel?`<span style="background:#eef3ff;color:#3b5bdb;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid #d3ddfa">🤖 antwoord klaar</span>`:''}
-          ${d.telefoon?`<a href="tel:${d.telefoon}" onclick="event.stopPropagation()" style="background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:6px;text-decoration:none">📞 ${d.telefoon}</a>`:'<span style="font-size:12px;color:var(--hint)">Geen telefoon bekend</span>'}
-          <span style="font-size:11px;color:var(--hint);font-family:var(--mono)">${laatste?.datum||''} ${laatste?.tijd||''}</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted)">${(laatste?.tekst||'').slice(0,100)}${(laatste?.tekst||'').length>100?'…':''}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  return`${dzHtml()}
-  ${metReactie.length?`
-  <div style="margin-bottom:20px">
-    <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--red);font-weight:600;margin-bottom:8px">⚡ Klant heeft gereageerd — direct opvolgen</div>
-    <div style="display:flex;flex-direction:column;gap:8px">${reactieBanner}</div>
-  </div>`:''}
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
-    <div>
-      <div class="ph-title">${groet()} Frank <em>— ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</em></div>
-      <div style="font-size:13px;color:var(--muted);margin-top:6px">${dagAdvies.join(' · ')}</div>
-    </div>
-    <button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>
-  </div>
-  ${(function(){
-    const afgesloten=deals.filter(d=>d.status==='gewonnen'||d.status==='verloren');
-    const zonderReden=afgesloten.filter(d=>!d.reden);
-    if(zonderReden.length===0)return'';
-    return`<div onclick="show('analyse')" style="cursor:pointer;background:#fff8e6;border:1px solid #f0dca0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#8a6a1a;display:flex;align-items:center;gap:8px">
-      💡 <span><strong>${zonderReden.length} afgesloten deal${zonderReden.length===1?'':'s'}</strong> nog zonder reden getagd — dit voedt de score-voorspelling. Klik hier om ze aan te vullen op de Analyse-pagina.</span>
-    </div>`;
-  })()}
-  
-  <div class="kpis">
-    <div class="kpi" onclick="window.__dashFilter='bellen';render()" style="cursor:pointer">
-      <div class="kpi-l">Actie vereist</div>
-      <div class="kpi-n red">${laat.length+bk.length}</div>
-      <div class="kpi-s">${laat.length} te laat · ${bk.length} binnenkort</div>
-    </div>
-    <div class="kpi" onclick="window.__dashFilter='reactie';render()" style="cursor:pointer">
-      <div class="kpi-l">Reactie ontvangen</div>
-      <div class="kpi-n ${metReactie.length?'acc':''}">${metReactie.length}</div>
-      <div class="kpi-s">Laatste 48 uur</div>
-    </div>
-    <div class="kpi" onclick="window.__dashFilter='alle';render()" style="cursor:pointer">
-      <div class="kpi-l">Open pipeline</div>
-      <div class="kpi-n">${open.length}</div>
-      <div class="kpi-s">${fmt(openVal)} open waarde</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-l">Gewonnen</div>
-      <div class="kpi-n green">${won.length}</div>
-      <div class="kpi-s">${conv}% conversie</div>
-    </div>
-  </div>
-  
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${filterBtns}</div>
-  
-  ${gefilterd!==null?`
-    <div class="sh"><div class="sl">${filterTitel}</div><div class="sline"></div><div class="sn">${gefilterd.length}</div></div>
-    ${gefilterd.length?tbl(gefilterd):'<div class="empty">Geen leads in deze categorie.</div>'}
-  `:`
-    ${actie.length?`
-      <div class="sh"><div class="sl">🔴 Nu opvolgen</div><div class="sline"></div><div class="sn">${actie.length}</div></div>
-      ${tbl(actie)}
-    `:''}
-    ${metReactie.length?`
-      <div class="sh"><div class="sl">📩 Reactie ontvangen</div><div class="sline"></div><div class="sn">${metReactie.length}</div></div>
-      ${tbl(metReactie)}
-    `:''}
-    ${geenDatum.length?`
-      <div class="sh"><div class="sl">⚠ Geen follow-up datum</div><div class="sline"></div><div class="sn">${geenDatum.length}</div></div>
-      ${tbl(geenDatum)}
-    `:''}
-    ${nieuweLeads.length?`
-      <div class="sh"><div class="sl">🆕 Nieuwe leads</div><div class="sline"></div><div class="sn">${nieuweLeads.length}</div></div>
-      ${tbl(nieuweLeads)}
-    `:''}
-    ${rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)).length?`
-      <div class="sh"><div class="sl">Ingepland</div><div class="sline"></div><div class="sn">${rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)).length}</div></div>
-      ${tbl(rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)))}
-    `:''}
-    ${open.length===0?'<div class="empty">Geen open leads — sleep een XML bestand of voeg handmatig toe.</div>':''}
-  `}`;
+const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
+const won=deals.filter(d=>d.status==='gewonnen');
+const laat=deals.filter(d=>urg(d)==='urg');
+const bk=deals.filter(d=>urg(d)==='soon');
+const conv=deals.length?Math.round(won.length/deals.length*100):0;
+const openVal=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+// Actieve filter state
+const f=window.__dashFilter||'alle';
+function sortVal(d){
+if(!d.nextContact)return 99999;
+return Math.ceil((new Date(d.nextContact)-Date.now())/86400000);
 }
-
+// Nieuwe mails = leads die in laatste 24u een reactie contact hebben
+const gisteren=new Date(Date.now()-86400000*7); // 7 dagen terug
+const maanden={'jan':0,'feb':1,'mrt':2,'apr':3,'mei':4,'jun':5,'jul':6,'aug':7,'sep':8,'okt':9,'nov':10,'dec':11};
+function parseDatum(s){
+if(!s)return new Date(0);
+if(s.match(/^\d{4}-\d{2}-\d{2}$/))return new Date(s);
+const m=s.match(/^(\d+)\s+(\w+)(?:\s+(\d{4}))?$/);
+if(m){const mnd=maanden[m[2].toLowerCase()];return new Date(new Date().getFullYear(),(mnd!==undefined?mnd:0),parseInt(m[1]));}
+return new Date(s);
+}
+function heeftNieuweReactie(d){
+const contacts=d.contacts||[];
+if(!contacts.length)return false;
+const laatste=contacts[contacts.length-1];
+return laatste.type==='reactie'&&parseDatum(laatste.datum)>gisteren;
+}
+function heeftNieuweContact(d){
+return (d.contacts||[]).some(c=>parseDatum(c.datum)>gisteren);
+}
+const actie=open.filter(d=>urg(d)==='urg'||urg(d)==='soon').sort((a,b)=>sortVal(a)-sortVal(b));
+const metReactie=open.filter(d=>heeftNieuweReactie(d));
+const nieuweMails=open.filter(d=>heeftNieuweContact(d)&&!heeftNieuweReactie(d));
+const rest=open.filter(d=>urg(d)==='ok').sort((a,b)=>sortVal(a)-sortVal(b));
+const geenDatum=open.filter(d=>d.status!=='nieuw'&&!d.nextContact);
+const nieuweLeads=open.filter(d=>d.status==='nieuw').sort((a,b)=>new Date(a.datum)-new Date(b.datum));
+// Filter toepassen
+let gefilterd=null;
+let filterTitel='';
+if(f==='bellen'){gefilterd=actie;filterTitel='Vandaag bellen / opvolgen';}
+else if(f==='reactie'){gefilterd=metReactie;filterTitel='Reactie ontvangen';}
+else if(f==='offerte'){gefilterd=open.filter(d=>d.status==='offerte');filterTitel='Offerte verstuurd';}
+else if(f==='nieuw'){gefilterd=nieuweLeads;filterTitel='Nieuwe leads';}
+// Dagstart advies
+const dagAdvies=[];
+if(laat.length)dagAdvies.push(`<span style="color:var(--red);font-weight:600">${laat.length} te laat</span> — pak vandaag de telefoon`);
+if(metReactie.length)dagAdvies.push(`<span style="color:var(--accent);font-weight:600">${metReactie.length} reactie${metReactie.length>1?'s':''}</span> ontvangen — direct opvolgen`);
+if(bk.length&&!laat.length)dagAdvies.push(`<span style="color:var(--orange);font-weight:600">${bk.length} lead${bk.length>1?'s':''}</span> binnenkort opvolgen`);
+if(!dagAdvies.length)dagAdvies.push('<span style="color:var(--green);font-weight:600">Alles op schema</span> — geen urgente acties');
+const filterBtns=[
+{k:'alle',l:'Alle leads',n:open.length},
+{k:'bellen',l:'📞 Bellen nu',n:actie.length,clr:actie.length?'var(--red)':''},
+{k:'reactie',l:'📩 Reactie ontvangen',n:metReactie.length,clr:metReactie.length?'var(--accent)':''},
+{k:'offerte',l:'📄 Offerte verstuurd',n:open.filter(d=>d.status==='offerte').length},
+{k:'nieuw',l:'🆕 Nieuwe leads',n:nieuweLeads.length},
+].map(b=>`<button onclick="window.__dashFilter='${b.k}';render()" style="padding:8px 14px;border-radius:8px;font-size:12px;font-family:var(--mono);cursor:pointer;border:1.5px solid ${f===b.k?'var(--accent)':'var(--border)'};background:${f===b.k?'var(--accent-bg)':'var(--white)'};color:${b.clr||(f===b.k?'var(--accent)':'var(--muted)')};font-weight:${f===b.k?'600':'400'};white-space:nowrap">
+${b.l}${b.n?` <span style="background:${f===b.k?'var(--accent)':'var(--border2)'};color:${f===b.k?'#fff':'var(--text)'};padding:1px 6px;border-radius:10px;font-size:10px;margin-left:4px">${b.n}</span>`:''}
+</button>`).join('');
+// Reactie banner items
+const reactieBanner=metReactie.map(d=>{
+const laatste=(d.contacts||[]).slice(-1)[0];
+return`<div onclick="openEdit('${d.id}')" style="background:#fff;border:2px solid var(--accent);border-radius:10px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+<div style="font-size:24px">📩</div>
+<div style="flex:1">
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+<span style="font-weight:700;font-size:14px;color:var(--text)">${d.klant}</span>
+${d.aiVoorstel?`<span style="background:#eef3ff;color:#3b5bdb;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid #d3ddfa">🤖 antwoord klaar</span>`:''}
+${d.telefoon?`<a href="tel:${d.telefoon}" onclick="event.stopPropagation()" style="background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:6px;text-decoration:none">📞 ${d.telefoon}</a>`:'<span style="font-size:12px;color:var(--hint)">Geen telefoon bekend</span>'}
+<span style="font-size:11px;color:var(--hint);font-family:var(--mono)">${laatste?.datum||''} ${laatste?.tijd||''}</span>
+</div>
+<div style="font-size:12px;color:var(--muted)">${(laatste?.tekst||'').slice(0,100)}${(laatste?.tekst||'').length>100?'…':''}</div>
+</div>
+</div>`;
+}).join('');
+return`${dzHtml()}
+${metReactie.length?`
+<div style="margin-bottom:20px">
+<div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--red);font-weight:600;margin-bottom:8px">⚡ Klant heeft gereageerd — direct opvolgen</div>
+<div style="display:flex;flex-direction:column;gap:8px">${reactieBanner}</div>
+</div>`:''}
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+<div>
+<div class="ph-title">${groet()} Frank <em>— ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'})}</em></div>
+<div style="font-size:13px;color:var(--muted);margin-top:6px">${dagAdvies.join(' · ')}</div>
+</div>
+<button class="btn btn-p" onclick="openNew({})">+ Lead toevoegen</button>
+</div>
+${(function(){
+const afgesloten=deals.filter(d=>d.status==='gewonnen'||d.status==='verloren');
+const zonderReden=afgesloten.filter(d=>!d.reden);
+if(zonderReden.length===0)return'';
+return`<div onclick="show('analyse')" style="cursor:pointer;background:#fff8e6;border:1px solid #f0dca0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#8a6a1a;display:flex;align-items:center;gap:8px">
+💡 <span><strong>${zonderReden.length} afgesloten deal${zonderReden.length===1?'':'s'}</strong> nog zonder reden getagd — dit voedt de score-voorspelling. Klik hier om ze aan te vullen op de Analyse-pagina.</span>
+</div>`;
+})()}
+<div class="kpis">
+<div class="kpi" onclick="window.__dashFilter='bellen';render()" style="cursor:pointer">
+<div class="kpi-l">Actie vereist</div>
+<div class="kpi-n red">${laat.length+bk.length}</div>
+<div class="kpi-s">${laat.length} te laat · ${bk.length} binnenkort</div>
+</div>
+<div class="kpi" onclick="window.__dashFilter='reactie';render()" style="cursor:pointer">
+<div class="kpi-l">Reactie ontvangen</div>
+<div class="kpi-n ${metReactie.length?'acc':''}">${metReactie.length}</div>
+<div class="kpi-s">Laatste 48 uur</div>
+</div>
+<div class="kpi" onclick="window.__dashFilter='alle';render()" style="cursor:pointer">
+<div class="kpi-l">Open pipeline</div>
+<div class="kpi-n">${open.length}</div>
+<div class="kpi-s">${fmt(openVal)} open waarde</div>
+</div>
+<div class="kpi">
+<div class="kpi-l">Gewonnen</div>
+<div class="kpi-n green">${won.length}</div>
+<div class="kpi-s">${conv}% conversie</div>
+</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${filterBtns}</div>
+${gefilterd!==null?`
+<div class="sh"><div class="sl">${filterTitel}</div><div class="sline"></div><div class="sn">${gefilterd.length}</div></div>
+${gefilterd.length?tbl(gefilterd):'<div class="empty">Geen leads in deze categorie.</div>'}
+`:`
+${actie.length?`
+<div class="sh"><div class="sl">🔴 Nu opvolgen</div><div class="sline"></div><div class="sn">${actie.length}</div></div>
+${tbl(actie)}
+`:''}
+${metReactie.length?`
+<div class="sh"><div class="sl">📩 Reactie ontvangen</div><div class="sline"></div><div class="sn">${metReactie.length}</div></div>
+${tbl(metReactie)}
+`:''}
+${geenDatum.length?`
+<div class="sh"><div class="sl">⚠ Geen follow-up datum</div><div class="sline"></div><div class="sn">${geenDatum.length}</div></div>
+${tbl(geenDatum)}
+`:''}
+${nieuweLeads.length?`
+<div class="sh"><div class="sl">🆕 Nieuwe leads</div><div class="sline"></div><div class="sn">${nieuweLeads.length}</div></div>
+${tbl(nieuweLeads)}
+`:''}
+${rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)).length?`
+<div class="sh"><div class="sl">Ingepland</div><div class="sline"></div><div class="sn">${rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)).length}</div></div>
+${tbl(rest.filter(d=>!metReactie.includes(d)&&!geenDatum.includes(d)))}
+`:''}
+${open.length===0?'<div class="empty">Geen open leads — sleep een XML bestand of voeg handmatig toe.</div>':''}
+`}`;
+}
 function tbl(rows){
-  if(!rows.length)return'';
-  const trs=rows.map(d=>{
-    const u=urg(d),cls=u==='urg'?'urg':u==='soon'?'soon':'ok';
-    const utag=u==='urg'?`<span class="ul">● Te laat</span>`:u==='soon'?`<span class="us">● Binnenkort</span>`:`<span class="uo">${da(d.datum)}d</span>`;
-    const calls=d.contacts?.length||0;
-    const lastContact=calls?d.contacts[calls-1]:null;
-    const lastTag=lastContact
-      ?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'…':''}</div>`
-      :`<span class="ch">—</span>`;
-    const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
-      ${d.status==='nieuw'?`<button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
-      ${d.status==='contact'?`<button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''} 
-      <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
-      <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
-      <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
-      <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
-      <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
-    </div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
-    return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
-      <td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
-      <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
-      <td><span class="cm">${fmt(d.bedrag)}</span></td>
-      <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
-      <td>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="width:36px;height:5px;background:#f0ede6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,getScore(d))}%;background:${getScore(d)>=70?'#1a5c3a':getScore(d)>=40?'#b8590a':'#c0392b'};border-radius:3px"></div></div>
-          <span class="cm" style="font-size:12px;color:${getScore(d)>=70?'var(--green)':getScore(d)>=40?'var(--orange)':'var(--red)'}">${getScore(d)}%</span>
-        </div>
-        ${(function(){var a=getAdvies(d);return a?`<div style="font-size:10px;color:${a.kleur};font-weight:700;margin-top:2px;max-width:110px" title="${a.uitleg.replace(/"/g,'&quot;')}">${a.label}</div>`:'';})()}
-      </td>
-      <td>
-        ${d.nextContact?`<div class="ch" style="color:var(--text);font-weight:600">${fd(d.nextContact)}</div><div class="ch">opvolgen</div>`:`<div class="ch">${fd(d.datum)}</div><div class="ch">binnenkomst</div>`}
-      </td>
-      <td>${utag}</td>
-      <td>${lastTag}</td>
-      <td><div class="ch">${ns(d)}</div>${calls?`<div class="ch">${calls}× contact</div>`:''}</td>
-      <td>${act}</td>
-    </tr>`;
-  }).join('');
-  return`<table class="t"><thead><tr><th>Klant</th><th>Offertenr.</th><th>Bedrag</th><th>Status</th><th>Score</th><th>Opvolgen / datum</th><th>Urgentie</th><th>Laatste contact</th><th>Acties</th></tr></thead><tbody>${trs}</tbody></table>`;
+if(!rows.length)return'';
+const trs=rows.map(d=>{
+const u=urg(d),cls=u==='urg'?'urg':u==='soon'?'soon':'ok';
+const utag=u==='urg'?`<span class="ul">● Te laat</span>`:u==='soon'?`<span class="us">● Binnenkort</span>`:`<span class="uo">${da(d.datum)}d</span>`;
+const calls=d.contacts?.length||0;
+const lastContact=calls?d.contacts[calls-1]:null;
+const lastTag=lastContact
+?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'…':''}</div>`
+:`<span class="ch">—</span>`;
+const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
+${d.status==='nieuw'?`<button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
+${d.status==='contact'?`<button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''}
+<button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
+<button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
+<button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
+<button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
+<button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
+</div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
+return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
+<td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
+<td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
+<td><span class="cm">${fmt(d.bedrag)}</span></td>
+<td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
+<td>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="width:36px;height:5px;background:#f0ede6;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,getScore(d))}%;background:${getScore(d)>=70?'#1a5c3a':getScore(d)>=40?'#b8590a':'#c0392b'};border-radius:3px"></div></div>
+<span class="cm" style="font-size:12px;color:${getScore(d)>=70?'var(--green)':getScore(d)>=40?'var(--orange)':'var(--red)'}">${getScore(d)}%</span>
+</div>
+${(function(){var a=getAdvies(d);return a?`<div style="font-size:10px;color:${a.kleur};font-weight:700;margin-top:2px;max-width:110px" title="${a.uitleg.replace(/"/g,'&quot;')}">${a.label}</div>`:'';})()}
+</td>
+<td>
+${d.nextContact?`<div class="ch" style="color:var(--text);font-weight:600">${fd(d.nextContact)}</div><div class="ch">opvolgen</div>`:`<div class="ch">${fd(d.datum)}</div><div class="ch">binnenkomst</div>`}
+</td>
+<td>${utag}</td>
+<td>${lastTag}</td>
+<td><div class="ch">${ns(d)}</div>${calls?`<div class="ch">${calls}× contact</div>`:''}</td>
+<td>${act}</td>
+</tr>`;
+}).join('');
+return`<table class="t"><thead><tr><th>Klant</th><th>Offertenr.</th><th>Bedrag</th><th>Status</th><th>Score</th><th>Opvolgen / datum</th><th>Urgentie</th><th>Laatste contact</th><th>Acties</th></tr></thead><tbody>${trs}</tbody></table>`;
 }
-
 function rPipe(){
-  // Build pipeline groups based on contact log, not status field
-  function pipeGroup(d){
-    if(d.status==='nieuw')return'nieuw';
-    if(d.status==='contact')return'contact';
-    if(d.status==='dealer')return'dealer';
-    if(d.status==='gewonnen')return'gewonnen';
-    if(d.status==='verloren')return'verloren';
-    if(d.status==='deadend')return'deadend';
-    // offerte - split by contact log
-    var contacts=d.contacts||[];
-    var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
-    var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
-    if(contacts.length===0)return'offerte';
-    if(klant_replies>0&&outbound>klant_replies)return'gesprek';
-    if(klant_replies>0)return'gesprek';
-    if(outbound>=2)return'fu2';
-    return'fu1';
-  }
-  const stages=[
-    {k:'nieuw',l:'Nieuwe lead',c:'#1a3a6c'},
-    {k:'contact',l:'Contact gelegd',c:'#6b3fa0'},
-    {k:'dealer',l:'Naar dealer',c:'#1a6090'},
-    {k:'offerte',l:'Offerte verstuurd',c:'#1a5c3a'},
-    {k:'followup',l:'Follow-up',c:'#b8590a'},
-    {k:'gesprek',l:'In gesprek',c:'#2980b9'},
-    {k:'gewonnen',l:'Gewonnen',c:'#27ae60'},
-    {k:'verloren',l:'Verloren',c:'#999'},
-    {k:'deadend',l:'Dead end',c:'#c8c8c0'}
-  ];
-  const cols=stages.map(s=>{
-    const items=deals.filter(d=>{
-      var g=pipeGroup(d);
-      if(s.k==='followup')return g==='fu1'||g==='fu2';
-      return g===s.k;
-    });
-    const cards=items.length?items.map(d=>{const u=urg(d),dc=u==='urg'?'var(--red)':u==='soon'?'var(--orange)':'var(--hint)';var ds=getDisplayStatus(d);
-          var scoreVal=getScore(d);
-          var scoreClr=scoreVal>=70?'#1a5c3a':scoreVal>=40?'#b8590a':'#c0392b';
-          var html='<div class="pcard" onclick="openEdit(\''+d.id+'\')"><div class="pcn">'+d.klant+(d.telefoon?' <a href="tel:'+d.telefoon+'" onclick="event.stopPropagation()" title="Bel '+d.telefoon+'" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>':'')+'</div>';
-          if(d.bedrag)html+='<div class="pca">'+fmt(d.bedrag)+'</div>';
-          html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">';
-          html+='<span style="font-size:10px;color:#888">'+da(d.datum)+'d</span>';
-          html+='<span style="font-size:11px;font-weight:700;color:'+scoreClr+'">'+scoreVal+'%</span>';
-          html+='</div></div>';
-          return html;}).join(''):`<div style="font-size:11px;color:var(--hint);padding:4px 0">Leeg</div>`;
-    return`<div class="pcol"><div class="pch"><span style="color:${s.c}">${s.l}</span><span>${items.length}</span></div>${cards}</div>`;
-  }).join('');
-  return`<div class="ph"><div><div class="ph-title">Pipeline</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div><div class="pipe">${cols}</div>`;
+// Build pipeline groups based on contact log, not status field
+function pipeGroup(d){
+if(d.status==='nieuw')return'nieuw';
+if(d.status==='contact')return'contact';
+if(d.status==='dealer')return'dealer';
+if(d.status==='gewonnen')return'gewonnen';
+if(d.status==='verloren')return'verloren';
+if(d.status==='deadend')return'deadend';
+// offerte - split by contact log
+var contacts=d.contacts||[];
+var klant_replies=contacts.filter(function(cc){return cc.type==='reactie';}).length;
+var outbound=contacts.filter(function(cc){return cc.type!=='reactie';}).length;
+if(contacts.length===0)return'offerte';
+if(klant_replies>0&&outbound>klant_replies)return'gesprek';
+if(klant_replies>0)return'gesprek';
+if(outbound>=2)return'fu2';
+return'fu1';
 }
-
+const stages=[
+{k:'nieuw',l:'Nieuwe lead',c:'#1a3a6c'},
+{k:'contact',l:'Contact gelegd',c:'#6b3fa0'},
+{k:'dealer',l:'Naar dealer',c:'#1a6090'},
+{k:'offerte',l:'Offerte verstuurd',c:'#1a5c3a'},
+{k:'followup',l:'Follow-up',c:'#b8590a'},
+{k:'gesprek',l:'In gesprek',c:'#2980b9'},
+{k:'gewonnen',l:'Gewonnen',c:'#27ae60'},
+{k:'verloren',l:'Verloren',c:'#999'},
+{k:'deadend',l:'Dead end',c:'#c8c8c0'}
+];
+const cols=stages.map(s=>{
+const items=deals.filter(d=>{
+var g=pipeGroup(d);
+if(s.k==='followup')return g==='fu1'||g==='fu2';
+return g===s.k;
+});
+const cards=items.length?items.map(d=>{const u=urg(d),dc=u==='urg'?'var(--red)':u==='soon'?'var(--orange)':'var(--hint)';var ds=getDisplayStatus(d);
+var scoreVal=getScore(d);
+var scoreClr=scoreVal>=70?'#1a5c3a':scoreVal>=40?'#b8590a':'#c0392b';
+var html='<div class="pcard" onclick="openEdit(\''+d.id+'\')"><div class="pcn">'+d.klant+(d.telefoon?' <a href="tel:'+d.telefoon+'" onclick="event.stopPropagation()" title="Bel '+d.telefoon+'" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>':'')+'</div>';
+if(d.bedrag)html+='<div class="pca">'+fmt(d.bedrag)+'</div>';
+html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">';
+html+='<span style="font-size:10px;color:#888">'+da(d.datum)+'d</span>';
+html+='<span style="font-size:11px;font-weight:700;color:'+scoreClr+'">'+scoreVal+'%</span>';
+html+='</div></div>';
+return html;}).join(''):`<div style="font-size:11px;color:var(--hint);padding:4px 0">Leeg</div>`;
+return`<div class="pcol"><div class="pch"><span style="color:${s.c}">${s.l}</span><span>${items.length}</span></div>${cards}</div>`;
+}).join('');
+return`<div class="ph"><div><div class="ph-title">Pipeline</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div><div class="pipe">${cols}</div>`;
+}
 function rAlle(){
-  const sorted=[...deals].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
-  return`<div class="ph"><div><div class="ph-title">Alle leads</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${sorted.length?tbl(sorted):'<div class="empty">Nog geen leads.</div>'}`;
+const sorted=[...deals].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+return`<div class="ph"><div><div class="ph-title">Alle leads</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${sorted.length?tbl(sorted):'<div class="empty">Nog geen leads.</div>'}`;
 }
-
 function rAnalyse(){
-  const won=deals.filter(d=>d.status==='gewonnen');
-  const lost=deals.filter(d=>d.status==='verloren');
-  const dead=deals.filter(d=>d.status==='deadend');
-  const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
-  const all=deals.length;
-  const conv=all?Math.round(won.length/all*100):0;
-  const openWaarde=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
-  const wonWaarde=won.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
-  const gemContact=won.length?Math.round(won.reduce((s,d)=>s+(d.contacts?.length||0),0)/won.length*10)/10:0;
-  const fmtE=n=>n>=1000?'€'+Math.round(n/1000)+'K':'€'+Math.round(n);
-  const fmtFull=n=>'€'+Math.round(n).toLocaleString('nl-NL');
-
-  // Maanddata
-  const maanden={};
-  const nu=new Date();
-  for(let i=5;i>=0;i--){const d=new Date(nu.getFullYear(),nu.getMonth()-i,1);maanden[d.toISOString().slice(0,7)]={leads:0,won:0,waarde:0,wonWaarde:0};}
-  deals.forEach(d=>{const m=d.datum?.slice(0,7);if(m&&maanden[m]){maanden[m].leads++;maanden[m].waarde+=Number(d.bedrag)||0;if(d.status==='gewonnen'){maanden[m].won++;maanden[m].wonWaarde+=Number(d.bedrag)||0;}if(d.status==='deadend'){maanden[m].dead=(maanden[m].dead||0)+1;}}});
-  const mk=Object.keys(maanden).sort();
-  const ml=mk.map(m=>{const d=new Date(m+'-01');return d.toLocaleDateString('nl-NL',{month:'short'});});
-
-  // Herkomst land uit notitie (Adres: ..., Land) of email domein extensie
-  const landen={};
-  deals.forEach(d=>{
-    let land='Onbekend';
-    const adresMatch=d.notitie?.match(/Adres:.*?,\s*([A-Z]{2})$/im);
-    if(adresMatch)land=adresMatch[1];
-    else{
-      const emailMatch=d.email?.match(/\.([a-z]{2,3})$/);
-      if(emailMatch){
-        const ext=emailMatch[1].toUpperCase();
-        const map={NL:'Nederland',DE:'Duitsland',BE:'België',FR:'Frankrijk',GB:'VK',UK:'VK',COM:'Internationaal',NET:'Internationaal',ORG:'Internationaal',EU:'Europa',AT:'Oostenrijk',CH:'Zwitserland',ES:'Spanje',IT:'Italië',PL:'Polen',DK:'Denemarken',SE:'Zweden',NO:'Noorwegen'};
-        land=map[ext]||ext;
-      }
-    }
-    landen[land]=(landen[land]||0)+1;
-  });
-  const landenSorted=Object.entries(landen).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxLand=landenSorted[0]?.[1]||1;
-
-  // Contactmomenten vs conversie
-  // Groepeer deals op aantal contactmomenten (0,1,2,3,4,5+)
-  const contactGroups={0:{tot:0,won:0},1:{tot:0,won:0},2:{tot:0,won:0},3:{tot:0,won:0},4:{tot:0,won:0},'5+':{tot:0,won:0}};
-  [...won,...lost,...open.filter(d=>d.status!=='nieuw')].forEach(d=>{
-    const n=d.contacts?.length||0;
-    const key=n>=5?'5+':n.toString();
-    if(!contactGroups[key])contactGroups[key]={tot:0,won:0};
-    contactGroups[key].tot++;
-    if(d.status==='gewonnen')contactGroups[key].won++;
-  });
-  const cgKeys=Object.keys(contactGroups);
-  const cgLabels=cgKeys.map(k=>k==='0'?'0 contact':k==='1'?'1x':k+'x');
-  const cgConv=cgKeys.map(k=>contactGroups[k].tot?Math.round(contactGroups[k].won/contactGroups[k].tot*100):0);
-  const cgTot=cgKeys.map(k=>contactGroups[k].tot);
-
-  const offerteDeals=deals.filter(d=>d.status==='offerte');
-  const inGesprek=offerteDeals.filter(d=>(d.contacts||[]).some(cc=>cc.type==='reactie')).length;
-  const followUp=offerteDeals.filter(d=>{var c=d.contacts||[];return c.length>0&&!c.some(cc=>cc.type==='reactie');}).length;
-  const verstuurd=offerteDeals.length-inGesprek-followUp;
-  const statusCounts=[
-    {l:'Nieuwe lead',n:deals.filter(d=>d.status==='nieuw').length,c:'#1a3a6c'},
-    {l:'Offerte verstuurd',n:verstuurd,c:'#1a5c3a'},
-    {l:'Follow-up',n:followUp,c:'#b8590a'},
-    {l:'In gesprek',n:inGesprek,c:'#2980b9'},
-    {l:'Gewonnen',n:won.length,c:'#27ae60'},
-    {l:'Verloren',n:lost.length,c:'#bbb'},
-    {l:'Dead end',n:dead.length,c:'#c8c8c0'},
-  ];
-
-  const top5=open.filter(d=>d.bedrag).sort((a,b)=>Number(b.bedrag)-Number(a.bedrag)).slice(0,5);
-
-  setTimeout(()=>{
-    if(!window.Chart)return;
-    const c1=document.getElementById('ch1');
-    if(c1){new Chart(c1,{type:'bar',data:{labels:ml,datasets:[
-      {data:mk.map(m=>maanden[m].leads),backgroundColor:'#b8d4c2',borderRadius:5,label:'Leads'},
-      {data:mk.map(m=>maanden[m].won),backgroundColor:'#1a5c3a',borderRadius:5,label:'Gewonnen'}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,ticks:{stepSize:1,color:'#888'},grid:{color:'#f0ede6'}}}}});}
-
-    const c2=document.getElementById('ch2');
-    if(c2){new Chart(c2,{type:'line',data:{labels:ml,datasets:[
-      {data:mk.map(m=>maanden[m].waarde),borderColor:'#b8590a',backgroundColor:'rgba(184,89,10,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#b8590a',label:'Open'},
-      {data:mk.map(m=>maanden[m].wonWaarde),borderColor:'#1a5c3a',backgroundColor:'rgba(26,92,58,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#1a5c3a',label:'Gewonnen'}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{color:'#888',callback:v=>fmtE(v)}}}}});}
-
-    const c3=document.getElementById('ch3');
-    const tot=statusCounts.reduce((s,x)=>s+x.n,0)||1;
-    if(c3){new Chart(c3,{type:'doughnut',data:{labels:statusCounts.map(x=>x.l),datasets:[{data:statusCounts.map(x=>x.n),backgroundColor:statusCounts.map(x=>x.c),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});}
-
-    const c4=document.getElementById('ch4');
-    if(c4&&top5.length){new Chart(c4,{type:'bar',data:{labels:top5.map(d=>d.klant.split(' ')[0]),datasets:[{data:top5.map(d=>Number(d.bedrag)),backgroundColor:['#1a5c3a','#2e7d52','#3d9968','#52b37f','#6dcc98'],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{callback:v=>fmtE(v),color:'#888'}},y:{grid:{display:false},ticks:{color:'#333',font:{weight:'600'}}}}}});}
-
-
-  },150);
-
-  const card=(label,val,sub,clr,fk)=>{
-    return '<div onclick="showAnalyseDetail(\''+fk+'\')" style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:16px 20px;border-top:3px solid '+clr+';cursor:pointer;transition:box-shadow .15s;position:relative" onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,0.10)\'" onmouseout="this.style.boxShadow=\'none\'">'
-      +'<div style="font-size:11px;color:#888;font-family:monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+label+'</div>'
-      +'<div style="font-size:24px;font-weight:700;color:#111;letter-spacing:-.02em">'+val+'</div>'
-      +'<div style="font-size:12px;color:#888;margin-top:4px">'+sub+'</div>'
-      +'<div style="position:absolute;top:14px;right:14px;font-size:11px;color:#ccc">→</div>'
-      +'</div>';
-  };
-  const dot=(c,l)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${l}</span>`;
-  const cbox=(title,id,legend,h,extra)=>`<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-    <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:${legend?'6px':'14px'}">${title}</div>
-    ${legend?`<div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:#666">${legend}</div>`:''}
-    <div style="position:relative;height:${h}px"><canvas id="${id}"></canvas></div>
-    ${extra||''}
-  </div>`;
-
-  return`
-  <div style="margin-bottom:18px">
-    <div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em">Analyse <span style="color:#1a5c3a">— verkoopinzicht</span></div>
-    <div style="font-size:12px;color:#888;margin-top:2px">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px">
-    ${card('Open pipeline',fmtFull(openWaarde),open.length+' open leads','#1a5c3a','open')}
-    ${card('Gewonnen omzet',fmtFull(wonWaarde),won.length+' opdrachten','#27ae60','gewonnen')}
-    ${card('Conversie',conv+'%',all+' leads totaal','#1a3a6c','all')}
-    ${card('Gem. contactmomenten',gemContact+'x','per gewonnen deal','#b8590a','actie')}
-    ${card('Verloren',lost.length+' leads',fmtFull(lost.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#c0392b','verloren')}
-    ${card('Dead end',dead.length+' leads',fmtFull(dead.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#999','deadend')}
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    ${cbox('Leads per maand','ch1',dot('#b8d4c2','Leads')+dot('#1a5c3a','Gewonnen'),175)}
-    ${cbox('Waarde per maand','ch2',dot('#b8590a','Open')+dot('#1a5c3a','Gewonnen'),175)}
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Verdeling per fase</div>
-      <div style="position:relative;height:140px"><canvas id="ch3"></canvas></div>
-      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px">
-        ${statusCounts.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0">
-          <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:50%;background:${x.c};display:inline-block;flex-shrink:0"></span>${x.l}</span>
-          <span style="font-size:12px;font-weight:700;color:#111">${x.n}</span>
-        </div>`).join('')}
-      </div>
-    </div>
-
-    ${cbox('Top 5 grootste open','ch4','',top5.length?top5.length*36+40:120)}
-
-    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Herkomst (land)</div>
-      ${landenSorted.length?landenSorted.map(([land,n])=>`
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:600;color:#333">${land}</span>
-            <span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
-          </div>
-          <div style="height:7px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/maxLand*100)}%;background:#1a3a6c;border-radius:4px"></div></div>
-        </div>`).join(''):`<div style="font-size:12px;color:#aaa;padding:20px 0;text-align:center">Voeg email-adressen toe<br>om herkomst te zien</div>`}
-    </div>
-  </div>
-
-  ${(function(){
-    const rs=getRedenStats();
-    if(!rs.totWon&&!rs.totLost)return'';
-    const bar=(entries,tot,clr)=>entries.length?entries.map(([r,n])=>`
-      <div style="margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:12px;color:#333">${r}</span>
-          <span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
-        </div>
-        <div style="height:6px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/tot*100)}%;background:${clr};border-radius:4px"></div></div>
-      </div>`).join(''):'<div style="font-size:12px;color:#aaa;padding:10px 0">Nog geen redenen getagd</div>';
-    return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-      <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">🎉 Waarom gewonnen</div>
-        <div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totWon} van de ${won.length} gewonnen deals getagd</div>
-        ${bar(rs.won,rs.totWon||1,'#27ae60')}
-      </div>
-      <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
-        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">Waarom verloren</div>
-        <div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totLost} van de ${lost.length} verloren deals getagd</div>
-        ${bar(rs.lost,rs.totLost||1,'#c0392b')}
-      </div>
-    </div>`;
-  })()}
-
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-    <button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>
-  </div>`;
+const won=deals.filter(d=>d.status==='gewonnen');
+const lost=deals.filter(d=>d.status==='verloren');
+const dead=deals.filter(d=>d.status==='deadend');
+const open=deals.filter(d=>!['gewonnen','verloren','deadend'].includes(d.status));
+const all=deals.length;
+const conv=all?Math.round(won.length/all*100):0;
+const openWaarde=open.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+const wonWaarde=won.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+const gemContact=won.length?Math.round(won.reduce((s,d)=>s+(d.contacts?.length||0),0)/won.length*10)/10:0;
+const fmtE=n=>n>=1000?'€'+Math.round(n/1000)+'K':'€'+Math.round(n);
+const fmtFull=n=>'€'+Math.round(n).toLocaleString('nl-NL');
+// Maanddata
+const maanden={};
+const nu=new Date();
+for(let i=5;i>=0;i--){const d=new Date(nu.getFullYear(),nu.getMonth()-i,1);maanden[d.toISOString().slice(0,7)]={leads:0,won:0,waarde:0,wonWaarde:0};}
+deals.forEach(d=>{const m=d.datum?.slice(0,7);if(m&&maanden[m]){maanden[m].leads++;maanden[m].waarde+=Number(d.bedrag)||0;if(d.status==='gewonnen'){maanden[m].won++;maanden[m].wonWaarde+=Number(d.bedrag)||0;}if(d.status==='deadend'){maanden[m].dead=(maanden[m].dead||0)+1;}}});
+const mk=Object.keys(maanden).sort();
+const ml=mk.map(m=>{const d=new Date(m+'-01');return d.toLocaleDateString('nl-NL',{month:'short'});});
+// Herkomst land uit notitie (Adres: ..., Land) of email domein extensie
+const landen={};
+deals.forEach(d=>{
+let land='Onbekend';
+const adresMatch=d.notitie?.match(/Adres:.*?,\s*([A-Z]{2})$/im);
+if(adresMatch)land=adresMatch[1];
+else{
+const emailMatch=d.email?.match(/\.([a-z]{2,3})$/);
+if(emailMatch){
+const ext=emailMatch[1].toUpperCase();
+const map={NL:'Nederland',DE:'Duitsland',BE:'België',FR:'Frankrijk',GB:'VK',UK:'VK',COM:'Internationaal',NET:'Internationaal',ORG:'Internationaal',EU:'Europa',AT:'Oostenrijk',CH:'Zwitserland',ES:'Spanje',IT:'Italië',PL:'Polen',DK:'Denemarken',SE:'Zweden',NO:'Noorwegen'};
+land=map[ext]||ext;
 }
-
-
+}
+landen[land]=(landen[land]||0)+1;
+});
+const landenSorted=Object.entries(landen).sort((a,b)=>b[1]-a[1]).slice(0,8);
+const maxLand=landenSorted[0]?.[1]||1;
+// Contactmomenten vs conversie
+// Groepeer deals op aantal contactmomenten (0,1,2,3,4,5+)
+const contactGroups={0:{tot:0,won:0},1:{tot:0,won:0},2:{tot:0,won:0},3:{tot:0,won:0},4:{tot:0,won:0},'5+':{tot:0,won:0}};
+[...won,...lost,...open.filter(d=>d.status!=='nieuw')].forEach(d=>{
+const n=d.contacts?.length||0;
+const key=n>=5?'5+':n.toString();
+if(!contactGroups[key])contactGroups[key]={tot:0,won:0};
+contactGroups[key].tot++;
+if(d.status==='gewonnen')contactGroups[key].won++;
+});
+const cgKeys=Object.keys(contactGroups);
+const cgLabels=cgKeys.map(k=>k==='0'?'0 contact':k==='1'?'1x':k+'x');
+const cgConv=cgKeys.map(k=>contactGroups[k].tot?Math.round(contactGroups[k].won/contactGroups[k].tot*100):0);
+const cgTot=cgKeys.map(k=>contactGroups[k].tot);
+const offerteDeals=deals.filter(d=>d.status==='offerte');
+const inGesprek=offerteDeals.filter(d=>(d.contacts||[]).some(cc=>cc.type==='reactie')).length;
+const followUp=offerteDeals.filter(d=>{var c=d.contacts||[];return c.length>0&&!c.some(cc=>cc.type==='reactie');}).length;
+const verstuurd=offerteDeals.length-inGesprek-followUp;
+const statusCounts=[
+{l:'Nieuwe lead',n:deals.filter(d=>d.status==='nieuw').length,c:'#1a3a6c'},
+{l:'Offerte verstuurd',n:verstuurd,c:'#1a5c3a'},
+{l:'Follow-up',n:followUp,c:'#b8590a'},
+{l:'In gesprek',n:inGesprek,c:'#2980b9'},
+{l:'Gewonnen',n:won.length,c:'#27ae60'},
+{l:'Verloren',n:lost.length,c:'#bbb'},
+{l:'Dead end',n:dead.length,c:'#c8c8c0'},
+];
+const top5=open.filter(d=>d.bedrag).sort((a,b)=>Number(b.bedrag)-Number(a.bedrag)).slice(0,5);
+setTimeout(()=>{
+if(!window.Chart)return;
+const c1=document.getElementById('ch1');
+if(c1){new Chart(c1,{type:'bar',data:{labels:ml,datasets:[
+{data:mk.map(m=>maanden[m].leads),backgroundColor:'#b8d4c2',borderRadius:5,label:'Leads'},
+{data:mk.map(m=>maanden[m].won),backgroundColor:'#1a5c3a',borderRadius:5,label:'Gewonnen'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,ticks:{stepSize:1,color:'#888'},grid:{color:'#f0ede6'}}}}});}
+const c2=document.getElementById('ch2');
+if(c2){new Chart(c2,{type:'line',data:{labels:ml,datasets:[
+{data:mk.map(m=>maanden[m].waarde),borderColor:'#b8590a',backgroundColor:'rgba(184,89,10,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#b8590a',label:'Open'},
+{data:mk.map(m=>maanden[m].wonWaarde),borderColor:'#1a5c3a',backgroundColor:'rgba(26,92,58,0.07)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#1a5c3a',label:'Gewonnen'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{color:'#888',callback:v=>fmtE(v)}}}}});}
+const c3=document.getElementById('ch3');
+const tot=statusCounts.reduce((s,x)=>s+x.n,0)||1;
+if(c3){new Chart(c3,{type:'doughnut',data:{labels:statusCounts.map(x=>x.l),datasets:[{data:statusCounts.map(x=>x.n),backgroundColor:statusCounts.map(x=>x.c),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});}
+const c4=document.getElementById('ch4');
+if(c4&&top5.length){new Chart(c4,{type:'bar',data:{labels:top5.map(d=>d.klant.split(' ')[0]),datasets:[{data:top5.map(d=>Number(d.bedrag)),backgroundColor:['#1a5c3a','#2e7d52','#3d9968','#52b37f','#6dcc98'],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f0ede6'},ticks:{callback:v=>fmtE(v),color:'#888'}},y:{grid:{display:false},ticks:{color:'#333',font:{weight:'600'}}}}}});}
+},150);
+const card=(label,val,sub,clr,fk)=>{
+return '<div onclick="showAnalyseDetail(\''+fk+'\')" style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:16px 20px;border-top:3px solid '+clr+';cursor:pointer;transition:box-shadow .15s;position:relative" onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,0.10)\'" onmouseout="this.style.boxShadow=\'none\'">'
++'<div style="font-size:11px;color:#888;font-family:monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+label+'</div>'
++'<div style="font-size:24px;font-weight:700;color:#111;letter-spacing:-.02em">'+val+'</div>'
++'<div style="font-size:12px;color:#888;margin-top:4px">'+sub+'</div>'
++'<div style="position:absolute;top:14px;right:14px;font-size:11px;color:#ccc">→</div>'
++'</div>';
+};
+const dot=(c,l)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${l}</span>`;
+const cbox=(title,id,legend,h,extra)=>`<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:${legend?'6px':'14px'}">${title}</div>
+${legend?`<div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:#666">${legend}</div>`:''}
+<div style="position:relative;height:${h}px"><canvas id="${id}"></canvas></div>
+${extra||''}
+</div>`;
+return`
+<div style="margin-bottom:18px">
+<div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em">Analyse <span style="color:#1a5c3a">— verkoopinzicht</span></div>
+<div style="font-size:12px;color:#888;margin-top:2px">${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px">
+${card('Open pipeline',fmtFull(openWaarde),open.length+' open leads','#1a5c3a','open')}
+${card('Gewonnen omzet',fmtFull(wonWaarde),won.length+' opdrachten','#27ae60','gewonnen')}
+${card('Conversie',conv+'%',all+' leads totaal','#1a3a6c','all')}
+${card('Gem. contactmomenten',gemContact+'x','per gewonnen deal','#b8590a','actie')}
+${card('Verloren',lost.length+' leads',fmtFull(lost.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#c0392b','verloren')}
+${card('Dead end',dead.length+' leads',fmtFull(dead.reduce((s,d)=>s+(Number(d.bedrag)||0),0)),'#999','deadend')}
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+${cbox('Leads per maand','ch1',dot('#b8d4c2','Leads')+dot('#1a5c3a','Gewonnen'),175)}
+${cbox('Waarde per maand','ch2',dot('#b8590a','Open')+dot('#1a5c3a','Gewonnen'),175)}
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Verdeling per fase</div>
+<div style="position:relative;height:140px"><canvas id="ch3"></canvas></div>
+<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px">
+${statusCounts.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0">
+<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:50%;background:${x.c};display:inline-block;flex-shrink:0"></span>${x.l}</span>
+<span style="font-size:12px;font-weight:700;color:#111">${x.n}</span>
+</div>`).join('')}
+</div>
+</div>
+${cbox('Top 5 grootste open','ch4','',top5.length?top5.length*36+40:120)}
+<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:14px">Herkomst (land)</div>
+${landenSorted.length?landenSorted.map(([land,n])=>`
+<div style="margin-bottom:10px">
+<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+<span style="font-size:12px;font-weight:600;color:#333">${land}</span>
+<span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
+</div>
+<div style="height:7px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/maxLand*100)}%;background:#1a3a6c;border-radius:4px"></div></div>
+</div>`).join(''):`<div style="font-size:12px;color:#aaa;padding:20px 0;text-align:center">Voeg email-adressen toe<br>om herkomst te zien</div>`}
+</div>
+</div>
+${(function(){
+const rs=getRedenStats();
+if(!rs.totWon&&!rs.totLost)return'';
+const bar=(entries,tot,clr)=>entries.length?entries.map(([r,n])=>`
+<div style="margin-bottom:9px">
+<div style="display:flex;justify-content:space-between;margin-bottom:3px">
+<span style="font-size:12px;color:#333">${r}</span>
+<span style="font-size:12px;font-weight:700;color:#111;font-family:monospace">${n}</span>
+</div>
+<div style="height:6px;background:#f0ede6;border-radius:4px"><div style="height:100%;width:${Math.round(n/tot*100)}%;background:${clr};border-radius:4px"></div></div>
+</div>`).join(''):'<div style="font-size:12px;color:#aaa;padding:10px 0">Nog geen redenen getagd</div>';
+return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">🎉 Waarom gewonnen</div>
+<div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totWon} van de ${won.length} gewonnen deals getagd</div>
+${bar(rs.won,rs.totWon||1,'#27ae60')}
+</div>
+<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:18px">
+<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px">Waarom verloren</div>
+<div style="font-size:11px;color:#888;margin-bottom:12px">${rs.totLost} van de ${lost.length} verloren deals getagd</div>
+${bar(rs.lost,rs.totLost||1,'#c0392b')}
+</div>
+</div>`;
+})()}
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+<button class="btn btn-p" onclick="exportMaandoverzicht()" style="font-size:13px;padding:9px 18px">📊 Export maandoverzicht</button>
+</div>`;
+}
 
 function showAnalyseDetail(filterKey){
-  const filterMap={
-    open:{label:'Open leads',fn:d=>!['gewonnen','verloren','deadend'].includes(d.status)},
-    gewonnen:{label:'Gewonnen opdrachten',fn:d=>d.status==='gewonnen'},
-    verloren:{label:'Verloren leads',fn:d=>d.status==='verloren'},
-    deadend:{label:'Dead end leads',fn:d=>d.status==='deadend'},
-    all:{label:'Alle leads',fn:d=>true},
-    actie:{label:'Leads — actie vereist',fn:d=>['urg','soon'].includes(urg(d))}
-  };
-  const f=filterMap[filterKey]||{label:'Leads',fn:()=>true};
-  const lijst=[...deals].filter(f.fn).sort((a,b)=>new Date(b.datum)-new Date(a.datum));
-
-  const fmtD=d=>d?new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):'-';
-  const rows=lijst.map(d=>{
-    const sc=scoreForDisplay(d);
-    const scoreVal=sc?.score??'-';
-    const scoreClr=scoreVal>=60?'var(--green)':scoreVal>=30?'var(--orange)':'var(--red)';
-    const volgende=d.nextContact?fmtD(d.nextContact):'—';
-    const lastContact=d.contacts?.length?(d.contacts[d.contacts.length-1].datum?fmtD(d.contacts[d.contacts.length-1].datum):'-'):'-';
-    const lastNota=d.contacts?.length?d.contacts[d.contacts.length-1].nota?.slice(0,40):'';
-    const actie=ns(d);
-    const urgClr=urg(d)==='urg'?'var(--red)':urg(d)==='soon'?'var(--orange)':'var(--hint)';
-    const st=getDisplayStatus(d);
-    return`<tr style="border-bottom:1px solid #f0ede6;cursor:pointer" onclick="openEdit('${d.id}')" onmouseover="this.style.background='#fafaf7'" onmouseout="this.style.background=''">
-      <td style="padding:10px 12px">
-        <div style="font-weight:600;font-size:13px;color:#111">${d.klant||'-'}</div>
-        <div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">${d.aanvraagnr?'WS: '+d.aanvraagnr:d.offertenr||''}</div>
-      </td>
-      <td style="padding:10px 12px"><span class="pill ${st.pill}" style="font-size:10px">${st.label}</span></td>
-      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#333">${fmtD(d.datum)}</td>
-      <td style="padding:10px 12px;font-size:12px;color:#555">${lastContact}<div style="font-size:10px;color:#aaa;margin-top:1px">${lastNota}</div></td>
-      <td style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:${scoreClr}">${scoreVal}%</td>
-      <td style="padding:10px 12px;font-size:11px;color:${urgClr}">${actie}</td>
-      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:var(--accent)">${volgende}</td>
-      <td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#888">${d.bedrag?'€'+Number(d.bedrag).toLocaleString('nl-NL'):'-'}</td>
-    </tr>`;
-  }).join('');
-
-  const totWaarde=lijst.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
-
-  document.getElementById('main').innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <button class="btn" onclick="show('analyse')" style="font-size:13px">← Terug</button>
-      <div>
-        <div style="font-size:20px;font-weight:700;color:#111;letter-spacing:-.02em">Leads — <span style="color:var(--accent)">${f.label}</span></div>
-        <div style="font-size:12px;color:#888;margin-top:2px">${lijst.length} leads · ${totWaarde?'€'+Math.round(totWaarde).toLocaleString('nl-NL'):'-'}</div>
-      </div>
-    </div>
-    ${lijst.length?`
-    <div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;overflow:hidden">
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#f5f4f0;border-bottom:1px solid #e2e0d8">
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Klant</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Status</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Start</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Laatste contact</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Score</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Actie</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Follow-up</th>
-            <th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Bedrag</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`:`<div style="text-align:center;padding:60px;color:#aaa;font-size:14px">Geen leads gevonden in deze categorie.</div>`}
-  `;
+const filterMap={
+open:{label:'Open leads',fn:d=>!['gewonnen','verloren','deadend'].includes(d.status)},
+gewonnen:{label:'Gewonnen opdrachten',fn:d=>d.status==='gewonnen'},
+verloren:{label:'Verloren leads',fn:d=>d.status==='verloren'},
+deadend:{label:'Dead end leads',fn:d=>d.status==='deadend'},
+all:{label:'Alle leads',fn:d=>true},
+actie:{label:'Leads — actie vereist',fn:d=>['urg','soon'].includes(urg(d))}
+};
+const f=filterMap[filterKey]||{label:'Leads',fn:()=>true};
+const lijst=[...deals].filter(f.fn).sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+const fmtD=d=>d?new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):'-';
+const rows=lijst.map(d=>{
+const sc=scoreForDisplay(d);
+const scoreVal=sc?.score??'-';
+const scoreClr=scoreVal>=60?'var(--green)':scoreVal>=30?'var(--orange)':'var(--red)';
+const volgende=d.nextContact?fmtD(d.nextContact):'—';
+const lastContact=d.contacts?.length?(d.contacts[d.contacts.length-1].datum?fmtD(d.contacts[d.contacts.length-1].datum):'-'):'-';
+const lastNota=d.contacts?.length?d.contacts[d.contacts.length-1].nota?.slice(0,40):'';
+const actie=ns(d);
+const urgClr=urg(d)==='urg'?'var(--red)':urg(d)==='soon'?'var(--orange)':'var(--hint)';
+const st=getDisplayStatus(d);
+return`<tr style="border-bottom:1px solid #f0ede6;cursor:pointer" onclick="openEdit('${d.id}')" onmouseover="this.style.background='#fafaf7'" onmouseout="this.style.background=''">
+<td style="padding:10px 12px">
+<div style="font-weight:600;font-size:13px;color:#111">${d.klant||'-'}</div>
+<div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">${d.aanvraagnr?'WS: '+d.aanvraagnr:d.offertenr||''}</div>
+</td>
+<td style="padding:10px 12px"><span class="pill ${st.pill}" style="font-size:10px">${st.label}</span></td>
+<td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#333">${fmtD(d.datum)}</td>
+<td style="padding:10px 12px;font-size:12px;color:#555">${lastContact}<div style="font-size:10px;color:#aaa;margin-top:1px">${lastNota}</div></td>
+<td style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:${scoreClr}">${scoreVal}%</td>
+<td style="padding:10px 12px;font-size:11px;color:${urgClr}">${actie}</td>
+<td style="padding:10px 12px;font-family:monospace;font-size:12px;color:var(--accent)">${volgende}</td>
+<td style="padding:10px 12px;font-family:monospace;font-size:12px;color:#888">${d.bedrag?'€'+Number(d.bedrag).toLocaleString('nl-NL'):'-'}</td>
+</tr>`;
+}).join('');
+const totWaarde=lijst.reduce((s,d)=>s+(Number(d.bedrag)||0),0);
+document.getElementById('main').innerHTML=`
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+<button class="btn" onclick="show('analyse')" style="font-size:13px">← Terug</button>
+<div>
+<div style="font-size:20px;font-weight:700;color:#111;letter-spacing:-.02em">Leads — <span style="color:var(--accent)">${f.label}</span></div>
+<div style="font-size:12px;color:#888;margin-top:2px">${lijst.length} leads · ${totWaarde?'€'+Math.round(totWaarde).toLocaleString('nl-NL'):'-'}</div>
+</div>
+</div>
+${lijst.length?`
+<div style="background:#fff;border:1px solid #e2e0d8;border-radius:10px;overflow:hidden">
+<table style="width:100%;border-collapse:collapse">
+<thead>
+<tr style="background:#f5f4f0;border-bottom:1px solid #e2e0d8">
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Klant</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Status</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Start</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Laatste contact</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Score</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Actie</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Follow-up</th>
+<th style="padding:10px 12px;font-family:monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:400">Bedrag</th>
+</tr>
+</thead>
+<tbody>${rows}</tbody>
+</table>
+</div>`:`<div style="text-align:center;padding:60px;color:#aaa;font-size:14px">Geen leads gevonden in deze categorie.</div>`}
+`;
 }
-
 function scoreForDisplay(d){
-  if(!d||['gewonnen','verloren','deadend'].includes(d.status))return{score:0};
-  return{score:getScore(d)};
+if(!d||['gewonnen','verloren','deadend'].includes(d.status))return{score:0};
+return{score:getScore(d)};
 }
-
 function exportMaandoverzicht(){
-  const sep=';';
-  const fmtDatum=d=>d?new Date(d).toLocaleDateString('nl-NL'):'-';
-
-  // Sorteer op startdatum
-  const sorted=[...deals].sort((a,b)=>new Date(a.datum)-new Date(b.datum));
-
-  const rows=[
-    ['Q-Line Offerte Tracker — Lead overzicht'],
-    ['Gegenereerd op: '+new Date().toLocaleDateString('nl-NL')],
-    [],
-    ['Maand','Klant','Webshop nr.','Offertenr.','Product / aanvraag','Land','Voorkeur contact','Bedrag (€)','Status','Contactmomenten','Startdatum','Datum offerte','Einddatum / laatste contact']
-  ];
-
-  sorted.forEach(d=>{
-    const maand=d.datum?new Date(d.datum).toLocaleDateString('nl-NL',{month:'long',year:'numeric'}):'-';
-    const contacts=d.contacts||[];
-    const aantalContact=contacts.length;
-    const laatste=contacts.length?contacts[contacts.length-1].datum:'';
-    const eindDatum=(['gewonnen','verloren','deadend'].includes(d.status)&&laatste)?laatste:(laatste||'');
-    const statusLabel=SL[d.status]||d.status;
-
-    rows.push([
-      maand,
-      d.klant||'-',
-      d.aanvraagnr||'-',
-      d.offertenr||'-',
-      d.onderwerp||d.sub||'-',
-      d.land||'-',
-      d.contactWay||'-',
-      Number(d.bedrag)||'',
-      statusLabel,
-      aantalContact,
-      fmtDatum(d.datum),
-      fmtDatum(d.datumOfferte),
-      fmtDatum(eindDatum)
-    ]);
-  });
-
-  const csv=rows.map(r=>r.map(c=>{
-    const s=String(c??'');
-    return s.includes(sep)||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;
-  }).join(sep)).join('\n');
-
-  const bom='\uFEFF';
-  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
-  a.href=URL.createObjectURL(blob);
-  a.download='qline-leads-'+datum+'.csv';
-  a.click();
+const sep=';';
+const fmtDatum=d=>d?new Date(d).toLocaleDateString('nl-NL'):'-';
+// Sorteer op startdatum
+const sorted=[...deals].sort((a,b)=>new Date(a.datum)-new Date(b.datum));
+const rows=[
+['Q-Line Offerte Tracker — Lead overzicht'],
+['Gegenereerd op: '+new Date().toLocaleDateString('nl-NL')],
+[],
+['Maand','Klant','Webshop nr.','Offertenr.','Product / aanvraag','Land','Voorkeur contact','Bedrag (€)','Status','Contactmomenten','Startdatum','Datum offerte','Einddatum / laatste contact']
+];
+sorted.forEach(d=>{
+const maand=d.datum?new Date(d.datum).toLocaleDateString('nl-NL',{month:'long',year:'numeric'}):'-';
+const contacts=d.contacts||[];
+const aantalContact=contacts.length;
+const laatste=contacts.length?contacts[contacts.length-1].datum:'';
+const eindDatum=(['gewonnen','verloren','deadend'].includes(d.status)&&laatste)?laatste:(laatste||'');
+const statusLabel=SL[d.status]||d.status;
+rows.push([
+maand,
+d.klant||'-',
+d.aanvraagnr||'-',
+d.offertenr||'-',
+d.onderwerp||d.sub||'-',
+d.land||'-',
+d.contactWay||'-',
+Number(d.bedrag)||'',
+statusLabel,
+aantalContact,
+fmtDatum(d.datum),
+fmtDatum(d.datumOfferte),
+fmtDatum(eindDatum)
+]);
+});
+const csv=rows.map(r=>r.map(c=>{
+const s=String(c??'');
+return s.includes(sep)||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;
+}).join(sep)).join('\n');
+const bom='﻿';
+const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+const a=document.createElement('a');
+const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
+a.href=URL.createObjectURL(blob);
+a.download='qline-leads-'+datum+'.csv';
+a.click();
 }
-
 async function analyseerContactTekst(contacts){
-  var tekst=contacts.map(function(c){return(c.nota||'').toLowerCase();}).join(' ');
-  var bonus=0;var signalen=[];var next_action='';
-  var pos=[
-    {w:['wanneer kunnen','wanneer start','wanneer lever'],b:20,s:'+ Klant vraagt naar planning'},
-    {w:['akkoord','gaan we doen','doen we','mooie prijs','goed voorstel'],b:20,s:'+ Akkoord signaal'},
-    {w:['bouwvergunning','vergunning','tekening','architect'],b:15,s:'+ Concreet aan de slag'},
-    {w:['heel geinteresseerd','zeer geinteresseerd','graag','absoluut'],b:15,s:'+ Sterke interesse'},
-    {w:['teruggebeld','heeft teruggebeld','zelf gebeld','belde terug'],b:15,s:'+ Klant belt zelf terug'},
-    {w:['deadline','voor de zomer','voor de winter','dit jaar nog'],b:10,s:'+ Urgentie aanwezig'},
-    {w:['budget','financiering','gespaard'],b:10,s:'+ Budget besproken'},
-    {w:['partner','man','vrouw','samen beslissen'],b:5,s:'+ Beslissers betrokken'}
-  ];
-  var neg=[
-    {w:['te duur','te hoog','concurrent','andere aanbieder','goedkoper'],b:-15,s:'- Prijsweerstand'},
-    {w:['geen reactie','niet opgenomen','voicemail','niet bereikbaar'],b:-10,s:'- Geen reactie'},
-    {w:['bedenktijd','nadenken','later','volgend jaar','uitstellen'],b:-15,s:'- Uitsteller'},
-    {w:['geen interesse','niet relevant','niet nodig','toch niet'],b:-25,s:'- Geen interesse'},
-    {w:['al gekocht','al besteld','al geregeld','anders gedaan'],b:-30,s:'- Al elders gekocht'}
-  ];
-  pos.forEach(function(p){p.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===p.s;})){bonus+=p.b;signalen.push(p.s);}});});
-  neg.forEach(function(n){n.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===n.s;})){bonus+=n.b;signalen.push(n.s);}});});
-  if(tekst.includes('wanneer kunnen')||tekst.includes('wanneer start'))next_action='Klant wil planning — stuur concrete startdatum en sluit deal!';
-  else if(tekst.includes('akkoord')||tekst.includes('gaan we doen'))next_action='Akkoord signaal — stuur opdrachtbevestiging vandaag!';
-  else if(tekst.includes('te duur')||tekst.includes('concurrent'))next_action='Prijsweerstand — bel en bespreek meerwaarde Q-Line vs concurrent.';
-  else if(tekst.includes('bedenktijd')||tekst.includes('nadenken'))next_action='Klant twijfelt — vraag direct: wat houdt je nog tegen?';
-  else if(tekst.includes('partner')||tekst.includes('samen beslissen'))next_action='Beide beslissers betrekken — plan afspraak met koppel/partner.';
-  else if(tekst.includes('vergunning')||tekst.includes('tekening'))next_action='Klant is concreet bezig — stay close en bied hulp aan bij vergunning.';
-  else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
-  else next_action='Follow-up sturen en concreet om beslissing vragen.';
-  return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
+var tekst=contacts.map(function(c){return(c.nota||'').toLowerCase();}).join(' ');
+var bonus=0;var signalen=[];var next_action='';
+var pos=[
+{w:['wanneer kunnen','wanneer start','wanneer lever'],b:20,s:'+ Klant vraagt naar planning'},
+{w:['akkoord','gaan we doen','doen we','mooie prijs','goed voorstel'],b:20,s:'+ Akkoord signaal'},
+{w:['bouwvergunning','vergunning','tekening','architect'],b:15,s:'+ Concreet aan de slag'},
+{w:['heel geinteresseerd','zeer geinteresseerd','graag','absoluut'],b:15,s:'+ Sterke interesse'},
+{w:['teruggebeld','heeft teruggebeld','zelf gebeld','belde terug'],b:15,s:'+ Klant belt zelf terug'},
+{w:['deadline','voor de zomer','voor de winter','dit jaar nog'],b:10,s:'+ Urgentie aanwezig'},
+{w:['budget','financiering','gespaard'],b:10,s:'+ Budget besproken'},
+{w:['partner','man','vrouw','samen beslissen'],b:5,s:'+ Beslissers betrokken'}
+];
+var neg=[
+{w:['te duur','te hoog','concurrent','andere aanbieder','goedkoper'],b:-15,s:'- Prijsweerstand'},
+{w:['geen reactie','niet opgenomen','voicemail','niet bereikbaar'],b:-10,s:'- Geen reactie'},
+{w:['bedenktijd','nadenken','later','volgend jaar','uitstellen'],b:-15,s:'- Uitsteller'},
+{w:['geen interesse','niet relevant','niet nodig','toch niet'],b:-25,s:'- Geen interesse'},
+{w:['al gekocht','al besteld','al geregeld','anders gedaan'],b:-30,s:'- Al elders gekocht'}
+];
+pos.forEach(function(p){p.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===p.s;})){bonus+=p.b;signalen.push(p.s);}});});
+neg.forEach(function(n){n.w.forEach(function(w){if(tekst.includes(w)&&!signalen.find(function(s){return s===n.s;})){bonus+=n.b;signalen.push(n.s);}});});
+if(tekst.includes('wanneer kunnen')||tekst.includes('wanneer start'))next_action='Klant wil planning — stuur concrete startdatum en sluit deal!';
+else if(tekst.includes('akkoord')||tekst.includes('gaan we doen'))next_action='Akkoord signaal — stuur opdrachtbevestiging vandaag!';
+else if(tekst.includes('te duur')||tekst.includes('concurrent'))next_action='Prijsweerstand — bel en bespreek meerwaarde Q-Line vs concurrent.';
+else if(tekst.includes('bedenktijd')||tekst.includes('nadenken'))next_action='Klant twijfelt — vraag direct: wat houdt je nog tegen?';
+else if(tekst.includes('partner')||tekst.includes('samen beslissen'))next_action='Beide beslissers betrekken — plan afspraak met koppel/partner.';
+else if(tekst.includes('vergunning')||tekst.includes('tekening'))next_action='Klant is concreet bezig — stay close en bied hulp aan bij vergunning.';
+else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action='Probeer andere aanpak: WhatsApp of mail ipv bellen.';
+else next_action='Follow-up sturen en concreet om beslissing vragen.';
+return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
 }
-
 async function genereerOpvolgVoorstel(){
-  const d=deals.find(x=>x.id===editId);
-  if(!d){alert('Sla de lead eerst op voordat je een voorstel genereert.');return}
-  const btn=document.getElementById('aiGenBtn');
-  const wrap=document.getElementById('aiVoorstelWrap');
-  const laatsteMail=document.getElementById('aiLaatsteMail').value.trim();
-  const contacts=d.contacts||[];
-  const contactlog=contacts.length
-    ? contacts.map(c=>`- [${c.type}, ${c.datum} ${c.tijd||''}] ${c.tekst||c.nota||''}`).join('\n')
-    : '(nog geen contactmomenten gelogd)';
-
-  // Tel hoeveel keer Frank al heeft opgevolgd zonder reactie ("outbound streak"),
-  // zelfde telling als getAdvies() gebruikt, zodat de AI de toon hierop afstemt.
-  let outboundStreak=0;
-  for(let i=0;i<contacts.length;i++){
-    if(contacts[i].type==='reactie')outboundStreak=0;
-    else outboundStreak++;
-  }
-  const advies=getAdvies(d);
-  const toonInstructie=outboundStreak>=5
-    ? `Dit is al de ${outboundStreak}e keer dat Frank opvolgt zonder enige reactie. Schrijf een kort, eerlijk "laatste kans"-bericht — geen enthousiaste toon meer, gewoon direct vragen of er nog interesse is en dat je het traject anders sluit. Geen verwijten, gewoon zakelijk.`
-    : outboundStreak>=3
-    ? `Dit is al de ${outboundStreak}e opvolgpoging zonder reactie. Wees iets directer dan bij een eerste bericht, en overweeg een ander kanaal voor te stellen (bijv. "zal ik anders even bellen?") in plaats van gewoon nogmaals te mailen.`
-    : `Dit is nog een vroege opvolging (poging ${outboundStreak+1}), dus een vriendelijke, lichte toon is prima.`;
-
-  const prompt=`Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kort opvolgbericht te schrijven aan een klant. Doel: een reactie loskrijgen van een klant die stil is geworden — niet opdringerig, maar direct en praktisch, in Franks eigen stijl: zakelijk maar informeel, geen overbodige poespas.
-
+const d=deals.find(x=>x.id===editId);
+if(!d){alert('Sla de lead eerst op voordat je een voorstel genereert.');return}
+const btn=document.getElementById('aiGenBtn');
+const wrap=document.getElementById('aiVoorstelWrap');
+const laatsteMail=document.getElementById('aiLaatsteMail').value.trim();
+const contacts=d.contacts||[];
+const contactlog=contacts.length
+? contacts.map(c=>`- [${c.type}, ${c.datum} ${c.tijd||''}] ${c.tekst||c.nota||''}`).join('\n')
+: '(nog geen contactmomenten gelogd)';
+// Tel hoeveel keer Frank al heeft opgevolgd zonder reactie ("outbound streak"),
+// zelfde telling als getAdvies() gebruikt, zodat de AI de toon hierop afstemt.
+let outboundStreak=0;
+for(let i=0;i<contacts.length;i++){
+if(contacts[i].type==='reactie')outboundStreak=0;
+else outboundStreak++;
+}
+const advies=getAdvies(d);
+const toonInstructie=outboundStreak>=5
+? `Dit is al de ${outboundStreak}e keer dat Frank opvolgt zonder enige reactie. Schrijf een kort, eerlijk "laatste kans"-bericht — geen enthousiaste toon meer, gewoon direct vragen of er nog interesse is en dat je het traject anders sluit. Geen verwijten, gewoon zakelijk.`
+: outboundStreak>=3
+? `Dit is al de ${outboundStreak}e opvolgpoging zonder reactie. Wees iets directer dan bij een eerste bericht, en overweeg een ander kanaal voor te stellen (bijv. "zal ik anders even bellen?") in plaats van gewoon nogmaals te mailen.`
+: `Dit is nog een vroege opvolging (poging ${outboundStreak+1}), dus een vriendelijke, lichte toon is prima.`;
+const prompt=`Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kort opvolgbericht te schrijven aan een klant. Doel: een reactie loskrijgen van een klant die stil is geworden — niet opdringerig, maar direct en praktisch, in Franks eigen stijl: zakelijk maar informeel, geen overbodige poespas.
 KLANTGEGEVENS:
 - Naam/bedrijf: ${d.klant}
 - Interesse/product: ${d.onderwerp||'onbekend'}
@@ -1830,64 +1719,55 @@ KLANTGEGEVENS:
 - Land: ${d.land||'onbekend'}
 - Status: ${d.status}
 - Notities: ${d.notitie||'geen'}
-
 CONTACTGESCHIEDENIS (chronologisch, wat er al verstuurd/besproken is):
 ${contactlog}
-
 OPVOLG-CONTEXT: ${toonInstructie}
 ${advies?`Systeemadvies over deze lead: "${advies.label}" — ${advies.uitleg}`:''}
-
 ${laatsteMail?`LAATSTE MAIL DIE DE KLANT STUURDE (haak hier specifiek op in):\n${laatsteMail}\n`:'(Frank heeft geen laatste mail van de klant geplakt — baseer je alleen op de contactgeschiedenis hierboven.)'}
-
 Schrijf een kort opvolgbericht (mail of app-bericht, max ~120 woorden) dat:
 - niet herhaalt wat al gezegd is, maar er op voortbouwt
 - een concrete, laagdrempelige vraag stelt zodat de klant makkelijk kan reageren (bijv. een simpele ja/nee-vraag of een keuze tussen 2 opties, in plaats van een open "hoe staat het ermee?")
 - past bij het land/de taal van de klant (Duitse klant = Duits, in de juiste formaliteit; Nederlandse klant = Nederlands)
 - Franks toon aanhoudt: direct, vriendelijk-zakelijk, geen overdreven verkooppraat
 - rekening houdt met de OPVOLG-CONTEXT hierboven qua directheid/toon
-
 Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
-
-  btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
-  const oldLabel=wrap.querySelector('.ai-auto-label');
-  if(oldLabel)oldLabel.remove();
-  try{
-    const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-6",
-        max_tokens:1000,
-        messages:[{role:"user",content:prompt}]
-      })
-    });
-    const data=await response.json();
-    const tekst=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
-    if(!tekst)throw new Error('Geen tekst ontvangen');
-    document.getElementById('aiVoorstel').value=tekst;
-    wrap.style.display='block';
-  }catch(e){
-    alert('Genereren mislukt: '+e.message+'. Probeer het nog eens.');
-  }finally{
-    btn.disabled=false;btn.textContent='✨ Genereer opvolgvoorstel';
-  }
+btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
+const oldLabel=wrap.querySelector('.ai-auto-label');
+if(oldLabel)oldLabel.remove();
+try{
+const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+model:"claude-sonnet-4-6",
+max_tokens:1000,
+messages:[{role:"user",content:prompt}]
+})
+});
+const data=await response.json();
+const tekst=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
+if(!tekst)throw new Error('Geen tekst ontvangen');
+document.getElementById('aiVoorstel').value=tekst;
+wrap.style.display='block';
+}catch(e){
+alert('Genereren mislukt: '+e.message+'. Probeer het nog eens.');
+}finally{
+btn.disabled=false;btn.textContent='✨ Genereer opvolgvoorstel';
+}
 }
 function kopieerVoorstel(){
-  const ta=document.getElementById('aiVoorstel');
-  ta.select();
-  navigator.clipboard.writeText(ta.value).then(()=>{
-    const btns=document.querySelectorAll('#aiVoorstelWrap .btn');
-    if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!';setTimeout(()=>{btns[0].textContent=orig;},1500);}
-    const d=deals.find(x=>x.id===editId);
-    if(d&&d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;save();}
-  });
+const ta=document.getElementById('aiVoorstel');
+ta.select();
+navigator.clipboard.writeText(ta.value).then(()=>{
+const btns=document.querySelectorAll('#aiVoorstelWrap .btn');
+if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!';setTimeout(()=>{btns[0].textContent=orig;},1500);}
+const d=deals.find(x=>x.id===editId);
+if(d&&d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;save();}
+});
 }
-
-
 
 document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo')closeMo()});
 loadWithSync();
-
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>

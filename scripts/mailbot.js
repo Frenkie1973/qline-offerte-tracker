@@ -53,12 +53,14 @@ function extractPhone(text) {
   return '';
 }
 
-// Zoekt naar "Label: waarde" of "Label - waarde" op een eigen regel.
-// Dekt zowel gestructureerde (webshop/formulier-)mails als losse tekst waarin
-// de klant toevallig zulke labels gebruikt.
+// Zoekt naar "Label: waarde", "Label - waarde" OF gewoon "Label waarde" (zonder
+// scheidingsteken) op een eigen regel. De Q-Line webshop-formuliermails blijken
+// namelijk GEEN dubbele punt te gebruiken (bv. "Referentie 24863", "Naam Jan
+// Jansen") — vandaar dat het scheidingsteken optioneel is, met minimaal een
+// spatie ertussen zodat een label niet per ongeluk vastplakt aan een woord.
 function extractField(text, labelPatterns) {
   for (const label of labelPatterns) {
-    const re = new RegExp(`^[\\s>*-]*${label}\\s*[:\\-]\\s*(.+)$`, 'im');
+    const re = new RegExp(`^[\\s>*-]*${label}[\\s:\\-]+(.+)$`, 'im');
     const m = text.match(re);
     if (m) {
       const v = m[1].trim().replace(/\s{2,}/g, ' ');
@@ -106,20 +108,12 @@ const AANVRAAGNR_LABELS = [
 ];
 
 function extractAanvraagnr(text) {
-  // Eerst het strikte "Label: waarde" formaat proberen (zelfde als andere velden).
-  // Alleen accepteren als de waarde er ook echt als een nummer uitziet — anders
-  // vangt bv. een algemeen "Reference:"-veld per ongeluk een bedrijfs-/plaatsnaam.
-  const strikt = extractField(text, AANVRAAGNR_LABELS);
-  if (strikt && /\d/.test(strikt) && strikt.length <= 20) return strikt;
-  // Sommige webshopmails gebruiken géén dubbele punt/streepje, bv.
-  // "Referenznummer 24821" — daarom ook zoeken naar label direct gevolgd
-  // door een waarde die met een cijfer begint, zonder scheidingsteken-eis.
-  for (const label of AANVRAAGNR_LABELS) {
-    const re = new RegExp(`${label}\\s*[:\\-]?\\s*(\\d[\\w\\/\\-]*)`, 'i');
-    const m = text.match(re);
-    if (m) return m[1].trim();
-  }
-  return '';
+  // extractField dekt nu ook het scheidingsteken-loze webshopformaat
+  // ("Referentie 24863"). Alleen accepteren als de waarde er ook echt als een
+  // nummer/code uitziet — anders vangt een algemeen "Reference"-veld per
+  // ongeluk een bedrijfs- of plaatsnaam.
+  const val = extractField(text, AANVRAAGNR_LABELS);
+  return (val && /\d/.test(val) && val.length <= 20) ? val : '';
 }
 
 function extractStructuredData(bodyText, fromName, fromEmail) {
@@ -128,13 +122,16 @@ function extractStructuredData(bodyText, fromName, fromEmail) {
     || extractSignatureName(bodyText)
     || cleanFromName || '';
   const email = extractField(bodyText, ['e-?mail(?:adres)?', 'email']) || fromEmail || '';
-  const telefoon = extractField(bodyText, ['telefoon(?:nummer)?', 'tel(?:efoonnr)?', 'phone', 'mobiel']) || extractPhone(bodyText);
-  const straat = extractField(bodyText, ['adres', 'address', 'straat']);
+  // "phone\s*number" MOET vóór het losse "phone" staan, anders vangt "phone"
+  // alleen "Phone" en komt "number 0612345678" als waarde mee.
+  const telefoon = extractField(bodyText, ['telefoon(?:nummer)?', 'tel(?:efoonnr)?', 'phone\\s*number', 'phone', 'mobiel']) || extractPhone(bodyText);
+  // Idem: de samengestelde labels moeten vóór de losse "straat"/"address" staan.
+  const straat = extractField(bodyText, ['straat\\s*en\\s*huisnummer', 'street\\s*and\\s*house\\s*number', 'adres', 'address', 'straat']);
   const postcode = extractField(bodyText, ['postcode', 'zip(?:code)?', 'plz']);
   const plaats = extractField(bodyText, ['plaats', 'city', 'woonplaats', 'stadt']);
   const landVeld = extractField(bodyText, ['land', 'country']);
   const product = extractField(bodyText, ['product', 'interesse\\s*in', 'onderwerp']);
-  const contactWay = extractField(bodyText, ['contact\\s*voorkeur', 'voorkeur\\s*contact', 'preferred\\s*contact(?:\\s*way)?', 'liever\\s*(?:gebeld|gemaild)']);
+  const contactWay = extractField(bodyText, ['gewenste\\s*manier\\s*van\\s*contact', 'contact\\s*voorkeur', 'voorkeur\\s*contact', 'preferred\\s*contact\\s*(?:way|method)?', 'liever\\s*(?:gebeld|gemaild)']);
   const kooptermijn = extractField(bodyText, ['kooptermijn', 'wanneer.*(?:kopen|aanschaf)', 'when.*(?:buy|purchase)']);
   const typeKlant = extractField(bodyText, ['type\\s*(?:bedrijf|klant)', 'soort\\s*bedrijf', 'business\\s*type']);
   const aanvraagnr = extractAanvraagnr(bodyText);
@@ -331,7 +328,14 @@ async function main() {
     ].filter(Boolean).join('\n');
 
     const onderwerp = ex.product || m.subject || 'Mail zonder onderwerp';
-    const emailKey = (ex.email || '').toLowerCase().trim();
+    // Q-Line's eigen mailboxen mogen NOOIT als "klant-e-mail" gebruikt worden om
+    // leads te matchen. De webshop toont soms store@q-line.com zelf als
+    // afzender van een ordermelding — zonder deze uitsluiting werden daardoor
+    // compleet verschillende, losse klantaanvragen allemaal per ongeluk
+    // samengevoegd tot dezelfde (soms al foute) bestaande lead.
+    const EIGEN_ADRESSEN = ['store@q-line.com', 'f.timmerhuis@q-line.com'];
+    let emailKey = (ex.email || '').toLowerCase().trim();
+    if (EIGEN_ADRESSEN.includes(emailKey)) emailKey = '';
     const klantKey = (ex.klant || fromEmail || '').toLowerCase().trim();
     const GESLOTEN_STATUSSEN = ['gewonnen', 'verloren', 'deadend'];
 
@@ -339,8 +343,12 @@ async function main() {
     // offerte, dealer — alleen gewonnen/verloren/deadend telt niet mee) van
     // dezelfde klant, op e-mail óf op naam, zodat een klant waar Frank al
     // mee bezig is niet als nieuwe losse lead wordt aangemaakt.
+    // Uitzondering: als beide een aanvraagnr hebben en die verschillen, gaat
+    // het gegarandeerd om een andere bestelling — dan nooit samenvoegen, ook
+    // niet als naam/e-mail toevallig overeenkomen.
     const bestaande = leadsArr.find((d) => {
       if (GESLOTEN_STATUSSEN.includes(d.status)) return false;
+      if (ex.aanvraagnr && d.aanvraagnr && d.aanvraagnr !== ex.aanvraagnr) return false;
       const dEmail = (d.email || '').toLowerCase().trim();
       const dKlant = (d.klant || '').toLowerCase().trim();
       if (emailKey && dEmail && dEmail === emailKey) return true;

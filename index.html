@@ -284,7 +284,7 @@ return false;
 const SKEY='qltrk2_settings';
 function getSettings(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
 function getDays(){const s=getSettings();return{fu1:Number(s.fu1)||3,fu2:Number(s.fu2)||10,fu2laat:Number(s.fu2laat)||20};}
-let deals=[],editId=null,view='dash';
+let deals=[],editId=null,view='dash';let searchQuery='';function matchesSearch(d){if(!searchQuery)return true;var q=searchQuery.toLowerCase();return[d.klant,d.email,d.telefoon,d.onderwerp,d.offertenr,d.aanvraagnr,d.notitie].some(function(v){return(v||'').toLowerCase().indexOf(q)!==-1;});}function searchBoxHtml(){return'<div style="margin-bottom:16px"><input id="searchBox" type="text" value="'+searchQuery.replace(/"/g,'&quot;')+'" oninput="onSearchInput(this.value)" placeholder="Zoek op naam, e-mail, telefoon, offertenr..." style="width:100%;max-width:360px;background:var(--white);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);font-family:var(--sans);outline:none"></div>';}function onSearchInput(val){searchQuery=val;var a=document.activeElement;var s=a&&a.selectionStart,e2=a&&a.selectionEnd;render();var el=document.getElementById('searchBox');if(el){el.focus();try{el.setSelectionRange(s,e2);}catch(err){}}}
 function load(){try{deals=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){deals=[]}}
 async function loadWithSync(){
 // Laad lokaal eerst zodat dashboard meteen zichtbaar is
@@ -1349,7 +1349,7 @@ const stages=[
 {k:'deadend',l:'Dead end',c:'#c8c8c0'}
 ];
 const cols=stages.map(s=>{
-const items=deals.filter(d=>{
+const items=deals.filter(matchesSearch).filter(d=>{
 var g=pipeGroup(d);
 if(s.k==='followup')return g==='fu1'||g==='fu2';
 return g===s.k;
@@ -1366,11 +1366,11 @@ html+='</div></div>';
 return html;}).join(''):`<div style="font-size:11px;color:var(--hint);padding:4px 0">Leeg</div>`;
 return`<div class="pcol"><div class="pch"><span style="color:${s.c}">${s.l}</span><span>${items.length}</span></div>${cards}</div>`;
 }).join('');
-return`<div class="ph"><div><div class="ph-title">Pipeline</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div><div class="pipe">${cols}</div>`;
+return`<div class="ph"><div><div class="ph-title">Pipeline</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${searchBoxHtml()}<div class="pipe">${cols}</div>`;
 }
 function rAlle(){
-const sorted=[...deals].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
-return`<div class="ph"><div><div class="ph-title">Alle leads</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${sorted.length?tbl(sorted):'<div class="empty">Nog geen leads.</div>'}`;
+const sorted=[...deals.filter(matchesSearch)].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+return`<div class="ph"><div><div class="ph-title">Alle leads</div></div><button class="btn btn-p" onclick="openNew({})">+ Lead</button></div>${searchBoxHtml()}${sorted.length?tbl(sorted):'<div class="empty">Geen leads gevonden voor deze zoekopdracht.</div>'}`;
 }
 function rAnalyse(){
 const won=deals.filter(d=>d.status==='gewonnen');

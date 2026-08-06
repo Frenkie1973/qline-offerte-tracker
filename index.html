@@ -211,6 +211,16 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
 </div>
 </div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)" id="aiEersteContactBlok">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📧 Eerste contact — kwalificatiemail</div>
+<div style="font-size:12px;color:var(--hint);margin-bottom:10px;line-height:1.4">Stuur dit vóórdat je een offerte maakt. Vraagt de klant wat een voorstel voor hem een "ja" maakt, wanneer hij beslist, en of hij bereid is deze week te kiezen als het voorstel op prijs en aanpak klopt.</div>
+<div class="ff"><label>Wat schreef/zei de klant al (plak hier, optioneel)</label><textarea id="aiKlantBericht" rows="4" placeholder="Plak hier de oorspronkelijke aanvraag of het bericht van de klant — helpt de AI om specifiek te zijn..."></textarea></div>
+<button class="btn btn-p" style="margin-bottom:10px" onclick="genereerEersteContactMail()" id="aiEcBtn">✨ Genereer kwalificatiemail</button>
+<div id="aiEcWrap" style="display:none">
+<textarea id="aiEcTekst" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+<button class="btn" style="margin-top:8px" onclick="kopieerEersteContact()">📋 Kopieer tekst</button>
+</div>
+</div>
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
 <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
 <div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
@@ -710,6 +720,10 @@ document.getElementById('cwrap').style.display='none';
 document.getElementById('bdel').style.display='none';
 const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
 const adv0=document.getElementById('mAdvies');if(adv0)adv0.style.display='none';
+const ekb0=document.getElementById('aiKlantBericht');if(ekb0)ekb0.value='';
+const ecTa0=document.getElementById('aiEcTekst');if(ecTa0)ecTa0.value='';
+const ecWrap0=document.getElementById('aiEcWrap');if(ecWrap0)ecWrap0.style.display='none';
+const ecBlok0=document.getElementById('aiEersteContactBlok');if(ecBlok0)ecBlok0.style.display=['nieuw','contact'].includes(pre?.status||'nieuw')?'block':'none';
 document.getElementById('mo').classList.add('open');
 toggleDatumOfferte();
 }
@@ -749,6 +763,10 @@ document.getElementById('fn').value=d.notitie||'';
 document.getElementById('cwrap').style.display='block';
 document.getElementById('fnc').value='';
 document.getElementById('aiLaatsteMail').value='';
+document.getElementById('aiKlantBericht').value='';
+const ecTa=document.getElementById('aiEcTekst');if(ecTa)ecTa.value='';
+const ecWrap=document.getElementById('aiEcWrap');if(ecWrap)ecWrap.style.display='none';
+const ecBlok=document.getElementById('aiEersteContactBlok');if(ecBlok)ecBlok.style.display=['nieuw','contact'].includes(d.status)?'block':'none';
 const aiVoorstelTa=document.getElementById('aiVoorstel');
 const aiWrap=document.getElementById('aiVoorstelWrap');
 if(d.aiVoorstel){
@@ -970,6 +988,16 @@ box.innerHTML=`
 <button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
 </div>
 </div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)" id="aiEersteContactBlok">
+<div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📧 Eerste contact — kwalificatiemail</div>
+<div style="font-size:12px;color:var(--hint);margin-bottom:10px;line-height:1.4">Stuur dit vóórdat je een offerte maakt. Vraagt de klant wat een voorstel voor hem een "ja" maakt, wanneer hij beslist, en of hij bereid is deze week te kiezen als het voorstel op prijs en aanpak klopt.</div>
+<div class="ff"><label>Wat schreef/zei de klant al (plak hier, optioneel)</label><textarea id="aiKlantBericht" rows="4" placeholder="Plak hier de oorspronkelijke aanvraag of het bericht van de klant — helpt de AI om specifiek te zijn..."></textarea></div>
+<button class="btn btn-p" style="margin-bottom:10px" onclick="genereerEersteContactMail()" id="aiEcBtn">✨ Genereer kwalificatiemail</button>
+<div id="aiEcWrap" style="display:none">
+<textarea id="aiEcTekst" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
+<button class="btn" style="margin-top:8px" onclick="kopieerEersteContact()">📋 Kopieer tekst</button>
+</div>
+</div>
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
 <div style="font-size:11px;font-family:var(--mono);color:var(--hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🤖 AI-opvolgvoorstel</div>
 <div id="aiPogingInfo" style="display:none;font-size:12px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
@@ -986,6 +1014,11 @@ box.innerHTML=`
 <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
 <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
 </div>`;
+}
+function quickKwalificatie(id,e){
+e&&e.stopPropagation();
+openEdit(id);
+setTimeout(()=>genereerEersteContactMail(),80);
 }
 function quick(id,s,e){
 e&&e.stopPropagation();
@@ -1287,8 +1320,8 @@ const lastTag=lastContact
 ?`<div class="ch" style="color:var(--text);font-weight:500">${lastContact.datum} ${lastContact.tijd}</div><div class="ch">${(lastContact.tekst||'').slice(0,40)}${lastContact.tekst?.length>40?'…':''}</div>`
 :`<span class="ch">—</span>`;
 const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
-${d.status==='nieuw'?`<button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
-${d.status==='contact'?`<button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''}
+${d.status==='nieuw'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
+${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''}
 <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
 <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
 <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
@@ -1762,6 +1795,60 @@ const btns=document.querySelectorAll('#aiVoorstelWrap .btn');
 if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!';setTimeout(()=>{btns[0].textContent=orig;},1500);}
 const d=deals.find(x=>x.id===editId);
 if(d&&d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;save();}
+});
+}
+async function genereerEersteContactMail(){
+const d=deals.find(x=>x.id===editId);
+if(!d){alert('Sla de lead eerst op voordat je een kwalificatiemail genereert.');return}
+const btn=document.getElementById('aiEcBtn');
+const wrap=document.getElementById('aiEcWrap');
+const klantBericht=document.getElementById('aiKlantBericht').value.trim();
+const prompt=`Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kwalificatiemail schrijven voor het EERSTE contact met een nieuwe lead — dus VOORDAT er een offerte gemaakt wordt.
+Doel van deze mail: drie dingen helder krijgen voordat Frank tijd steekt in een offerte, geïnspireerd op de aanpak van ervaren verkopers om niet blind offertes te sturen:
+1. Wat er in het voorstel moet staan om voor de klant een "ja" te worden (zodat Frank weet wat de klant echt wil en of er überhaupt een deal in zit)
+2. Wanneer de klant een beslissing neemt / op basis waarvan (commitment vragen, zonder dat het opdringerig aanvoelt)
+3. Of de klant bereid is deze week een keuze te maken, ALS het voorstel klopt op prijs en aanpak (eerst een principe-ja op de beslissing, voordat het voorstel er is)
+KLANTGEGEVENS:
+- Naam/bedrijf: ${d.klant}
+- Interesse/product: ${d.onderwerp||'onbekend'}
+- Land: ${d.land||'onbekend'}
+- Notities: ${d.notitie||'geen'}
+${klantBericht?`OORSPRONKELIJKE AANVRAAG / BERICHT VAN DE KLANT:\n${klantBericht}\n`:'(Frank heeft geen origineel bericht van de klant geplakt — baseer je op de klantgegevens hierboven.)'}
+Schrijf een korte, vriendelijke maar directe e-mail (max ~150 woorden) die:
+- kort bevestigt dat de aanvraag ontvangen is en oprechte interesse toont
+- op een natuurlijke, vloeiende manier de 3 kwalificatievragen hierboven verwerkt (niet als opsomming "vraag 1/2/3", gewoon in lopende tekst)
+- past bij het land/de taal van de klant (Duitse klant = Duits, in de juiste formaliteit; Nederlandse klant = Nederlands; anders Engels)
+- Franks toon aanhoudt: zakelijk maar informeel, direct, geen overdreven verkooppraat, geen jargon
+- eindigt met een duidelijke uitnodiging om te reageren
+Geef ALLEEN de tekst van de mail terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
+btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
+try{
+const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+model:"claude-sonnet-4-6",
+max_tokens:1000,
+messages:[{role:"user",content:prompt}]
+})
+});
+const data=await response.json();
+const tekst=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
+if(!tekst)throw new Error('Geen tekst ontvangen');
+document.getElementById('aiEcTekst').value=tekst;
+wrap.style.display='block';
+}catch(e){
+alert('Genereren mislukt: '+e.message+'. Probeer het nog eens.');
+}finally{
+btn.disabled=false;btn.textContent='✨ Genereer kwalificatiemail';
+}
+}
+function kopieerEersteContact(){
+const ta=document.getElementById('aiEcTekst');
+ta.select();
+navigator.clipboard.writeText(ta.value).then(()=>{
+const btns=document.querySelectorAll('#aiEcWrap .btn');
+if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!';setTimeout(()=>{btns[0].textContent=orig;},1500);}
 });
 }
 

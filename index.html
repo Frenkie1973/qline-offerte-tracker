@@ -270,14 +270,67 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 const KEY='qltrk2';
 const FB_BASE='https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app/leads.json';
 // Sinds de Firebase-regels "auth != null" vereisen (30-7-2026) moet elk
-// verzoek een geldig token meesturen. We loggen daarom stilzwijgend in als
-// "anonieme gebruiker" via Firebase Authentication — dat voldoet aan de
-// regel zonder dat er een echt account/wachtwoord nodig is, en zonder dat
-// er een admin-secret in deze publieke pagina hoeft te staan (dat zou
-// iedereen die de paginabron bekijkt volledige databasetoegang geven).
+// verzoek een geldig token meesturen. We gebruiken een gedeeld team-account
+// (Firebase Email/Password auth) in plaats van anonieme login: bij anonieme
+// login kon namelijk IEDEREEN die de site bezoekt zichzelf automatisch
+// "inloggen" en zo bij alle klantgegevens — dat voldeed technisch aan de
+// regel maar bood geen echte bescherming. Met een wachtwoord moet je het
+// teamwachtwoord kennen om toegang te krijgen.
 const FB_API_KEY='AIzaSyC24CbCjNFSvTR6sbslJZT6_NRQQpgN_ys';
+const TEAM_EMAIL='team@q-line.com';
 const AUTH_KEY='qltrk2_auth';
+let _authPromise=null;
+function showLoginOverlay(){
+return new Promise((resolve)=>{
+let overlay=document.getElementById('loginOverlay');
+if(overlay)overlay.remove();
+overlay=document.createElement('div');
+overlay.id='loginOverlay';
+overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+overlay.innerHTML=`
+<div style="background:var(--white);border-radius:14px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+<div style="font-size:19px;font-weight:700;margin-bottom:6px;color:var(--text)">Q-Line Tracker</div>
+<div style="font-size:14px;color:var(--hint);margin-bottom:18px;line-height:1.4">Voer het teamwachtwoord in om de leads te zien.</div>
+<input id="loginPw" type="password" placeholder="Teamwachtwoord" style="width:100%;box-sizing:border-box;padding:14px;font-size:16px;border:1px solid var(--border2);border-radius:9px;margin-bottom:12px" autocomplete="current-password">
+<div id="loginErr" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none"></div>
+<button id="loginBtn" style="width:100%;padding:14px;font-size:16px;font-weight:700;background:var(--green);color:#fff;border:none;border-radius:9px;cursor:pointer">Inloggen</button>
+</div>`;
+document.body.appendChild(overlay);
+const pwInput=document.getElementById('loginPw');
+const btn=document.getElementById('loginBtn');
+const errEl=document.getElementById('loginErr');
+async function attempt(){
+const pw=pwInput.value;
+if(!pw)return;
+btn.disabled=true;btn.textContent='Bezig...';
+errEl.style.display='none';
+try{
+const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({email:TEAM_EMAIL,password:pw,returnSecureToken:true})
+});
+const data=await res.json();
+if(!res.ok)throw new Error('Onjuist wachtwoord, probeer opnieuw.');
+const fresh={idToken:data.idToken,refreshToken:data.refreshToken,expiresAt:Date.now()+Number(data.expiresIn)*1000};
+localStorage.setItem(AUTH_KEY,JSON.stringify(fresh));
+overlay.remove();
+resolve(fresh.idToken);
+}catch(e){
+errEl.textContent=e.message||'Inloggen mislukt, probeer opnieuw.';
+errEl.style.display='block';
+btn.disabled=false;btn.textContent='Inloggen';
+pwInput.select();
+}
+}
+btn.addEventListener('click',attempt);
+pwInput.addEventListener('keydown',function(e){if(e.key==='Enter')attempt();});
+setTimeout(function(){pwInput.focus();},80);
+});
+}
 async function ensureAuthToken(){
+if(_authPromise)return _authPromise;
+_authPromise=(async()=>{
 let cached=null;
 try{cached=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
 if(cached&&cached.idToken&&cached.expiresAt&&Date.now()<cached.expiresAt-60000){
@@ -298,16 +351,13 @@ return fresh.idToken;
 }
 }catch(e){}
 }
-const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB_API_KEY}`,{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({returnSecureToken:true})
-});
-if(!res.ok)throw new Error('Anoniem inloggen bij Firebase mislukt: '+res.status);
-const data=await res.json();
-const fresh={idToken:data.idToken,refreshToken:data.refreshToken,expiresAt:Date.now()+Number(data.expiresIn)*1000};
-localStorage.setItem(AUTH_KEY,JSON.stringify(fresh));
-return fresh.idToken;
+return await showLoginOverlay();
+})();
+try{
+return await _authPromise;
+}finally{
+_authPromise=null;
+}
 }
 async function fbSave(data){
 try{

@@ -268,10 +268,51 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 </div>
 <script>
 const KEY='qltrk2';
-const FB_URL='https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app/leads.json';
+const FB_BASE='https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app/leads.json';
+// Sinds de Firebase-regels "auth != null" vereisen (30-7-2026) moet elk
+// verzoek een geldig token meesturen. We loggen daarom stilzwijgend in als
+// "anonieme gebruiker" via Firebase Authentication — dat voldoet aan de
+// regel zonder dat er een echt account/wachtwoord nodig is, en zonder dat
+// er een admin-secret in deze publieke pagina hoeft te staan (dat zou
+// iedereen die de paginabron bekijkt volledige databasetoegang geven).
+const FB_API_KEY='AIzaSyC24CbCjNFSvTR6sbslJZT6_NRQQpgN_ys';
+const AUTH_KEY='qltrk2_auth';
+async function ensureAuthToken(){
+let cached=null;
+try{cached=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
+if(cached&&cached.idToken&&cached.expiresAt&&Date.now()<cached.expiresAt-60000){
+return cached.idToken;
+}
+if(cached&&cached.refreshToken){
+try{
+const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_API_KEY}`,{
+method:'POST',
+headers:{'Content-Type':'application/x-www-form-urlencoded'},
+body:`grant_type=refresh_token&refresh_token=${cached.refreshToken}`
+});
+if(r.ok){
+const d=await r.json();
+const fresh={idToken:d.id_token,refreshToken:d.refresh_token,expiresAt:Date.now()+Number(d.expires_in)*1000};
+localStorage.setItem(AUTH_KEY,JSON.stringify(fresh));
+return fresh.idToken;
+}
+}catch(e){}
+}
+const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB_API_KEY}`,{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({returnSecureToken:true})
+});
+if(!res.ok)throw new Error('Anoniem inloggen bij Firebase mislukt: '+res.status);
+const data=await res.json();
+const fresh={idToken:data.idToken,refreshToken:data.refreshToken,expiresAt:Date.now()+Number(data.expiresIn)*1000};
+localStorage.setItem(AUTH_KEY,JSON.stringify(fresh));
+return fresh.idToken;
+}
 async function fbSave(data){
 try{
-await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+const token=await ensureAuthToken();
+await fetch(`${FB_BASE}?auth=${token}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
 const si=document.getElementById('sync-indicator');
 if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
 }catch(e){
@@ -281,7 +322,8 @@ if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
 }
 async function fbLoad(){
 try{
-const res=await fetch(FB_URL);
+const token=await ensureAuthToken();
+const res=await fetch(`${FB_BASE}?auth=${token}`);
 const data=await res.json();
 if(Array.isArray(data)&&data.length>0){
 deals=data;

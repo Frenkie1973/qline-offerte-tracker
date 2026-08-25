@@ -18,8 +18,16 @@ const MAILBOX = 'store@q-line.com';
 // mailboxen gecheckt.
 const SENT_MAILBOXES = ['store@q-line.com', 'f.timmerhuis@q-line.com'];
 const FB_BASE = 'https://q-line-tracker-default-rtdb.europe-west1.firebasedatabase.app';
-const LEADS_URL = `${FB_BASE}/leads.json`;
-const STATE_URL = `${FB_BASE}/mailbotState.json`;
+// Sinds de Firebase-regels zijn aangescherpt naar "auth != null" (30-7-2026)
+// moet ELK verzoek geauthenticeerd zijn — ook vanuit deze bot, die geen
+// gebruiker heeft om mee in te loggen. Daarom wordt het legacy database-secret
+// als ?auth=... query-param meegestuurd; dat geeft admin-toegang die de
+// beveiligingsregels omzeilt, precies zoals het dashboard dat niet nodig
+// heeft omdat een ingelogde gebruiker daar wél aan "auth != null" voldoet.
+const FB_SECRET = process.env.FIREBASE_DB_SECRET;
+const FB_AUTH_SUFFIX = FB_SECRET ? `?auth=${FB_SECRET}` : '';
+const LEADS_URL = `${FB_BASE}/leads.json${FB_AUTH_SUFFIX}`;
+const STATE_URL = `${FB_BASE}/mailbotState.json${FB_AUTH_SUFFIX}`;
 
 const TENANT_ID = process.env.MS_TENANT_ID;
 const CLIENT_ID = process.env.MS_CLIENT_ID;
@@ -280,6 +288,10 @@ Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commenta
 async function main() {
   if (!TENANT_ID || !CLIENT_ID || !CLIENT_SECRET) {
     console.error('Ontbrekende secrets (MS_TENANT_ID / MS_CLIENT_ID / MS_CLIENT_SECRET).');
+    process.exit(1);
+  }
+  if (!FB_SECRET) {
+    console.error('Ontbrekend secret FIREBASE_DB_SECRET — sinds de Firebase-regels "auth != null" vereisen kan de bot niet meer anoniem lezen/schrijven.');
     process.exit(1);
   }
 

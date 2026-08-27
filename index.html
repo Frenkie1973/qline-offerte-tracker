@@ -1193,10 +1193,15 @@ const d=deals.find(x=>x.id===id);
 if(!d){alert('Lead niet gevonden.');return}
 const {jsPDF}=window.jspdf;
 const doc=new jsPDF({unit:'mm',format:'a4'});
-const pageW=210,marginL=18,marginR=18,contentW=pageW-marginL-marginR;
+const pageW=210,pageH=297,marginL=18,marginR=18,marginBottom=20,contentW=pageW-marginL-marginR;
+// Regelhoogte exact afgestemd op jsPDF's eigen tekstopmaak (1.15 * fontSize),
+// zodat handmatige y-stappen nooit méér of minder ruimte innemen dan de
+// tekst die daadwerkelijk getekend wordt — dat voorkomt overlappende tekst.
+function lineH(fontPt){return fontPt*1.15/72*25.4;}
 let y=20;
 function checkPage(extra){
-if(y+extra>280){doc.addPage();y=20;}
+if(y+extra>pageH-marginBottom){doc.addPage();y=20;return true;}
+return false;
 }
 // Kop
 doc.setFillColor(20,20,20);
@@ -1208,32 +1213,44 @@ doc.text('Q-LINE',marginL,9.5);
 doc.setFont('helvetica','normal');
 doc.setFontSize(8);
 doc.text('PIONEERS IN EQUESTRIAN INNOVATION',pageW-marginR,9.5,{align:'right'});
-y=26;
+y=28;
 doc.setTextColor(20,20,20);
 doc.setFont('helvetica','bold');
-doc.setFontSize(18);
-doc.text('Orderoverzicht — '+d.klant,marginL,y);
-y+=6;
+doc.setFontSize(17);
+const titleLines=doc.splitTextToSize('Orderoverzicht — '+d.klant,contentW);
+doc.text(titleLines,marginL,y);
+y+=lineH(17)*titleLines.length+2;
 doc.setDrawColor(200,60,50);
 doc.setLineWidth(0.8);
 doc.line(marginL,y,marginL+30,y);
-y+=10;
-// Klantgegevens blok
+y+=11;
+// Klantgegevens: label en waarde op één regel, met de kolombreedte van de
+// waarde exact afgestemd op de werkelijk getekende breedte van het label
+// (in plaats van een vaste kolom) — zo kan een lang label nooit over de
+// waarde heen lopen.
 doc.setFont('helvetica','bold');
-doc.setFontSize(11);
+doc.setFontSize(12);
+checkPage(8);
 doc.text('Klantgegevens',marginL,y);
-y+=6;
-doc.setFont('helvetica','normal');
-doc.setFontSize(10);
+y+=7;
+const veldFontPt=10;
 const veld=(label,val)=>{
 if(!val)return;
-checkPage(6);
+const labelText=label+': ';
 doc.setFont('helvetica','bold');
-doc.text(label+':',marginL,y);
+doc.setFontSize(veldFontPt);
+const labelW=doc.getTextWidth(labelText);
 doc.setFont('helvetica','normal');
-const lines=doc.splitTextToSize(String(val),contentW-38);
-doc.text(lines,marginL+38,y);
-y+=6*lines.length;
+const lines=doc.splitTextToSize(String(val),Math.max(contentW-labelW,30));
+const blockH=lineH(veldFontPt)*lines.length;
+checkPage(blockH+2);
+doc.setFont('helvetica','bold');
+doc.setTextColor(20,20,20);
+doc.text(labelText,marginL,y);
+doc.setFont('helvetica','normal');
+doc.setTextColor(50,50,50);
+doc.text(lines,marginL+labelW,y);
+y+=blockH+2.5;
 };
 veld('Klant',d.klant);
 veld('E-mail',d.email);
@@ -1245,18 +1262,36 @@ veld('Aanvraagnummer',d.aanvraagnr);
 veld('Bedrag',d.bedrag?('€ '+Number(d.bedrag).toLocaleString('nl-NL')):'');
 veld('Gewonnen op',d.datum);
 if(d.reden)veld('Reden (waarom gewonnen)',d.reden);
-if(d.notitie){y+=2;veld('Notities',d.notitie);}
+// Notities: eigen blok i.p.v. label+waarde-op-één-regel, want dit veld
+// bevat vaak meerdere regels (bijv. een adresblok) — dat leest prettiger
+// als los blokje onder een eigen kopje dan ingeklemd naast een label.
+if(d.notitie){
+checkPage(10);
+doc.setFont('helvetica','bold');
+doc.setFontSize(veldFontPt);
+doc.setTextColor(20,20,20);
+doc.text('Notities:',marginL,y);
+y+=lineH(veldFontPt)+1.5;
+doc.setFont('helvetica','normal');
+doc.setTextColor(50,50,50);
+const notitieLines=doc.splitTextToSize(String(d.notitie),contentW-4);
+const notitieH=lineH(veldFontPt)*notitieLines.length;
+checkPage(notitieH);
+doc.text(notitieLines,marginL+2,y);
+y+=notitieH+2.5;
+}
 y+=6;
 // Tijdlijn
-checkPage(14);
+checkPage(16);
 doc.setFont('helvetica','bold');
-doc.setFontSize(11);
+doc.setFontSize(12);
+doc.setTextColor(20,20,20);
 doc.text('Volledig verloop (chronologisch)',marginL,y);
-y+=3;
+y+=4;
 doc.setDrawColor(220,220,220);
 doc.setLineWidth(0.3);
 doc.line(marginL,y,pageW-marginR,y);
-y+=7;
+y+=8;
 const contacts=d.contacts||[];
 if(!contacts.length){
 doc.setFont('helvetica','italic');
@@ -1265,24 +1300,36 @@ doc.setTextColor(120,120,120);
 doc.text('Geen contactmomenten geregistreerd.',marginL,y);
 y+=8;
 }
-const typeLabel={mail:'✉ Mail',reactie:'📩 Reactie van klant',app:'💬 App',bel:'📞 Telefoon'};
+const typeLabel={mail:'Mail',reactie:'Reactie van klant',app:'App',bel:'Telefoon'};
+const entryFontPt=9.5;
+const headFontPt=9.5;
+const padTop=5,padBottom=4,padX=3;
 contacts.forEach((c,i)=>{
 const label=typeLabel[c.type]||c.type||'Contact';
-const tekst=(c.tekst||'').trim();
-const lines=doc.splitTextToSize(tekst||'(geen tekst)',contentW-4);
-checkPage(10+lines.length*4.6);
-doc.setFillColor(245,243,238);
-doc.rect(marginL,y-4.5,contentW,6+lines.length*4.6,'F');
-doc.setFont('helvetica','bold');
-doc.setFontSize(9.5);
-doc.setTextColor(20,20,20);
-doc.text(`${i+1}. ${label} — ${c.datum||''} ${c.tijd||''}`,marginL+2,y);
-y+=5.5;
+const tekst=(c.tekst||'').trim()||'(geen tekst)';
 doc.setFont('helvetica','normal');
-doc.setFontSize(9.5);
+doc.setFontSize(entryFontPt);
+const lines=doc.splitTextToSize(tekst,contentW-padX*2);
+const headH=lineH(headFontPt);
+const bodyH=lineH(entryFontPt)*lines.length;
+const blockH=padTop+headH+2+bodyH+padBottom;
+// Als dit hele blok niet meer past, begin een nieuwe pagina VOORDAT we
+// beginnen te tekenen — zo wordt nooit de achtergrond op de ene pagina
+// getekend en de tekst op de volgende (de eigenlijke overlap-bug).
+checkPage(blockH);
+doc.setFillColor(245,243,238);
+doc.rect(marginL,y,contentW,blockH,'F');
+let ty=y+padTop+headH*0.7;
+doc.setFont('helvetica','bold');
+doc.setFontSize(headFontPt);
+doc.setTextColor(20,20,20);
+doc.text(`${i+1}. ${label} — ${c.datum||''} ${c.tijd||''}`,marginL+padX,ty);
+ty+=headH*0.6+2;
+doc.setFont('helvetica','normal');
+doc.setFontSize(entryFontPt);
 doc.setTextColor(60,60,60);
-doc.text(lines,marginL+2,y);
-y+=lines.length*4.6+4;
+doc.text(lines,marginL+padX,ty);
+y+=blockH+4;
 });
 // Footer op elke pagina
 const pageCount=doc.internal.getNumberOfPages();
@@ -1291,7 +1338,7 @@ doc.setPage(p);
 doc.setFont('helvetica','normal');
 doc.setFontSize(8);
 doc.setTextColor(150,150,150);
-doc.text('Q-Line Equestrian B.V. — gegenereerd op '+new Date().toLocaleDateString('nl-NL')+' — pagina '+p+' van '+pageCount,marginL,292);
+doc.text('Q-Line Equestrian B.V. — gegenereerd op '+new Date().toLocaleDateString('nl-NL')+' — pagina '+p+' van '+pageCount,marginL,pageH-8);
 }
 const veiligeNaam=d.klant.replace(/[^a-z0-9]+/gi,'_').slice(0,40);
 doc.save('Q-Line_order_'+veiligeNaam+'.pdf');

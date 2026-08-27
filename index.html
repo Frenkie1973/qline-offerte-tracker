@@ -235,6 +235,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="mfoot">
 <button class="btn" onclick="closeMo()">Annuleren</button>
 <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+<button class="btn" id="bpdf" style="display:none" onclick="exportGewonnenPDF(editId)">📄 PDF voor productie</button>
 <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
 </div>
 </div>
@@ -810,6 +811,7 @@ const fland=document.getElementById('fland');if(fland)fland.value=pre?.land||'';
 document.getElementById('fn').value=pre?.notitie||'';
 document.getElementById('cwrap').style.display='none';
 document.getElementById('bdel').style.display='none';
+const bpdf0=document.getElementById('bpdf');if(bpdf0)bpdf0.style.display='none';
 const mc0=document.getElementById('mheadCall');if(mc0)mc0.style.display='none';
 const adv0=document.getElementById('mAdvies');if(adv0)adv0.style.display='none';
 const ekb0=document.getElementById('aiKlantBericht');if(ekb0)ekb0.value='';
@@ -893,6 +895,7 @@ pogingEl.style.display='none';
 }
 renderClog(d.contacts||[]);
 document.getElementById('bdel').style.display='inline-block';
+const bpdf=document.getElementById('bpdf');if(bpdf)bpdf.style.display=d.status==='gewonnen'?'inline-block':'none';
 document.getElementById('mo').classList.add('open');
 toggleDatumOfferte();
 }
@@ -1104,6 +1107,7 @@ box.innerHTML=`
 <div class="mfoot">
 <button class="btn" onclick="closeMo()">Annuleren</button>
 <button class="btn btn-p" onclick="saveDeal()">Opslaan</button>
+<button class="btn" id="bpdf" style="display:none" onclick="exportGewonnenPDF(editId)">📄 PDF voor productie</button>
 <button class="btn btn-d" id="bdel" style="display:none;margin-left:auto" onclick="delDeal()">Verwijder</button>
 </div>`;
 }
@@ -1183,6 +1187,114 @@ if(!d||!d.contacts)return;
 d.contacts.splice(i,1);
 save();
 renderClog(d.contacts);
+}
+function exportGewonnenPDF(id){
+const d=deals.find(x=>x.id===id);
+if(!d){alert('Lead niet gevonden.');return}
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF({unit:'mm',format:'a4'});
+const pageW=210,marginL=18,marginR=18,contentW=pageW-marginL-marginR;
+let y=20;
+function checkPage(extra){
+if(y+extra>280){doc.addPage();y=20;}
+}
+// Kop
+doc.setFillColor(20,20,20);
+doc.rect(0,0,pageW,14,'F');
+doc.setTextColor(255,255,255);
+doc.setFont('helvetica','bold');
+doc.setFontSize(12);
+doc.text('Q-LINE',marginL,9.5);
+doc.setFont('helvetica','normal');
+doc.setFontSize(8);
+doc.text('PIONEERS IN EQUESTRIAN INNOVATION',pageW-marginR,9.5,{align:'right'});
+y=26;
+doc.setTextColor(20,20,20);
+doc.setFont('helvetica','bold');
+doc.setFontSize(18);
+doc.text('Orderoverzicht — '+d.klant,marginL,y);
+y+=6;
+doc.setDrawColor(200,60,50);
+doc.setLineWidth(0.8);
+doc.line(marginL,y,marginL+30,y);
+y+=10;
+// Klantgegevens blok
+doc.setFont('helvetica','bold');
+doc.setFontSize(11);
+doc.text('Klantgegevens',marginL,y);
+y+=6;
+doc.setFont('helvetica','normal');
+doc.setFontSize(10);
+const veld=(label,val)=>{
+if(!val)return;
+checkPage(6);
+doc.setFont('helvetica','bold');
+doc.text(label+':',marginL,y);
+doc.setFont('helvetica','normal');
+const lines=doc.splitTextToSize(String(val),contentW-38);
+doc.text(lines,marginL+38,y);
+y+=6*lines.length;
+};
+veld('Klant',d.klant);
+veld('E-mail',d.email);
+veld('Telefoon',d.telefoon);
+veld('Land',d.land);
+veld('Onderwerp',d.onderwerp);
+veld('Offertenummer',d.offertenr);
+veld('Aanvraagnummer',d.aanvraagnr);
+veld('Bedrag',d.bedrag?('€ '+Number(d.bedrag).toLocaleString('nl-NL')):'');
+veld('Gewonnen op',d.datum);
+if(d.reden)veld('Reden (waarom gewonnen)',d.reden);
+if(d.notitie){y+=2;veld('Notities',d.notitie);}
+y+=6;
+// Tijdlijn
+checkPage(14);
+doc.setFont('helvetica','bold');
+doc.setFontSize(11);
+doc.text('Volledig verloop (chronologisch)',marginL,y);
+y+=3;
+doc.setDrawColor(220,220,220);
+doc.setLineWidth(0.3);
+doc.line(marginL,y,pageW-marginR,y);
+y+=7;
+const contacts=d.contacts||[];
+if(!contacts.length){
+doc.setFont('helvetica','italic');
+doc.setFontSize(10);
+doc.setTextColor(120,120,120);
+doc.text('Geen contactmomenten geregistreerd.',marginL,y);
+y+=8;
+}
+const typeLabel={mail:'✉ Mail',reactie:'📩 Reactie van klant',app:'💬 App',bel:'📞 Telefoon'};
+contacts.forEach((c,i)=>{
+const label=typeLabel[c.type]||c.type||'Contact';
+const tekst=(c.tekst||'').trim();
+const lines=doc.splitTextToSize(tekst||'(geen tekst)',contentW-4);
+checkPage(10+lines.length*4.6);
+doc.setFillColor(245,243,238);
+doc.rect(marginL,y-4.5,contentW,6+lines.length*4.6,'F');
+doc.setFont('helvetica','bold');
+doc.setFontSize(9.5);
+doc.setTextColor(20,20,20);
+doc.text(`${i+1}. ${label} — ${c.datum||''} ${c.tijd||''}`,marginL+2,y);
+y+=5.5;
+doc.setFont('helvetica','normal');
+doc.setFontSize(9.5);
+doc.setTextColor(60,60,60);
+doc.text(lines,marginL+2,y);
+y+=lines.length*4.6+4;
+});
+// Footer op elke pagina
+const pageCount=doc.internal.getNumberOfPages();
+for(let p=1;p<=pageCount;p++){
+doc.setPage(p);
+doc.setFont('helvetica','normal');
+doc.setFontSize(8);
+doc.setTextColor(150,150,150);
+doc.text('Q-Line Equestrian B.V. — gegenereerd op '+new Date().toLocaleDateString('nl-NL')+' — pagina '+p+' van '+pageCount,marginL,292);
+}
+const veiligeNaam=d.klant.replace(/[^a-z0-9]+/gi,'_').slice(0,40);
+doc.save('Q-Line_order_'+veiligeNaam+'.pdf');
 }
 function mailKlant(){
 const d=deals.find(x=>x.id===editId);
@@ -1419,7 +1531,7 @@ ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',
 <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
 <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
 <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
-</div>`:`<span class="ch">${getDisplayStatus(d).label}</span>`;
+</div>`:(d.status==='gewonnen'?`<button class="qb" onclick="event.stopPropagation();exportGewonnenPDF('${d.id}')">📄 PDF voor productie</button>`:`<span class="ch">${getDisplayStatus(d).label}</span>`);
 return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
 <td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
 <td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
@@ -1948,5 +2060,6 @@ document.getElementById('mo').addEventListener('click',e=>{if(e.target.id==='mo'
 loadWithSync();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>

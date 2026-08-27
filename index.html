@@ -1192,6 +1192,35 @@ function exportGewonnenPDF(id){
 const d=deals.find(x=>x.id===id);
 if(!d){alert('Lead niet gevonden.');return}
 const {jsPDF}=window.jspdf;
+// jsPDF's standaardlettertype (Helvetica) ondersteunt alleen WinAnsi-tekens —
+// emoji (bijv. 🤖 die de mailbot in automatische notities zet) worden dan
+// als rare tekens weergegeven. Die halen we er daarom overal uit.
+function stripEmoji(s){
+if(!s)return s;
+return String(s)
+.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\uFE0F\u200D]/gu,'')
+.replace(/[ \t]{2,}/g,' ')
+.trim();
+}
+// Volledige e-mailhandtekeningen (adres, KvK-nummer, "met vriendelijke
+// groet" etc.) voegen niets toe aan "wat is er besproken" en maken de
+// tijdlijn onoverzichtelijk — we knippen de tekst af zodra zo'n vaste
+// afsluiting begint.
+function trimSignature(s){
+if(!s)return s;
+const markers=[/met vriendelijke groet/i,/mit freundlichen grüßen/i,/best regards/i,/verzonden vanaf outlook/i,/^-{2,}/m,/^van:\s/mi,/^from:\s/mi,/^kvk\s?nr/mi];
+let cut=s.length;
+markers.forEach(re=>{
+const m=s.match(re);
+if(m&&typeof m.index==='number'&&m.index<cut&&m.index>0)cut=m.index;
+});
+return s.slice(0,cut).trim()||s.trim();
+}
+function cleanTekst(s,maxLen){
+let out=trimSignature(stripEmoji(s));
+if(out.length>maxLen)out=out.slice(0,maxLen).trim()+'…';
+return out;
+}
 const doc=new jsPDF({unit:'mm',format:'a4'});
 const pageW=210,pageH=297,marginL=18,marginR=18,marginBottom=20,contentW=pageW-marginL-marginR;
 // Regelhoogte exact afgestemd op jsPDF's eigen tekstopmaak (1.15 * fontSize),
@@ -1252,20 +1281,21 @@ doc.setTextColor(50,50,50);
 doc.text(lines,marginL+labelW,y);
 y+=blockH+2.5;
 };
-veld('Klant',d.klant);
-veld('E-mail',d.email);
-veld('Telefoon',d.telefoon);
-veld('Land',d.land);
-veld('Onderwerp',d.onderwerp);
-veld('Offertenummer',d.offertenr);
-veld('Aanvraagnummer',d.aanvraagnr);
+veld('Klant',stripEmoji(d.klant));
+veld('E-mail',stripEmoji(d.email));
+veld('Telefoon',stripEmoji(d.telefoon));
+veld('Land',stripEmoji(d.land));
+veld('Onderwerp',stripEmoji(d.onderwerp));
+veld('Offertenummer',stripEmoji(d.offertenr));
+veld('Aanvraagnummer',stripEmoji(d.aanvraagnr));
 veld('Bedrag',d.bedrag?('€ '+Number(d.bedrag).toLocaleString('nl-NL')):'');
 veld('Gewonnen op',d.datum);
-if(d.reden)veld('Reden (waarom gewonnen)',d.reden);
+if(d.reden)veld('Reden (waarom gewonnen)',stripEmoji(d.reden));
 // Notities: eigen blok i.p.v. label+waarde-op-één-regel, want dit veld
 // bevat vaak meerdere regels (bijv. een adresblok) — dat leest prettiger
 // als los blokje onder een eigen kopje dan ingeklemd naast een label.
-if(d.notitie){
+const notitieSchoon=d.notitie?cleanTekst(d.notitie,1200):'';
+if(notitieSchoon){
 checkPage(10);
 doc.setFont('helvetica','bold');
 doc.setFontSize(veldFontPt);
@@ -1274,7 +1304,7 @@ doc.text('Notities:',marginL,y);
 y+=lineH(veldFontPt)+1.5;
 doc.setFont('helvetica','normal');
 doc.setTextColor(50,50,50);
-const notitieLines=doc.splitTextToSize(String(d.notitie),contentW-4);
+const notitieLines=doc.splitTextToSize(notitieSchoon,contentW-4);
 const notitieH=lineH(veldFontPt)*notitieLines.length;
 checkPage(notitieH);
 doc.text(notitieLines,marginL+2,y);
@@ -1292,7 +1322,18 @@ doc.setDrawColor(220,220,220);
 doc.setLineWidth(0.3);
 doc.line(marginL,y,pageW-marginR,y);
 y+=8;
-const contacts=d.contacts||[];
+// Schoonmaken + ontdubbelen: de mailbox-koppeling logt soms exact dezelfde
+// mail twee keer (bijv. bij een automatische reactie); die dubbels tonen
+// we niet nogmaals.
+const contactsRaw=d.contacts||[];
+const contacts=[];
+let vorigeTekst=null;
+contactsRaw.forEach(c=>{
+const tekstFinal=cleanTekst(c.tekst||'',600)||'(geen tekst)';
+if(tekstFinal===vorigeTekst)return;
+vorigeTekst=tekstFinal;
+contacts.push({...c,tekst:tekstFinal});
+});
 if(!contacts.length){
 doc.setFont('helvetica','italic');
 doc.setFontSize(10);
@@ -1306,7 +1347,7 @@ const headFontPt=9.5;
 const padTop=5,padBottom=4,padX=3;
 contacts.forEach((c,i)=>{
 const label=typeLabel[c.type]||c.type||'Contact';
-const tekst=(c.tekst||'').trim()||'(geen tekst)';
+const tekst=c.tekst;
 doc.setFont('helvetica','normal');
 doc.setFontSize(entryFontPt);
 const lines=doc.splitTextToSize(tekst,contentW-padX*2);

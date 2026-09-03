@@ -2096,19 +2096,21 @@ const btn=document.getElementById('aiEcBtn');
 const wrap=document.getElementById('aiEcWrap');
 const klantBericht=document.getElementById('aiKlantBericht').value.trim();
 const prompt=`Je helpt Frank, eigenaar van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting), een kwalificatiemail schrijven voor het EERSTE contact met een nieuwe lead — dus VOORDAT er een offerte gemaakt wordt.
-Doel van deze mail: drie dingen helder krijgen voordat Frank tijd steekt in een offerte, geïnspireerd op de aanpak van ervaren verkopers om niet blind offertes te sturen:
+Doel van deze mail: vier dingen helder krijgen voordat Frank tijd steekt in een offerte, geïnspireerd op de aanpak van ervaren verkopers om niet blind offertes te sturen:
 1. Wat er in het voorstel moet staan om voor de klant een "ja" te worden (zodat Frank weet wat de klant echt wil en of er überhaupt een deal in zit)
 2. Wanneer de klant een beslissing neemt / op basis waarvan (commitment vragen, zonder dat het opdringerig aanvoelt)
 3. Of de klant bereid is deze week een keuze te maken, ALS het voorstel klopt op prijs en aanpak (eerst een principe-ja op de beslissing, voordat het voorstel er is)
+4. Een concrete datum/moment waarop Frank de offerte samen met de klant kan doornemen zodra hij die verstuurt (dus: nadat de klant op déze mail heeft gereageerd, stuurt Frank de offerte, en dan willen we alvast een moment gepland hebben om 'm samen door te nemen — bel- of video-afspraak)
 KLANTGEGEVENS:
 - Naam/bedrijf: ${d.klant}
 - Interesse/product: ${d.onderwerp||'onbekend'}
 - Land: ${d.land||'onbekend'}
 - Notities: ${d.notitie||'geen'}
 ${klantBericht?`OORSPRONKELIJKE AANVRAAG / BERICHT VAN DE KLANT:\n${klantBericht}\n`:'(Frank heeft geen origineel bericht van de klant geplakt — baseer je op de klantgegevens hierboven.)'}
-Schrijf een korte, vriendelijke maar directe e-mail (max ~150 woorden) die:
+Schrijf een korte, vriendelijke maar directe e-mail (max ~160 woorden) die:
 - kort bevestigt dat de aanvraag ontvangen is en oprechte interesse toont
-- op een natuurlijke, vloeiende manier de 3 kwalificatievragen hierboven verwerkt (niet als opsomming "vraag 1/2/3", gewoon in lopende tekst)
+- op een natuurlijke, vloeiende manier de kwalificatievragen 1 t/m 3 hierboven verwerkt (niet als opsomming "vraag 1/2/3", gewoon in lopende tekst)
+- ALTIJD een aparte, duidelijke zin bevat die vraagt naar een datum/moment waarop Frank en de klant de offerte samen kunnen doornemen zodra die verstuurd is (punt 4) — dit mag als losse zin aan het einde, vlak vóór de afsluiting
 - past bij het land/de taal van de klant (Duitse klant = Duits, in de juiste formaliteit; Nederlandse klant = Nederlands; anders Engels)
 - Franks toon aanhoudt: zakelijk maar informeel, direct, geen overdreven verkooppraat, geen jargon
 - eindigt met een duidelijke uitnodiging om te reageren

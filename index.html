@@ -175,7 +175,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 </div>
 <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
 <div class="fg">
-<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3" oninput="updateOfferteLink()"><a id="fon-link" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:4px;font-size:11px;color:#b8590a;text-decoration:none;margin-top:5px;font-weight:600">📄 Bekijk interactieve offerte ↗</a></div>
 <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
 </div>
 <div class="fg">
@@ -796,6 +796,23 @@ if(!wrap)return;
 const s=document.getElementById('fst')?.value||'';
 wrap.style.display=['offerte','fu1','fu2'].includes(s)?'block':'none';
 }
+// Interactieve offerte: elke offerte staat als eigen HTML-bestand in de
+// offertes/-map van deze repo (GitHub Pages), met het offertenummer als
+// bestandsnaam. Zodra dat bestand bestaat, werkt deze link automatisch —
+// er is geen apart veld in Firebase voor nodig.
+function offerteUrl(nr){
+const slug=(nr||'').trim();
+if(!slug)return'';
+return'https://frenkie1973.github.io/qline-offerte-tracker/offertes/'+encodeURIComponent(slug)+'.html';
+}
+function updateOfferteLink(){
+const inp=document.getElementById('fon');
+const link=document.getElementById('fon-link');
+if(!inp||!link)return;
+const url=offerteUrl(inp.value);
+if(url){link.href=url;link.style.display='inline-flex';}
+else{link.style.display='none';}
+}
 function openNew(pre){
 editId=null;
 document.getElementById('mtitle').textContent='Lead toevoegen';
@@ -823,6 +840,7 @@ const ecWrap0=document.getElementById('aiEcWrap');if(ecWrap0)ecWrap0.style.displ
 const ecBlok0=document.getElementById('aiEersteContactBlok');if(ecBlok0)ecBlok0.style.display=['nieuw','contact'].includes(pre?.status||'nieuw')?'block':'none';
 document.getElementById('mo').classList.add('open');
 toggleDatumOfferte();
+updateOfferteLink();
 }
 function openEdit(id){
 editId=id;
@@ -901,6 +919,7 @@ document.getElementById('bdel').style.display='inline-block';
 const bpdf=document.getElementById('bpdf');if(bpdf)bpdf.style.display=d.status==='gewonnen'?'inline-block':'none';
 document.getElementById('mo').classList.add('open');
 toggleDatumOfferte();
+updateOfferteLink();
 }
 function closeMo(){document.getElementById('mo').classList.remove('open');editId=null}
 function saveDeal(){
@@ -1054,7 +1073,7 @@ box.innerHTML=`
 </div>
 <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
 <div class="fg">
-<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3" oninput="updateOfferteLink()"><a id="fon-link" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:4px;font-size:11px;color:#b8590a;text-decoration:none;margin-top:5px;font-weight:600">📄 Bekijk interactieve offerte ↗</a></div>
 <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
 </div>
 <div class="fg">
@@ -1625,7 +1644,7 @@ ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',
 </div>`:(d.status==='gewonnen'?`<button class="qb" onclick="event.stopPropagation();exportGewonnenPDF('${d.id}')">📄 PDF voor productie</button>`:`<span class="ch">${getDisplayStatus(d).label}</span>`);
 return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
 <td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
-<td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
+<td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}${d.offertenr?`<a href="${offerteUrl(d.offertenr)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:2px;font-size:10px;color:#b8590a;text-decoration:none;font-weight:600" title="Open interactieve offerte">📄 offerte ↗</a>`:''}</td>
 <td><span class="cm">${fmt(d.bedrag)}</span></td>
 <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
 <td>

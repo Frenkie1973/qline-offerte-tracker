@@ -1,0 +1,646 @@
+<title>Hippo Holland Voorstel</title>
+<!--
+  Q-LINE OFFERTE — ÉÉN BESTAND, GEEN SERVER NODIG.
+  Gegenereerd uit MKG-offerte 10260164-2 (Q-Line Equestrian B.V., 4 sept. 2026).
+  Huisstijl: q-line.com zelf (wit/zwart, Roboto + Roboto Condensed, rood-oranje
+  #FF2300 als accent, groen #0EB203 als actieknop — zoals op de live site).
+  Productfoto's zijn de echte foto's van q-line.com, opgehaald via de artikel-
+  nummers in de MKG-regels. Artikelnummers die in de PDF blauw en aanklikbaar
+  waren, linken hier naar diezelfde productpagina (alleen waar de link ook
+  echt in de brontekst stond — niet gegokt).
+
+  Alle bedragen in het "quote-data" blok zijn de letterlijke regeltotalen uit
+  de MKG-PDF (niet herberekend), zodat de som exact overeenkomt met "Totaal
+  exclusief btw" op de originele offerte.
+
+  OPEN PUNTEN VOOR REVIEW:
+  - Geen geldigheidsdatum aangetroffen in de brontekst — niet verzonnen.
+  - "Binnendiameter: 120 meter" bij de Dome-specs is vermoedelijk een
+    overtypfout in de MKG-brontekst (inconsistent met buitendiameter 21,5 m);
+    gemarkeerd, niet aangepast of geraden.
+  - Geen enkele regel is in de brontekst als "optioneel" gemarkeerd; daarom
+    bewust geen aan/uit-schakelbare optie-interactie op deze pagina.
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@400;700&display=swap');
+
+  :root{
+    --bg:#FFFFFF; --bg-2:#F6F6F4; --bg-3:#FAFAF8;
+    --ink:#161616; --ink-2:#4A4A48; --ink-3:#7A7A76;
+    --line:#E4E4E0; --line-strong:#CFCFC9;
+    --red:#FF2300; --red-soft:#FFE9E4;
+    --green:#0EB203; --green-dark:#0A8C02;
+    --link:#1B57D8;
+    --warn:#B5540A; --warn-soft:#FDECD8; --warn-line:#F0B26B;
+    --shadow:0 10px 30px -14px rgba(20,20,20,.18);
+    --font-head:'Roboto Condensed',Impact,'Arial Narrow',sans-serif;
+    --font-body:'Roboto',-apple-system,'Segoe UI',sans-serif;
+    --font-mono:ui-monospace,'SFMono-Regular','IBM Plex Mono',Menlo,monospace;
+  }
+  /* Bewust altijd licht: dit is de huisstijl van q-line.com zelf, consistent
+     ongeacht het systeemthema van de kijker. */
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);
+    font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;padding-bottom:64px}
+  h1,h2,h3{font-family:var(--font-head);color:var(--ink);text-transform:uppercase;
+    font-weight:700;text-wrap:balance;margin:0;letter-spacing:.01em}
+  p{margin:0}
+  ::selection{background:var(--red-soft)}
+  .mono{font-family:var(--font-mono)}
+  .tabular{font-variant-numeric:tabular-nums}
+  a{color:var(--link)}
+
+  section{max-width:960px;margin:0 auto;padding:80px 28px 76px;position:relative}
+  section + section{border-top:1px solid var(--line)}
+  @media (max-width:720px){section{padding:60px 20px 56px}}
+
+  .eyebrow{font-family:var(--font-head);font-weight:700;font-size:13px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--red);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow:before{content:"";width:20px;height:2px;background:var(--red);display:inline-block}
+
+  /* ---- HERO ---- */
+  .hero{position:relative;min-height:520px;display:flex;align-items:flex-end;padding:0;
+    border-top:none;background:#111 center/cover no-repeat;overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(10,10,10,0) 15%, rgba(8,8,8,.55) 62%, rgba(6,6,6,.88) 100%)}
+  .hero-inner{position:relative;z-index:2;max-width:960px;margin:0 auto;padding:56px 28px 46px;width:100%}
+  .hero .eyebrow{color:var(--red)}
+  .hero h1{font-size:clamp(34px,7vw,60px);line-height:1.02;color:#fff;max-width:16ch;opacity:0;
+    animation:rise .8s .1s ease-out forwards}
+  .hero .sub{font-size:18px;color:#EDEDED;max-width:48ch;margin-top:16px;font-family:var(--font-body);
+    text-transform:none;font-weight:400;opacity:0;animation:rise .8s .28s ease-out forwards}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:26px;font-family:var(--font-mono);
+    font-size:12.5px;color:#C9C9C9;opacity:0;animation:rise .8s .42s ease-out forwards}
+  .hero .meta b{color:#fff;font-family:var(--font-body);font-weight:700}
+  .hero .scrollcue{opacity:0;animation:rise .8s .6s ease-out forwards;display:inline-flex;align-items:center;gap:10px;
+    background:var(--green);border:none;color:#fff;font-family:var(--font-head);font-weight:700;
+    font-size:14.5px;text-transform:uppercase;letter-spacing:.03em;padding:13px 22px;border-radius:100px;
+    cursor:pointer;margin-top:26px;box-shadow:var(--shadow)}
+  .hero .scrollcue:hover{background:var(--green-dark)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){ .hero h1,.hero .sub,.hero .meta,.hero .scrollcue{animation:none;opacity:1} }
+
+  .overview h2{font-size:clamp(22px,4vw,32px);max-width:20ch}
+  .overview-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:28px 0 38px}
+  .ocard{background:var(--bg-3);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .ocard img{width:100%;height:120px;object-fit:cover;display:block}
+  .ocard .body{padding:16px 18px}
+  .ocard h4{font-family:var(--font-head);font-weight:700;font-size:15px;margin:0 0 4px;text-transform:none}
+  .ocard p{font-size:13.5px;color:var(--ink-3)}
+  .invest-block{background:var(--bg-2);border:1px solid var(--line-strong);border-radius:8px;padding:28px 30px;
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+  .invest-block .lbl{font-family:var(--font-head);font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+  .invest-block .val{font-family:var(--font-head);font-weight:700;font-size:clamp(28px,5vw,42px);color:var(--ink)}
+  .invest-block .note{font-size:13px;color:var(--ink-3);max-width:28ch}
+
+  .product h2{font-size:clamp(22px,4.5vw,36px);margin-top:8px;text-transform:none}
+  .product .sub{font-size:16.5px;color:var(--ink-2);max-width:58ch;margin-top:12px}
+  .photo-wrap{margin:30px 0;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .photo-wrap img{width:100%;max-height:420px;object-fit:cover;display:block}
+  .photo-cap{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);padding:9px 4px 0}
+
+  .benefits{list-style:none;margin:30px 0 8px;padding:0;display:flex;flex-direction:column;gap:18px}
+  .benefits li{display:flex;gap:14px;opacity:0;transform:translateY(10px);transition:opacity .55s ease,transform .55s ease}
+  .benefits li.in{opacity:1;transform:translateY(0)}
+  .benefits li .mark{flex:none;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:2px}
+  .benefits li h4{font-family:var(--font-body);font-weight:700;font-size:15.5px;margin:0 0 3px}
+  .benefits li p{font-size:14px;color:var(--ink-2)}
+  @media (prefers-reduced-motion:reduce){.benefits li{opacity:1;transform:none}}
+
+  .noteflag{display:flex;gap:10px;background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:6px;
+    padding:13px 16px;font-size:13.5px;color:var(--ink);margin-top:22px}
+  .noteflag b{color:var(--warn)}
+
+  details.specs{margin:22px 0 0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg-3)}
+  details.specs summary{cursor:pointer;list-style:none;padding:14px 18px;font-family:var(--font-body);font-weight:700;
+    font-size:14.5px;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+  details.specs summary::-webkit-details-marker{display:none}
+  details.specs summary:after{content:"+";font-family:var(--font-mono);color:var(--red);font-size:18px}
+  details.specs[open] summary:after{content:"–"}
+  .specs-table{padding:0 18px 16px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2)}
+  .specs-table div{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-top:1px solid var(--line)}
+  .specs-list{padding:0 18px 16px;font-size:13.5px;color:var(--ink-2)}
+  .specs-list li{padding:5px 0}
+
+  .pricing{margin-top:36px;background:var(--bg-3);border:1px solid var(--line-strong);border-radius:8px;
+    padding:26px 28px}
+  .pricing .ptitle{font-family:var(--font-body);font-weight:700;font-size:16px}
+  .price-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .price-row .list{font-family:var(--font-mono);font-size:16px;color:var(--ink-3);text-decoration:line-through}
+  .price-row .net{font-family:var(--font-head);font-weight:700;font-size:28px;color:var(--ink)}
+  .save-chip{display:inline-flex;align-items:center;font-family:var(--font-head);font-weight:700;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.03em;background:#E7F7E5;color:var(--green-dark);padding:3px 10px;border-radius:100px}
+  .col-label{font-family:var(--font-head);font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px}
+  .included{list-style:none;margin:0;padding:0;font-size:14.5px}
+  .included li{padding:4px 0;color:var(--ink-2)}
+  .included li:before{content:"✓ ";color:var(--red);font-weight:700}
+  .install-note{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;padding-top:15px;
+    border-top:1px dashed var(--line-strong);font-size:14px;color:var(--ink-3)}
+  .install-note b{font-family:var(--font-mono);color:var(--ink-2)}
+
+  .delivery{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}
+  .dcard{background:var(--bg-3);border:1px solid var(--line);border-radius:6px;padding:17px 19px}
+  .dcard .amt{font-family:var(--font-head);font-size:20px;color:var(--ink)}
+  .dcard .lbl{font-family:var(--font-head);font-size:11px;color:var(--ink-3);text-transform:uppercase}
+  .dcard p{font-size:13px;color:var(--ink-2);margin-top:6px}
+
+  .why-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:32px}
+  .wcard{border:1px solid var(--line);border-radius:6px;padding:22px 20px;background:var(--bg-3)}
+  .wcard .idx{font-family:var(--font-head);font-weight:700;font-size:12px;color:var(--red);margin-bottom:9px}
+  .wcard h4{font-family:var(--font-body);font-weight:700;font-size:15.5px;margin-bottom:7px}
+  .wcard p{font-size:13.5px;color:var(--ink-2)}
+
+  .summary-table{margin-top:28px;font-size:16px}
+  .summary-table .row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .summary-table .row .lbl{color:var(--ink)}
+  .summary-table .row .val{font-family:var(--font-mono);white-space:nowrap}
+  .summary-table .row.total{border-bottom:none;border-top:2px solid var(--ink);margin-top:4px;padding-top:18px}
+  .summary-table .row.total .lbl,.summary-table .row.total .val{font-family:var(--font-head);font-weight:700;font-size:24px}
+
+  details.full-breakdown{margin-top:20px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg-3)}
+  details.full-breakdown summary{cursor:pointer;list-style:none;padding:13px 18px;font-size:13.5px;color:var(--ink-2);
+    display:flex;justify-content:space-between;align-items:center}
+  details.full-breakdown summary::-webkit-details-marker{display:none}
+  details.full-breakdown summary:after{content:"+";font-family:var(--font-mono);color:var(--red)}
+  details.full-breakdown[open] summary:after{content:"–"}
+  .bd-table{overflow-x:auto;padding:0 4px 14px}
+  .bd-table table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+  .bd-table th,.bd-table td{text-align:left;padding:7px 10px;border-top:1px solid var(--line);color:var(--ink-2)}
+  .bd-table th{color:var(--ink-3);font-weight:500}
+  .bd-table td.num{text-align:right}
+  .bd-table a{color:var(--link);text-decoration:underline}
+
+  .validity-missing{margin-top:20px;padding:13px 18px;border:1px solid var(--warn-line);background:var(--warn-soft);
+    border-radius:6px;font-size:13.5px;color:var(--ink)}
+
+  .final h2{font-size:clamp(24px,5vw,38px);text-transform:none}
+  .final .sub{font-size:16.5px;color:var(--ink-2);max-width:52ch;margin-top:14px}
+  .terms-block{margin-top:24px;font-size:13.5px;color:var(--ink-3);display:flex;flex-direction:column;gap:6px}
+  .terms-block b{color:var(--ink-2)}
+  .cta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:32px}
+  .btn{display:flex;align-items:center;justify-content:center;text-align:center;gap:8px;padding:15px 20px;
+    border-radius:6px;font-family:var(--font-head);font-weight:700;font-size:14.5px;text-transform:uppercase;
+    letter-spacing:.02em;text-decoration:none;min-height:52px;border:1.5px solid var(--ink);color:var(--ink);
+    transition:background .15s,color .15s}
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;border-radius:100px}
+  .btn.primary:hover{background:var(--green-dark);border-color:var(--green-dark)}
+  .pdf-link{display:inline-flex;align-items:center;gap:8px;margin-top:20px;color:var(--ink-2);font-size:14.5px;
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer;background:none;border:none;
+    font-family:var(--font-body);padding:0}
+  .pdf-link:hover{color:var(--red)}
+
+  .decline{margin-top:52px;border-top:1px solid var(--line);padding-top:28px}
+  .decline > summary{list-style:none;cursor:pointer;color:var(--ink-3);font-size:14.5px;text-decoration:underline;text-underline-offset:3px}
+  .decline > summary::-webkit-details-marker{display:none}
+  .decline-panel{margin-top:16px;background:var(--bg-3);border:1px solid var(--line);border-radius:6px;padding:20px 22px}
+  .decline-panel p{font-size:14.5px;color:var(--ink-2);margin-bottom:14px}
+  .reason{display:flex;align-items:center;gap:10px;padding:9px 4px;font-size:14.5px;cursor:pointer;min-height:38px}
+  .reason input{accent-color:var(--red);width:16px;height:16px}
+  .decline-panel .btn{margin-top:12px;display:inline-flex;min-height:46px;padding:11px 22px;border-radius:6px}
+
+  footer{max-width:960px;margin:0 auto;padding:34px 28px 20px;color:var(--ink-3);font-size:12.5px;
+    display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
+
+  .sticky-total{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#111;border-top:3px solid var(--red);
+    display:flex;align-items:center;justify-content:space-between;padding:12px 22px;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom));cursor:pointer;text-decoration:none;color:#fff;
+    transform:translateY(100%);transition:transform .5s ease}
+  .sticky-total.show{transform:translateY(0)}
+  .sticky-total .l{font-family:var(--font-head);font-size:11.5px;color:#B9B9B9;text-transform:uppercase;letter-spacing:.05em}
+  .sticky-total .v{font-family:var(--font-head);font-weight:700;font-size:19px;color:#fff}
+  .sticky-total .row{display:flex;flex-direction:column;gap:2px}
+  .sticky-total .arrow{font-family:var(--font-head);font-size:13px;color:var(--red);font-weight:700;text-transform:uppercase}
+
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#111;
+    border:1px solid #333;color:#fff;padding:12px 20px;border-radius:6px;font-size:13.5px;
+    max-width:88vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:90}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (max-width:720px){ .pricing{padding:20px 18px} .hero{min-height:460px} }
+</style>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top" style="background-image:url('https://qline.s3-eu-west-1.amazonaws.com/_1800x500_crop_center-center_none/17-5-xx-xxxxx-18.jpg')">
+  <div class="hero-inner">
+    <p class="eyebrow">Offerte 10260164-2 · Q-Line Equestrian B.V.</p>
+    <h1>Uw Q-Line oplossing</h1>
+    <p class="sub">Een overdekte longeerpiste met hangende Up Side Down trainingsmolen — ontworpen rond uw stal en uw dagelijkse routine.</p>
+    <div class="meta">
+      <span>Klant <b>Hippo Holland</b> — t.a.v. J. Dekker</span>
+      <span>Referentie <b>Koopman</b></span>
+      <span>Datum <b>4 september 2026</b></span>
+    </div>
+    <button class="scrollcue" onclick="document.getElementById('overview').scrollIntoView()">Ontdek uw oplossing ↓</button>
+  </div>
+</section>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="overview" id="overview">
+  <p class="eyebrow">Uw project in één oogopslag</p>
+  <h2>Een complete, overdekte trainingsomgeving</h2>
+  <div class="overview-cards">
+    <div class="ocard">
+      <img src="https://qline.s3-eu-west-1.amazonaws.com/17-5-25-00015/_1130x757_crop_center-center_none/17-5-xx-xxxxx-19.jpg" alt="Q-Line Dome overkapping" loading="lazy">
+      <div class="body"><h4>Dome overkapping</h4><p>20 meter, incl. goot &amp; verlichting</p></div>
+    </div>
+    <div class="ocard">
+      <img src="https://qline.s3-eu-west-1.amazonaws.com/17-4-30-10020/_1130x757_crop_center-center_none/Q-line-trainingsmolen-005.jpg" alt="Q-Line veiligheidsomheining" loading="lazy">
+      <div class="body"><h4>Veiligheidsomheining</h4><p>Sublime, binnen &amp; buiten, 54 vakken</p></div>
+    </div>
+    <div class="ocard">
+      <img src="https://qline.s3-eu-west-1.amazonaws.com/22-5-25-00618/_1130x757_crop_center-center_none/2712/22-5-25-00618-1.jpg" alt="Q-Line Up Side Down trainingsmolen" loading="lazy">
+      <div class="body"><h4>USD Trainingsmolen</h4><p>Hangend in de nok, 6 paarden</p></div>
+    </div>
+  </div>
+  <div class="invest-block">
+    <div>
+      <div class="lbl">Totale projectinvestering</div>
+      <div class="val">€ <span class="tabular" id="overviewTotal">0</span></div>
+    </div>
+    <p class="note">Excl. BTW — inclusief montage en transport, volledige uitsplitsing verderop.</p>
+  </div>
+</section>
+
+<!-- ============ PRODUCT 1: DOME ============ -->
+<section class="product" id="dome">
+  <p class="eyebrow">Onderdeel 01 — overkapping</p>
+  <h2>Q-Line Dome, 20 meter</h2>
+  <p class="sub">Een volledig overdekte longeerpiste, ontworpen om het hele jaar door — in weer en wind — te kunnen trainen.</p>
+
+  <div class="photo-wrap">
+    <img src="https://qline.s3-eu-west-1.amazonaws.com/17-5-25-00015/_1130x757_crop_center-center_none/17-5-xx-xxxxx-19.jpg" alt="Q-Line Dome overkapping, 20 meter">
+  </div>
+  <p class="photo-cap">Foto: q-line.com — Dome overkapping (referentiebeeld)</p>
+
+  <ul class="benefits">
+    <li><span class="mark">✓</span><div><h4>Het hele jaar door trainen, ongeacht het weer</h4><p>De volledig overdekte longeerpiste beschermt tegen regen, wind en felle zon — geen uitgevallen trainingen meer door het weer.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Gebouwd voor decennia buiten</h4><p>De staalconstructie (IPE 200, 15 secties) is verzinkt volgens de Europese norm NEN-EN-ISO 1461-99 voor langdurige corrosiebescherming.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Kleur naar keuze, 30 jaar coatinggarantie</h4><p>De dakplaten zijn leverbaar in Granite HDX of Solano NX — met 30 jaar fabrieksgarantie op de coating, verstrekt door Arcelor.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Minder druppelvorming boven uw paarden</h4><p>Anti-condens vilt aan de onderzijde van de dakplaten absorbeert vocht en vermindert condensvorming tussen buien door.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Droge, verlichte hoefslag</h4><p>Een rondlopende goot met hemelwaterafvoer en 7 slagvaste LED-armaturen houden de baan droog en goed zichtbaar, ook 's avonds.</p></div></li>
+  </ul>
+
+  <div class="noteflag"><span>⚠</span><p><b>Belangrijk, geen verkooppunt:</b> de overkapping is ontworpen op een sneeuwlast van 1.500 N. De verantwoordelijkheid voor de geschiktheid van deze sneeuwlast voor uw locatie ligt bij u als opdrachtgever — controleer dit vooraf.</p></div>
+
+  <details class="specs">
+    <summary>Bekijk technische specificaties</summary>
+    <div class="specs-table">
+      <div><span>Buitendiameter</span><span>21,5 m</span></div>
+      <div><span>Binnendiameter</span><span style="color:var(--warn)">120 m — te verifiëren¹</span></div>
+      <div><span>Totale hoogte</span><span>6,7 m</span></div>
+      <div><span>Constructie</span><span>Gegalvaniseerd balkstaal IPE 200, 15 secties</span></div>
+      <div><span>Verzinking</span><span>NEN-EN-ISO 1461-99</span></div>
+      <div><span>Dakbedekking</span><span>32 mm damwandprofiel, Granite HDX / Solano NX</span></div>
+      <div><span>Gording</span><span>Z275 of ZMA140 zinklaag</span></div>
+      <div><span>Sneeuwlast</span><span>1.500 N (klantverantwoordelijkheid)</span></div>
+    </div>
+    <p style="padding:0 18px 16px;font-size:12px;color:var(--ink-3)">¹ Deze waarde uit de brontekst lijkt niet consistent met de buitendiameter — waarschijnlijk een overtypfout in de MKG-offerte. Niet aangepast; graag door Frank te verifiëren vóór verzending.</p>
+  </details>
+
+  <div class="pricing" data-product="dome">
+    <div class="ptitle">Dome 20 meter + goot, kokeruitbouw &amp; verlichting</div>
+    <div class="price-row"><span class="list mono">€ 65.789</span><span class="net">€ <span class="tabular">53.433</span></span><span class="save-chip">u bespaart € 12.357</span></div>
+    <div class="col-label">Inbegrepen</div>
+    <ul class="included">
+      <li>Dome overkapping 20 meter, 1.500N sneeuwlast</li>
+      <li>Dakgoot rondom, 15 secties, incl. hemelwaterafvoer</li>
+      <li>Kokeruitbouw spant (HOK)</li>
+      <li>LED-verlichting boven de hoefslag, 7 armaturen</li>
+    </ul>
+    <div class="install-note"><span>Montage overkapping &amp; verlichting</span><b>€ 8.460</b></div>
+  </div>
+</section>
+
+<!-- ============ PRODUCT 2: OMHEINING ============ -->
+<section class="product" id="omheining">
+  <p class="eyebrow">Onderdeel 02 — veiligheid rond de bak</p>
+  <h2>Q-Line Veiligheidsomheining Sublime</h2>
+  <p class="sub">Een dubbele omheining — binnen en buiten — die veilig meebeweegt en jarenlang overeind blijft.</p>
+
+  <div class="photo-wrap">
+    <img src="https://qline.s3-eu-west-1.amazonaws.com/17-4-30-10020/_1130x757_crop_center-center_none/Q-line-trainingsmolen-005.jpg" alt="Q-Line veiligheidsomheining Sublime">
+  </div>
+  <p class="photo-cap">Foto: q-line.com — Omheining Sublime (referentiebeeld)</p>
+
+  <ul class="benefits">
+    <li><span class="mark">✓</span><div><h4>Veilig van binnen én van buiten</h4><p>Zowel een binnen- als buitenomheining van 1,6 meter hoog, met poorten van 2×2 meter aan beide zijden.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Perfecte pasvorm voor uw installatie</h4><p>De vakvulling van kunststof PE-planken wordt op maat geproduceerd en past naadloos in de 54 omheiningsvakken.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Sterk, onderhoudsarm en weerbestendig</h4><p>Veer-en-groefverbinding, bestand tegen intensief gebruik en alle weersomstandigheden — geen jaarlijks onderhoud nodig.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Beschutting tegen wind, ook op open locaties</h4><p>Windbreekgaas in spant- en poortvakken houdt de baan beschut zonder het zicht volledig weg te nemen.</p></div></li>
+  </ul>
+
+  <details class="specs">
+    <summary>Bekijk technische specificaties</summary>
+    <div class="specs-table">
+      <div><span>Frame</span><span>Sublime, 54 vakken</span></div>
+      <div><span>Hoogte omheining</span><span>1,6 m (binnen &amp; buiten)</span></div>
+      <div><span>Poorten</span><span>2× 2×2 m, incl. tralies buiten</span></div>
+      <div><span>Vakvulling</span><span>Kunststof PE, 138 mm breed, 28 mm dik</span></div>
+      <div><span>Windbreekgaas</span><span>14× 4×1 m, 1× 2×1 m, incl. spanrolsysteem</span></div>
+      <div><span>Fundering</span><span>17× betonpoer 800×1000×900, 700 kg</span></div>
+      <div><span>Verzinking</span><span>NEN-EN-ISO 1461-99</span></div>
+    </div>
+  </details>
+
+  <div class="pricing" data-product="omheining">
+    <div class="ptitle">Omheining, vakvulling, windschermen &amp; fundering</div>
+    <div class="price-row"><span class="list mono">€ 27.562</span><span class="net">€ <span class="tabular">23.797</span></span><span class="save-chip">u bespaart € 3.765</span></div>
+    <div class="col-label">Inbegrepen</div>
+    <ul class="included">
+      <li>Omheining Sublime, 54 vakken, binnen &amp; buiten</li>
+      <li>Vakvulling kunststof zwart, op maat</li>
+      <li>Windbreekgaas spant- en poortvakken</li>
+      <li>17 betonpoeren als fundering</li>
+      <li>Alle bevestigingsmateriaal</li>
+    </ul>
+    <div class="install-note"><span>Montage omheining, windschermen &amp; goot</span><b>€ 4.680</b></div>
+  </div>
+</section>
+
+<!-- ============ PRODUCT 3: USD TRAININGSMOLEN ============ -->
+<section class="product" id="molen">
+  <p class="eyebrow">Onderdeel 03 — dagelijkse beweging</p>
+  <h2>Q-Line Up Side Down Trainingsmolen</h2>
+  <p class="sub">Hangend in de nok in plaats van op een middenpaal — zodat er niets in de weg staat op de baan zelf.</p>
+
+  <div class="photo-wrap">
+    <img src="https://qline.s3-eu-west-1.amazonaws.com/22-5-25-00618/_1130x757_crop_center-center_none/2712/22-5-25-00618-1.jpg" alt="Q-Line Up Side Down trainingsmolen, hangend in de nok">
+  </div>
+  <p class="photo-cap">Foto: q-line.com — trainingsmolen in het dak (referentiebeeld)</p>
+
+  <ul class="benefits">
+    <li><span class="mark">✓</span><div><h4>Niets in de weg op de baan</h4><p>Doordat de molen hangend in de nok is bevestigd, blijft de vloer van de piste volledig vrij van een middenpaal of -constructie.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Ruimte voor 6 paarden tegelijk</h4><p>20 meter diameter, ruim opgezet voor gelijktijdig gebruik door meerdere paarden.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Zachte hekken, veilig voor het paard</h4><p>Lichtgewicht, paardvriendelijke drijfhekken met 10 spijlen sturen zonder scherpe overgangen.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Naadloos wisselen tussen stap en draf</h4><p>De stap/drafkast WCB2.1 met traploze snelheidsregeling laat u precies het tempo instellen dat u wilt, met 2 programma's.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Draait zelf van richting, stopt direct bij nood</h4><p>Automatische richtingwissel voorkomt eenzijdige belasting; de noodstop brengt de molen direct tot stilstand.</p></div></li>
+    <li><span class="mark">✓</span><div><h4>Stofvrij trainen, het hele jaar door</h4><p>Beregening op zowel het looppad als het longeergedeelte, met een 3-wegkraan om tussen beide te kiezen — plus een automatisch smeersysteem voor minder onderhoud aan de aandrijving.</p></div></li>
+  </ul>
+
+  <details class="specs">
+    <summary>Bekijk technische specificaties</summary>
+    <div class="specs-table">
+      <div><span>Diameter</span><span>20 m</span></div>
+      <div><span>Capaciteit</span><span>6 paarden</span></div>
+      <div><span>Aandrijving</span><span>Direct</span></div>
+      <div><span>Besturing</span><span>Stap/drafkast WCB2.1, traploos, 2 programma's</span></div>
+      <div><span>Veiligheid</span><span>Automatische richtingwissel, noodstop</span></div>
+      <div><span>Drijfhekken</span><span>Lichtgewicht, 10 spijlen</span></div>
+      <div><span>Verzinking</span><span>NEN-EN-ISO 1461-99</span></div>
+      <div><span>Aansluitspanning</span><span>230–240V / 50–60Hz</span></div>
+    </div>
+  </details>
+
+  <div class="pricing" data-product="molen">
+    <div class="ptitle">USD Trainingsmolen 20M6H + beregening &amp; smering</div>
+    <div class="price-row"><span class="list mono">€ 21.962</span><span class="net">€ <span class="tabular">15.445</span></span><span class="save-chip">u bespaart € 6.517</span></div>
+    <div class="col-label">Inbegrepen</div>
+    <ul class="included">
+      <li>Up Side Down trainingsmolen, 6 paarden</li>
+      <li>Beregening looppad</li>
+      <li>Beregening longeergedeelte, incl. 3-wegkraan</li>
+      <li>Automatisch smeersysteem</li>
+    </ul>
+    <div class="install-note"><span>Montage trainingsmolen</span><b>€ 840</b></div>
+  </div>
+</section>
+
+<!-- ============ DELIVERY ============ -->
+<section id="levering">
+  <p class="eyebrow">Levering, montage &amp; transport</p>
+  <h2 style="text-transform:none">Vakkundig geïnstalleerd door het eigen Q-Line montageteam</h2>
+  <div class="delivery">
+    <div class="dcard"><div class="lbl">Montage overkapping</div><div class="amt">€ 8.460</div><p>Plaatsing Dome + verlichting, per meter diameter.</p></div>
+    <div class="dcard"><div class="lbl">Montage omheining</div><div class="amt">€ 4.680</div><p>Omheining, windbreekgaas en goot.</p></div>
+    <div class="dcard"><div class="lbl">Montage trainingsmolen</div><div class="amt">€ 840</div><p>Plaatsing van de USD-molen.</p></div>
+    <div class="dcard"><div class="lbl">Transport &amp; reisuren</div><div class="amt">€ 3.497</div><p>Voorrijdkosten (1.120 km) en reisuren van 2 monteurs.</p></div>
+  </div>
+
+  <details class="specs" style="margin-top:24px">
+    <summary>Wat wij van u vragen tijdens de montage</summary>
+    <ul class="specs-list">
+      <li>230V/16A stroomvoorziening binnen 20 m, 400V/16A krachtstroom binnen 25 m van de bouwplaats</li>
+      <li>Bouwplaats schoon, puin- en wortelvrij, waterpas en op de juiste hoogte</li>
+      <li>Goed bereikbaar voor vrachtwagen, kraan en hoogwerker</li>
+      <li>Alleen Q-line personeel werkzaam tijdens plaatsing — geen andere aannemers gelijktijdig op locatie</li>
+      <li>Opdrachtgever of vertegenwoordiger aanwezig bij oplevering</li>
+    </ul>
+  </details>
+  <details class="specs" style="margin-top:10px">
+    <summary>Niet inbegrepen in levering &amp; montage</summary>
+    <ul class="specs-list">
+      <li>Vergunningen — aanvragen is de verantwoordelijkheid van de opdrachtgever</li>
+      <li>Grondwerk: uitgraven en egaliseren van de bouwplaats, aan- en afvoer van grond</li>
+      <li>Storten van funderingen/poeren inclusief beton</li>
+      <li>Elektriciteit, water, bouwketen en andere bouwplaatsvoorzieningen</li>
+      <li>CAR-verzekering en overige projectverzekeringen</li>
+    </ul>
+  </details>
+  <p style="margin-top:16px;font-size:13px;color:var(--ink-3)">Dit is een beknopte samenvatting. De volledige montagevoorwaarden staan in de originele PDF-offerte hieronder.</p>
+</section>
+
+<!-- ============ WHY Q-LINE ============ -->
+<section id="why">
+  <p class="eyebrow">Waarom Q-Line</p>
+  <h2 style="text-transform:none">Gebouwd om jarenlang zonder omkijken te draaien</h2>
+  <div class="why-cards">
+    <div class="wcard"><div class="idx">01</div><h4>Verzinkt volgens Europese norm</h4><p>Elk stalen onderdeel is verzinkt conform NEN-EN-ISO 1461-99, een erkende norm voor langdurige corrosiebescherming.</p></div>
+    <div class="wcard"><div class="idx">02</div><h4>30 jaar coatinggarantie</h4><p>De dakcoating (Arcelor) wordt geleverd met 30 jaar fabrieksgarantie op de coating.</p></div>
+    <div class="wcard"><div class="idx">03</div><h4>Op maat geëngineerd</h4><p>Deze overkapping, omheining en molen zijn specifiek doorgerekend en uitgevoerd voor uw locatie.</p></div>
+    <div class="wcard"><div class="idx">04</div><h4>Eén vast aanspreekpunt</h4><p>Van offerte tot oplevering: rechtstreeks contact met Frank Timmerhuis.</p></div>
+    <div class="wcard"><div class="idx">05</div><h4>Nederlandse makelij</h4><p>Ontwikkeld en geproduceerd vanuit Geesteren.</p></div>
+  </div>
+</section>
+
+<!-- ============ PRICE SUMMARY ============ -->
+<section id="summary">
+  <p class="eyebrow">Uw project</p>
+  <h2 style="text-transform:none">Volledig, herleidbaar prijsoverzicht</h2>
+  <div class="summary-table" id="summaryTable"></div>
+
+  <details class="full-breakdown">
+    <summary>Bekijk volledige specificatie per artikel (22 posities, zoals in de MKG-offerte)</summary>
+    <div class="bd-table"><table>
+      <thead><tr><th>Pos.</th><th>Artikel</th><th class="num">Aantal</th><th class="num">Totaal</th></tr></thead>
+      <tbody id="bdBody"></tbody>
+    </table></div>
+  </details>
+
+  <div class="validity-missing">⚠ Geen geldigheidsdatum aangetroffen in de brontekst van deze offerte — vul deze aan voordat de offerte naar de klant gaat.</div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final" id="cta">
+  <p class="eyebrow">Volgende stap</p>
+  <h2>Klaar voor de volgende stap?</h2>
+  <p class="sub">We bespreken uw project en deze offerte graag persoonlijk met u door.</p>
+  <div class="terms-block">
+    <p><b>Levering:</b> Vrachtvrij tot vervoerder, wegtransport</p>
+    <p><b>Betaling:</b> 50% bij opdracht · 40% voor verzending · 10% binnen 14 dagen na factuurdatum</p>
+  </div>
+  <div class="cta-grid">
+    <a class="btn" id="btnQuestion" href="#">Ik heb een vraag</a>
+    <a class="btn" id="btnCall" href="#">Plan een gesprek</a>
+    <a class="btn" id="btnChange" href="#">Wijziging aanvragen</a>
+    <a class="btn primary" id="btnAccept" href="#">Offerte accepteren</a>
+  </div>
+  <button class="pdf-link" onclick="showToast('Koppel hier de originele PDF-offerte (10260164-2) als download.')">⭳ Download originele PDF-offerte</button>
+
+  <details class="decline">
+    <summary>Dit project gaat helaas niet door</summary>
+    <div class="decline-panel">
+      <p>Jammer om te horen. Eén optionele vraag helpt ons enorm bij het verbeteren van onze offertes:</p>
+      <label class="reason"><input type="radio" name="reason" value="Prijs"> Prijs</label>
+      <label class="reason"><input type="radio" name="reason" value="Timing"> Timing</label>
+      <label class="reason"><input type="radio" name="reason" value="Andere oplossing"> Andere oplossing</label>
+      <label class="reason"><input type="radio" name="reason" value="Project uitgesteld"> Project uitgesteld</label>
+      <label class="reason"><input type="radio" name="reason" value="Anders"> Anders</label>
+      <a class="btn" id="btnDecline" href="#">Versturen</a>
+    </div>
+  </details>
+</section>
+
+<footer>
+  <span>Q-Line Equestrian B.V. — Offerte 10260164-2</span>
+  <span>Geen cookies, geen tracking — dit is een op zichzelf staand document.</span>
+  <span>Geesteren, 4 september 2026</span>
+</footer>
+
+<a class="sticky-total" id="stickyTotal" href="#summary">
+  <div class="row"><span class="l">Totale investering</span><span class="v">€ <span class="tabular" id="stickyVal">0</span></span></div>
+  <span class="arrow">Bekijk overzicht →</span>
+</a>
+<div class="toast" id="toast"></div>
+
+<script id="quote-data" type="application/json">
+{
+  "quotationNumber": "10260164-2",
+  "salesperson": { "name": "Frank Timmerhuis", "email": "f.timmerhuis@q-line.com" },
+  "vatRate": 0.21,
+  "groups": [
+    { "label": "Dome overkapping (product)", "amount": 53432.51 },
+    { "label": "Montage overkapping & verlichting", "amount": 8460.00 },
+    { "label": "Veiligheidsomheining (product)", "amount": 23797.48 },
+    { "label": "Montage omheining, windscherm & goot", "amount": 4679.70 },
+    { "label": "USD Trainingsmolen (product)", "amount": 15445.28 },
+    { "label": "Montage trainingsmolen", "amount": 840.00 },
+    { "label": "Transport & reisuren monteurs", "amount": 3497.20 }
+  ],
+  "lines": [
+    {"pos":1,"artikel":"17-5-20-00020","naam":"DOME 20 METER 1500N","aantal":"1,00 st.","totaal":46221.09,"url":"https://www.q-line.com/overkapping/stapmolen-overkapping/hoefslagoverkapping-passage-1?variant=3801"},
+    {"pos":2,"artikel":"17-4-30-10020","naam":"Omheining ok 20 meter Sublime","aantal":"1,00 st.","totaal":8434.26,"url":"https://www.q-line.com/overkapping/overkapping-omheiningen/omheining-voor-overkapping?variant=12822"},
+    {"pos":3,"artikel":"17-1-00-00500","naam":"Vakvulling kunststof zwart","aantal":"54,00 st.","totaal":8709.07,"url":"https://www.q-line.com/overkapping/overkapping-omheiningen/omheining-vakvulling?variant=12894"},
+    {"pos":4,"artikel":"17-3-00-00520","naam":"Windbreekgaas spantvak 4x1m","aantal":"14,00 st.","totaal":2484.22,"url":"https://www.q-line.com/overkapping/overkapping-standaard-opties/windbreekgaas?variant=12906"},
+    {"pos":5,"artikel":"17-3-00-00521","naam":"Windbreekgaas poortvak 2x1m","aantal":"1,00 st.","totaal":115.43,"url":"https://www.q-line.com/overkapping/overkapping-standaard-opties/windbreekgaas?variant=12907"},
+    {"pos":6,"artikel":"17-4-25-00001","naam":"Betonpoer 800x1000x900 700kg","aantal":"17,00 st.","totaal":4054.50,"url":"https://www.q-line.com/overkapping/overkapping-standaard-opties/betonpoer?variant=4503"},
+    {"pos":7,"artikel":"17-4-50-00015","naam":"LPO&HOK goot voor 15 secties","aantal":"1,00 st.","totaal":3070.52,"url":"https://www.q-line.com/overkapping/overkapping-standaard-opties/regengoot?variant=4076"},
+    {"pos":8,"artikel":"17-4-30-00001","naam":"HOK Koker spant uitbouw","aantal":"1,00 st.","totaal":3501.00,"url":null},
+    {"pos":9,"artikel":"22-5-25-00620","naam":"Up Side Down trainingsmolen 20M6H","aantal":"1,00 st.","totaal":14367.35,"url":"https://www.q-line.com/training/trainingsmolen-sublime/hangende-trainingsmolen?variant=2689"},
+    {"pos":10,"artikel":"23-3-20-00013","naam":"USD Beregening Looppad","aantal":"1,00 st.","totaal":279.75,"url":"https://www.q-line.com/training/stapmolen-standaard-opties/trainingsmolen-beregening?variant=3945"},
+    {"pos":11,"artikel":"23-3-20-00011","naam":"USD Longeer Beregening","aantal":"1,00 st.","totaal":295.74,"url":null},
+    {"pos":12,"artikel":"23-4-05-00100","naam":"Smeersysteem (automatisch)","aantal":"1,00 st.","totaal":502.44,"url":"https://www.q-line.com/training/stapmolen-standaard-opties/automatisch-smeersysteem?variant=3880"},
+    {"pos":13,"artikel":"17-6-00-00001","naam":"Plaatsing longeeroverkapping","aantal":"20,00 st.","totaal":7900.00,"url":null},
+    {"pos":14,"artikel":"12-6-00-00001","naam":"Plaatsing Omheining","aantal":"20,00 st.","totaal":2100.00,"url":null},
+    {"pos":15,"artikel":"17-6-00-00004","naam":"Plaatsing windbreekgaas","aantal":"15,00 st.","totaal":929.70,"url":"https://www.q-line.com/overkapping/overkapping-standaard-opties/windbreekgaas?variant=12909"},
+    {"pos":16,"artikel":"17-6-00-00003","naam":"Plaatsing goot","aantal":"15,00 st.","totaal":1650.00,"url":null},
+    {"pos":17,"artikel":"23-6-00-00000","naam":"Plaatsing van molen","aantal":"1,00 st.","totaal":840.00,"url":null},
+    {"pos":18,"artikel":"16-1-10-00001","naam":"Voorrijdkosten Bus","aantal":"1.120,00 km","totaal":627.20,"url":null},
+    {"pos":19,"artikel":"16-1-10-00033","naam":"Reisuren Monteur 1","aantal":"20,00 uur","totaal":980.00,"url":null},
+    {"pos":20,"artikel":"16-1-10-00044","naam":"Reisuren monteur 2 3x","aantal":"60,00 uur","totaal":1890.00,"url":null},
+    {"pos":21,"artikel":"17-3-30-00018","naam":"Verlichting Passage/Dome 18/20 mtr","aantal":"1,00 st.","totaal":639.90,"url":null},
+    {"pos":22,"artikel":"17-6-00-00005","naam":"Plaatsing verlichting","aantal":"7,00 st.","totaal":560.00,"url":null}
+  ]
+}
+</script>
+
+<script>
+(function(){
+  var data = JSON.parse(document.getElementById('quote-data').textContent);
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fmt(n){ return Math.round(n).toLocaleString('nl-NL'); }
+  function fmt2(n){ return n.toLocaleString('nl-NL', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  var subtotal = data.groups.reduce(function(s,g){ return s+g.amount; }, 0);
+  var vat = subtotal * data.vatRate;
+  var total = subtotal + vat;
+
+  var html = '';
+  data.groups.forEach(function(g){
+    html += '<div class="row"><span class="lbl">'+g.label+'</span><span class="val tabular">€ '+fmt(g.amount)+'</span></div>';
+  });
+  html += '<div class="row"><span class="lbl">Subtotaal excl. BTW</span><span class="val tabular">€ '+fmt(subtotal)+'</span></div>';
+  html += '<div class="row"><span class="lbl">BTW (21%)</span><span class="val tabular">€ '+fmt(vat)+'</span></div>';
+  html += '<div class="row total"><span class="lbl">TOTAAL incl. BTW</span><span class="val tabular">€ '+fmt(total)+'</span></div>';
+  document.getElementById('summaryTable').innerHTML = html;
+
+  var bd = '';
+  data.lines.forEach(function(l){
+    var naamCell = l.url ? '<a href="'+l.url+'" target="_blank" rel="noopener">'+l.naam+'</a>' : l.naam;
+    bd += '<tr><td>'+l.pos+'-</td><td>'+naamCell+' <span style="color:var(--ink-3)">('+l.artikel+')</span></td><td class="num">'+l.aantal+'</td><td class="num">€ '+fmt2(l.totaal)+'</td></tr>';
+  });
+  document.getElementById('bdBody').innerHTML = bd;
+
+  document.getElementById('stickyVal').textContent = fmt(total);
+
+  function countUp(el, target){
+    if(reduceMotion){ el.textContent = fmt(target); return; }
+    var start = null, dur = 900;
+    function step(ts){
+      if(!start) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      el.textContent = fmt(target * (1 - Math.pow(1-p,3)));
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var io1 = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ countUp(document.getElementById('overviewTotal'), subtotal); io1.disconnect(); }
+    });
+  }, {threshold:.4});
+  io1.observe(document.getElementById('overview'));
+
+  var io2 = new IntersectionObserver(function(entries){
+    entries.forEach(function(e, i){
+      if(e.isIntersecting){ setTimeout(function(){ e.target.classList.add('in'); }, i*70); io2.unobserve(e.target); }
+    });
+  }, {threshold:.2});
+  document.querySelectorAll('.benefits li').forEach(function(li){ io2.observe(li); });
+
+  var stickyEl = document.getElementById('stickyTotal');
+  var io3 = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ stickyEl.classList.toggle('show', !e.isIntersecting); });
+  }, {threshold:0});
+  io3.observe(document.getElementById('top'));
+
+  window.showToast = function(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3600);
+  };
+
+  var qn = data.quotationNumber, mail = data.salesperson.email;
+  function mailto(subject, body){
+    return 'mailto:'+mail+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  }
+  document.getElementById('btnQuestion').href = mailto('Vraag over offerte '+qn, 'Hallo,\n\nIk heb een vraag over offerte '+qn+':\n\n');
+  document.getElementById('btnCall').href = mailto('Gesprek inplannen — offerte '+qn, 'Hallo,\n\nIk zou graag een moment inplannen om offerte '+qn+' door te nemen.\n\nMijn beschikbaarheid: ');
+  document.getElementById('btnChange').href = mailto('Wijziging gewenst — offerte '+qn, 'Hallo,\n\nIk wil graag het volgende laten aanpassen aan offerte '+qn+':\n\n');
+  document.getElementById('btnAccept').addEventListener('click', function(e){
+    e.preventDefault();
+    var body = 'Hallo,\n\nIk ga akkoord met offerte '+qn+'.\n\nTotaal incl. BTW: € '+fmt(total)+'\n\nMet vriendelijke groet,';
+    window.location.href = mailto('Akkoord met offerte '+qn, body);
+  });
+  document.getElementById('btnDecline').addEventListener('click', function(e){
+    e.preventDefault();
+    var checked = document.querySelector('input[name="reason"]:checked');
+    var reason = checked ? checked.value : '(geen reden opgegeven)';
+    window.location.href = mailto('Offerte '+qn+' gaat niet door', 'Hallo,\n\nHelaas gaat dit project niet door.\n\nVoornaamste reden: '+reason+'\n\n');
+  });
+})();
+</script>

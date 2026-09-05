@@ -366,12 +366,32 @@ _authPromise=null;
 async function fbSave(data){
 try{
 const token=await ensureAuthToken();
-await fetch(`${FB_BASE}?auth=${token}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+const res=await fetch(`${FB_BASE}?auth=${token}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+if(!res.ok){
+// Niet alleen netwerkfouten tellen als mislukt — Firebase antwoordt bij een
+// geweigerd schrijfverzoek (bijv. ingelogd met een kijk-alleen account)
+// gewoon met HTTP 200-achtige fetch-succes maar status 401/403, wat fetch()
+// zelf niet als exception behandelt. Zonder deze check leek het opslaan
+// altijd te lukken, ook als de data niet echt is weggeschreven.
+throw new Error('HTTP '+res.status);
+}
 const si=document.getElementById('sync-indicator');
 if(si){si.textContent='☁ opgeslagen '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});si.style.color='var(--green)';}
 }catch(e){
 const si=document.getElementById('sync-indicator');
-if(si){si.textContent='☁ offline';si.style.color='var(--hint)';}
+if(si){
+const isPermissieFout=String(e.message||'').includes('401')||String(e.message||'').includes('403');
+si.textContent=isPermissieFout?'☁ NIET opgeslagen — log opnieuw in':'☁ offline';
+si.style.color=isPermissieFout?'#c0392b':'var(--hint)';
+si.style.fontWeight=isPermissieFout?'700':'normal';
+}
+if(String(e.message||'').includes('401')||String(e.message||'').includes('403')){
+// Waarschijnlijk ingelogd met een kijk-alleen account, of het token is
+// ongeldig geworden — forceer opnieuw inloggen zodat de volgende
+// wijziging weer echt wordt opgeslagen.
+localStorage.removeItem(AUTH_KEY);
+alert('Opslaan is mislukt: je bent ingelogd met een account zonder schrijfrechten (of je sessie is verlopen). Log opnieuw in met je teamaccount — de pagina vraagt hier nu om.');
+}
 }
 }
 async function fbLoad(){

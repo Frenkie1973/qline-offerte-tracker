@@ -175,7 +175,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 </div>
 <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
 <div class="fg">
-<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3" oninput="updateOfferteLink()"><a id="fon-link" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:4px;font-size:11px;color:#b8590a;text-decoration:none;margin-top:5px;font-weight:600">📄 Bekijk interactieve offerte ↗</a></div>
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
 <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
 </div>
 <div class="fg">
@@ -1093,7 +1093,7 @@ box.innerHTML=`
 </div>
 <div class="ff"><label>Product / aanvraag</label><input id="fs" placeholder="Waar gaat het over?"></div>
 <div class="fg">
-<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3" oninput="updateOfferteLink()"><a id="fon-link" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;gap:4px;font-size:11px;color:#b8590a;text-decoration:none;margin-top:5px;font-weight:600">📄 Bekijk interactieve offerte ↗</a></div>
+<div class="ff"><label>Offertenr.</label><input id="fon" placeholder="bijv. 10260077-3"></div>
 <div class="ff"><label>Aanvraagnr. webshop</label><input id="fan" placeholder="bijv. 23802"></div>
 </div>
 <div class="fg">
@@ -1664,7 +1664,7 @@ ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',
 </div>`:(d.status==='gewonnen'?`<button class="qb" onclick="event.stopPropagation();exportGewonnenPDF('${d.id}')">📄 PDF voor productie</button>`:`<span class="ch">${getDisplayStatus(d).label}</span>`);
 return`<tr class="row ${cls}" onclick="openEdit('${d.id}')">
 <td><div class="cn">${d.auto?`<span title="Automatisch aangemaakt uit mailbox, controleer" style="font-size:10px;background:#eef3ff;color:#3b5bdb;border:1px solid #d3ddfa;border-radius:4px;padding:1px 5px;margin-right:5px;font-weight:700">🤖 auto</span>`:''}${d.klant}${d.telefoon?` <a href="tel:${d.telefoon}" onclick="event.stopPropagation()" title="Bel ${d.telefoon}" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:700">📞</a>`:''}</div><div class="cs">${d.onderwerp||'—'}</div></td>
-<td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}${d.offertenr?`<a href="${offerteUrl(d.offertenr)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-block;margin-top:2px;font-size:10px;color:#b8590a;text-decoration:none;font-weight:600" title="Open interactieve offerte">📄 offerte ↗</a>`:''}</td>
+<td><div class="cm">${d.offertenr||'—'}</div>${d.aanvraagnr?`<div class="ch">WS: ${d.aanvraagnr}</div>`:''}</td>
 <td><span class="cm">${fmt(d.bedrag)}</span></td>
 <td><span class="pill ${getDisplayStatus(d).pill}">${getDisplayStatus(d).label}</span></td>
 <td>

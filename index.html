@@ -150,6 +150,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
 <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
 <div id="sync-indicator" style="font-size:11px;color:var(--hint);margin-bottom:8px;font-family:var(--mono)">☁ verbinden...</div>
+<button class="btn" id="btn-check-mail" style="font-size:12px;padding:7px 12px;width:100%;text-align:center" onclick="checkMailNu()">🔄 Check nu op nieuwe mail</button>
 <button class="btn btn-p" style="font-size:13px;padding:9px 12px;width:100%;text-align:center" onclick="autoSave()">💾 Opslaan</button>
 <button class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left" onclick="kiesMap()">📁 Kies opslagmap</button>
 <label class="btn" style="font-size:12px;padding:7px 12px;width:100%;text-align:left;cursor:pointer;display:block">↩ Terugzetten<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
@@ -406,6 +407,33 @@ return true;
 }
 }catch(e){}
 return false;
+}
+async function checkMailNu(){
+const btn=document.getElementById('btn-check-mail');
+const origText=btn.textContent;
+btn.disabled=true;
+try{
+const res=await fetch('https://qline-ai-proxy.f-timmerhuis.workers.dev/trigger-mailbot',{method:'POST'});
+if(!res.ok)throw new Error('HTTP '+res.status);
+// De GitHub Action zelf duurt meestal 30-60 sec (inloggen bij Microsoft,
+// mails ophalen, AI-opvolgvoorsteltjes genereren, wegschrijven naar
+// Firebase). We tellen hardop af zodat Frank weet dat het nog bezig is,
+// en laden daarna de leads opnieuw in.
+const wachttijd=50;
+for(let sec=wachttijd;sec>0;sec--){
+btn.textContent=`⏳ Bezig... (${sec}s)`;
+await new Promise(r=>setTimeout(r,1000));
+}
+btn.textContent='🔄 Verversen...';
+const ok=await fbLoad();
+if(ok){render();updateBadge();}
+btn.textContent=origText;
+}catch(e){
+alert('Kon niet starten: '+e.message+'. Probeer het nog eens, of check zo dadelijk of er nieuwe mail is binnengekomen.');
+btn.textContent=origText;
+}finally{
+btn.disabled=false;
+}
 }
 const SKEY='qltrk2_settings';
 function getSettings(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}

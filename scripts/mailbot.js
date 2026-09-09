@@ -168,7 +168,7 @@ async function fetchNewMessages(token, sinceISO) {
   const select = 'id,subject,from,receivedDateTime,bodyPreview,body';
   // Expliciet de Postvak IN-map, nooit de hele mailbox (die bevat ook de
   // archiefmap "Q-Line store aanvragen" met al afgehandelde mail).
-  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/inbox/messages?$filter=${filter}&$select=${select}&$orderby=receivedDateTime asc&$top=50`;
+  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/inbox/messages?$filter=${filter}&$select=${select}&$orderby=receivedDateTime asc&$top=100`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`Mail ophalen mislukt: ${res.status} ${await res.text()}`);
   const data = await res.json();
@@ -183,7 +183,7 @@ async function fetchSentMessages(token, sinceISO) {
   const select = 'id,subject,toRecipients,sentDateTime,bodyPreview,body';
   const alle = [];
   for (const mailbox of SENT_MAILBOXES) {
-    const url = `https://graph.microsoft.com/v1.0/users/${mailbox}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=50`;
+    const url = `https://graph.microsoft.com/v1.0/users/${mailbox}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=100`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       console.error(`Verzonden mail ophalen mislukt voor ${mailbox}: ${res.status} ${await res.text()}`);
@@ -296,7 +296,17 @@ async function main() {
   }
 
   const state = await getJson(STATE_URL, {});
-  const sinceISO = state.lastCheck || new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  // Kijk ALTIJD minstens 7 dagen terug, ongeacht de laatste checktijd.
+  // Reden: als een mail vanuit een ander postvak (bijv. Franks persoonlijke
+  // f.timmerhuis@q-line.com) naar dit Postvak IN wordt gesleept, behoudt
+  // Microsoft Graph de oorspronkelijke ontvangsttijd van vóór het slepen —
+  // die ligt vrijwel altijd vóór het laatste controlemoment, waardoor zo'n
+  // mail bij een filter "sinds laatste check" nooit gevonden zou worden.
+  // Dubbele verwerking van al eerder geziene mail wordt voorkomen via
+  // processedIds hieronder, niet via dit tijdvenster — dus breder terugkijken
+  // is hier veilig.
+  const zevenDagenTerug = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const sinceISO = (state.lastCheck && state.lastCheck < zevenDagenTerug) ? state.lastCheck : zevenDagenTerug;
   const processedIds = new Set(state.processedIds || []);
 
   console.log(`Ophalen mails sinds ${sinceISO}...`);

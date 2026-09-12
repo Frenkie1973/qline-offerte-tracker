@@ -1729,7 +1729,8 @@ function rSupport(){
 if(!storingenLoaded)return'<div class="empty">Storingen laden...</div>';
 const filtered=storingFilter==='alle'?storingen:storingen.filter(s=>(s.status||'nieuw')===storingFilter);
 const filterBtns=['alle',...STORING_STATUSSEN].map(f=>{
-const label=f==='alle'?`Alle (${storingen.length})`:STORING_LABELS[f];
+const aantal=f==='alle'?storingen.length:storingen.filter(s=>(s.status||'nieuw')===f).length;
+const label=f==='alle'?`Alle (${aantal})`:`${STORING_LABELS[f]} (${aantal})`;
 return`<button onclick="setStoringFilter('${f}')" style="padding:7px 12px;border-radius:20px;border:1px solid ${storingFilter===f?'var(--accent)':'var(--border2)'};background:${storingFilter===f?'var(--accent-bg)':'var(--white)'};color:${storingFilter===f?'var(--accent)':'var(--muted)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--sans)">${label}</button>`;
 }).join('');
 const form=storingFormOpen?`<div class="gc" style="margin-bottom:14px">

@@ -150,6 +150,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <button class="nav-btn" data-view="offertes" onclick="show('offertes')">Offertes</button>
 <div class="nav-group-label">Support</div>
 <button class="nav-btn" data-view="support" onclick="show('support')">Support</button>
+<button class="nav-btn" data-view="kennisbank" onclick="show('kennisbank')">Kennisbank</button>
 <button class="nav-btn" data-view="klanten" onclick="show('klanten')">Klanten</button>
 </nav>
 <div class="sidebar-foot">
@@ -1505,8 +1506,9 @@ else if(view==='pipe')m.innerHTML=rPipe();
 else if(view==='alle')m.innerHTML=rAlle();
 else if(view==='analyse'){m.innerHTML=rAnalyse();}
 else if(view==='offertes')m.innerHTML=rOffertes();
-else if(view==='support')m.innerHTML=rSupport();
-else if(view==='klanten')m.innerHTML=rKlanten();
+else if(view==='support'){m.innerHTML=rSupport();if(!storingenLoaded)laadStoringen();}
+else if(view==='kennisbank'){m.innerHTML=rKennisbank();if(!kennisbankLoaded)laadKennisbank();}
+else if(view==='klanten'){m.innerHTML=rKlanten();if(!klantenLoaded)laadKlanten();}
 }
 // --- Offertes: overzicht van leads met een gekoppelde interactieve offerte.
 // Hergebruikt puur bestaande data (offerteUrl/offertenr), geen nieuw veld nodig.
@@ -1528,21 +1530,294 @@ return`<div class="gc" style="display:flex;justify-content:space-between;align-i
 }).join('');
 return`<div class="gt" style="margin-bottom:14px">Offertes (${metOfferte.length})</div>${rows}`;
 }
-// --- Support en Klanten: placeholders voor fase 2 van de uitbreiding naar
-// Q-Line Sales & Support Tracker. Nog geen eigen database gekoppeld — dat
-// komt in de volgende fase (nieuwe Firestore-database in dit Firebase-project,
-// los van de Inspectie-app).
+// ============================================================
+// FASE 2: Support, Kennisbank en Klanten — eigen Firestore-database
+// binnen hetzelfde Firebase-project (q-line-tracker), los van de
+// Inspectie-app. Zelfde inlogtoken (ensureAuthToken) als de RTDB hierboven,
+// puur REST-aanroepen, geen extra SDK nodig — past bij de rest van dit bestand.
+// ============================================================
+const FS_BASE='https://firestore.googleapis.com/v1/projects/q-line-tracker/databases/(default)/documents';
+function fsValue(v){
+if(v===null||v===undefined||v==='')return{nullValue:null};
+if(typeof v==='number')return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+if(typeof v==='boolean')return{booleanValue:v};
+if(Array.isArray(v))return{arrayValue:{values:v.map(fsValue)}};
+if(typeof v==='object')return{mapValue:{fields:fsEncode(v)}};
+return{stringValue:String(v)};
+}
+function fsEncode(obj){
+const fields={};
+for(const k in obj){if(obj[k]!==undefined)fields[k]=fsValue(obj[k]);}
+return fields;
+}
+function fsDecodeValue(v){
+if(!v)return null;
+if('stringValue'in v)return v.stringValue;
+if('integerValue'in v)return Number(v.integerValue);
+if('doubleValue'in v)return v.doubleValue;
+if('booleanValue'in v)return v.booleanValue;
+if('timestampValue'in v)return v.timestampValue;
+if('nullValue'in v)return null;
+if('arrayValue'in v)return(v.arrayValue.values||[]).map(fsDecodeValue);
+if('mapValue'in v)return fsDecode(v.mapValue.fields||{});
+return null;
+}
+function fsDecode(fields){
+const obj={};
+for(const k in fields)obj[k]=fsDecodeValue(fields[k]);
+return obj;
+}
+async function fsList(col){
+const token=await ensureAuthToken();
+const res=await fetch(`${FS_BASE}/${col}?pageSize=300`,{headers:{Authorization:`Bearer ${token}`}});
+if(!res.ok)throw new Error('HTTP '+res.status);
+const data=await res.json();
+if(!data.documents)return[];
+return data.documents.map(d=>({id:d.name.split('/').pop(),...fsDecode(d.fields||{})}));
+}
+async function fsCreate(col,obj){
+const token=await ensureAuthToken();
+const res=await fetch(`${FS_BASE}/${col}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({fields:fsEncode(obj)})});
+if(!res.ok)throw new Error('Opslaan mislukt: HTTP '+res.status+' '+await res.text());
+return res.json();
+}
+async function fsUpdate(col,id,obj){
+const token=await ensureAuthToken();
+const mask=Object.keys(obj).map(k=>`updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+const res=await fetch(`${FS_BASE}/${col}/${id}?${mask}`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({fields:fsEncode(obj)})});
+if(!res.ok)throw new Error('Bijwerken mislukt: HTTP '+res.status+' '+await res.text());
+return res.json();
+}
+
+// --- SUPPORT (storingen) ---
+let storingen=[],storingenLoaded=false,storingFilter='alle',storingFormOpen=false;
+const STORING_STATUSSEN=['nieuw','te_beoordelen','in_behandeling','wachten_klant','wachten_onderdelen','ingepland','technische_beoordeling','opgelost','gesloten'];
+const STORING_LABELS={nieuw:'🔴 Nieuw',te_beoordelen:'🟠 Te beoordelen',in_behandeling:'🟠 In behandeling',wachten_klant:'⏳ Wachten op klant',wachten_onderdelen:'⏳ Wachten op onderdelen',ingepland:'📅 Ingepland',technische_beoordeling:'⚠️ Technische beoordeling nodig',opgelost:'✅ Opgelost',gesloten:'⬛ Gesloten'};
+async function laadStoringen(){
+try{storingen=await fsList('storingen');storingen.sort((a,b)=>(b.aangemaakt||'').localeCompare(a.aangemaakt||''));}
+catch(e){console.error('Storingen laden mislukt:',e);}
+storingenLoaded=true;
+if(view==='support')render();
+}
+function toggleStoringForm(){storingFormOpen=!storingFormOpen;render();}
+async function submitNieuweStoring(){
+const g=id=>document.getElementById(id).value.trim();
+const klant=g('st-klant');
+if(!klant){alert('Klantnaam is verplicht.');return;}
+const nieuw={
+klant,contactpersoon:g('st-contact'),telefoon:g('st-tel'),email:g('st-email'),
+product:g('st-product'),model:g('st-model'),serienummer:g('st-serienr')||'Nog opvragen',
+omschrijving:g('st-omschrijving'),foutcode:g('st-foutcode'),
+urgentie:g('st-urgentie')||'normaal',status:'nieuw',bron:'Handmatig',
+aangemaakt:new Date().toISOString()
+};
+try{
+await fsCreate('storingen',nieuw);
+storingFormOpen=false;
+await laadStoringen();
+}catch(e){alert('Opslaan mislukt: '+e.message);}
+}
+async function wijzigStoringStatus(id,status){
+try{
+await fsUpdate('storingen',id,{status,bijgewerkt:new Date().toISOString()});
+const it=storingen.find(s=>s.id===id);if(it)it.status=status;
+render();
+}catch(e){alert('Bijwerken mislukt: '+e.message);}
+}
+function setStoringFilter(f){storingFilter=f;render();}
 function rSupport(){
-return`<div class="gc">
-<div class="gt">🔧 Support — komt in fase 2</div>
-<div class="gd">Hier komen straks alle storingen binnen via WhatsApp en e-mail (support@q-line.com), automatisch herkend door AI, gekoppeld aan het juiste klantdossier, met status, urgentie en een technische kennisbank voor foutcodes. Nu nog niet actief.</div>
+if(!storingenLoaded)return'<div class="empty">Storingen laden...</div>';
+const filtered=storingFilter==='alle'?storingen:storingen.filter(s=>(s.status||'nieuw')===storingFilter);
+const filterBtns=['alle',...STORING_STATUSSEN].map(f=>{
+const label=f==='alle'?`Alle (${storingen.length})`:STORING_LABELS[f];
+return`<button onclick="setStoringFilter('${f}')" style="padding:7px 12px;border-radius:20px;border:1px solid ${storingFilter===f?'var(--accent)':'var(--border2)'};background:${storingFilter===f?'var(--accent-bg)':'var(--white)'};color:${storingFilter===f?'var(--accent)':'var(--muted)'};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--sans)">${label}</button>`;
+}).join('');
+const form=storingFormOpen?`<div class="gc" style="margin-bottom:14px">
+<div class="gt">Nieuwe melding</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${stInput('st-klant','Klant / bedrijf *')}
+${stInput('st-contact','Contactpersoon')}
+${stInput('st-tel','Telefoon')}
+${stInput('st-email','E-mail')}
+${stInput('st-product','Product (bijv. Aquatrainer)')}
+${stInput('st-model','Model/type')}
+${stInput('st-serienr','Serienummer')}
+${stInput('st-foutcode','Foutcode (indien bekend)')}
+</div>
+<div style="margin-top:10px">${stTextarea('st-omschrijving','Omschrijving probleem')}</div>
+<div style="margin-top:10px;max-width:220px">
+<label style="font-size:12px;color:var(--muted)">Urgentie</label>
+<select id="st-urgentie" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px">
+<option value="laag">Laag</option><option value="normaal" selected>Normaal</option><option value="hoog">Hoog</option>
+</select>
+</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="submitNieuweStoring()" class="btn btn-p" style="padding:10px 16px">Opslaan</button>
+<button onclick="toggleStoringForm()" class="btn" style="padding:10px 16px">Annuleren</button>
+</div>
+</div>`:'';
+const cards=filtered.length?filtered.map(rStoringKaart).join(''):'<div class="empty">Geen storingen in dit filter.</div>';
+return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+<div class="gt" style="margin:0">Support (${storingen.length})</div>
+${storingFormOpen?'':'<button onclick="toggleStoringForm()" class="btn btn-p" style="padding:9px 14px">+ Nieuwe melding</button>'}
+</div>
+${form}
+<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px">${filterBtns}</div>
+${cards}`;
+}
+function stInput(id,label){return`<div><label style="font-size:12px;color:var(--muted)">${label}</label><input id="${id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box"></div>`;}
+function stTextarea(id,label){return`<div><label style="font-size:12px;color:var(--muted)">${label}</label><textarea id="${id}" rows="3" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box;resize:vertical"></textarea></div>`;}
+function rStoringKaart(s){
+const status=s.status||'nieuw';
+const urgKleur=s.urgentie==='hoog'?'#c0392b':s.urgentie==='laag'?'var(--hint)':'#d97706';
+const tijd=s.aangemaakt?new Date(s.aangemaakt).toLocaleString('nl-NL'):'';
+const statusOpties=STORING_STATUSSEN.map(st=>`<option value="${st}" ${st===status?'selected':''}>${STORING_LABELS[st]}</option>`).join('');
+return`<div class="gc" style="margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div>
+<div style="font-weight:600;font-size:15px">${s.klant||'Onbekend'} ${s.contactpersoon?'· '+s.contactpersoon:''}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:2px">${[s.product,s.model,s.serienummer].filter(Boolean).join(' · ')||'Geen product bekend'} ${s.foutcode?'· Foutcode '+s.foutcode:''}</div>
+</div>
+<div style="text-align:right">
+<div style="font-size:11px;font-weight:700;color:${urgKleur};text-transform:uppercase">${s.urgentie||'normaal'}</div>
+<div style="font-size:11px;color:var(--hint)">${tijd}</div>
+</div>
+</div>
+${s.omschrijving?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap">${s.omschrijving}</div>`:''}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
+<select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
+${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}
+</div>
 </div>`;
 }
+
+// --- KENNISBANK (foutcodes) ---
+let kennisbank=[],kennisbankLoaded=false,kbFormOpen=false;
+async function laadKennisbank(){
+try{kennisbank=await fsList('kennisbank');}catch(e){console.error('Kennisbank laden mislukt:',e);}
+kennisbankLoaded=true;
+if(view==='kennisbank')render();
+}
+function toggleKbForm(){kbFormOpen=!kbFormOpen;render();}
+async function submitNieuwArtikel(){
+const g=id=>document.getElementById(id).value.trim();
+const product=g('kb-product'),foutcode=g('kb-foutcode');
+if(!product||!foutcode){alert('Product en foutcode zijn verplicht.');return;}
+const artikel={
+product,model:g('kb-model'),foutcode,betekenis:g('kb-betekenis'),
+oorzaken:g('kb-oorzaken'),stappenplan:g('kb-stappenplan'),
+magKlantZelf:document.getElementById('kb-veilig').value==='ja',
+veiligheidsniveau:Number(document.getElementById('kb-niveau').value),
+notities:g('kb-notities'),
+aangemaakt:new Date().toISOString(),goedgekeurdDoor:'Frank'
+};
+try{await fsCreate('kennisbank',artikel);kbFormOpen=false;await laadKennisbank();}
+catch(e){alert('Opslaan mislukt: '+e.message);}
+}
+function rKennisbank(){
+if(!kennisbankLoaded)return'<div class="empty">Kennisbank laden...</div>';
+const form=kbFormOpen?`<div class="gc" style="margin-bottom:14px">
+<div class="gt">Nieuw kennisbankartikel</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${stInput('kb-product','Product *')}
+${stInput('kb-model','Model/hardwareversie')}
+${stInput('kb-foutcode','Foutcode *')}
+${stInput('kb-betekenis','Betekenis')}
+</div>
+<div style="margin-top:10px">${stTextarea('kb-oorzaken','Waarschijnlijke oorzaken')}</div>
+<div style="margin-top:10px">${stTextarea('kb-stappenplan','Stappenplan / controles / oplossing')}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+<div><label style="font-size:12px;color:var(--muted)">Veiligheidsniveau</label>
+<select id="kb-niveau" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="1">1 — klant mag zelf controleren</option>
+<option value="2" selected>2 — technische kennis vereist</option>
+<option value="3">3 — veiligheidskritisch, niet naar klant</option>
+</select></div>
+<div><label style="font-size:12px;color:var(--muted)">Mag klant dit zelf uitvoeren?</label>
+<select id="kb-veilig" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="nee" selected>Nee</option><option value="ja">Ja</option>
+</select></div>
+</div>
+<div style="margin-top:10px">${stTextarea('kb-notities','Interne technische notities')}</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="submitNieuwArtikel()" class="btn btn-p" style="padding:10px 16px">Opslaan</button>
+<button onclick="toggleKbForm()" class="btn" style="padding:10px 16px">Annuleren</button>
+</div>
+</div>`:'';
+const lijst=kennisbank.length?kennisbank.map(a=>`<div class="gc" style="margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-weight:600;font-size:15px">${a.product||''} ${a.model?'· '+a.model:''} — foutcode ${a.foutcode||''}</div>
+<div style="font-size:11px;font-weight:700;color:${a.veiligheidsniveau===3?'#c0392b':a.veiligheidsniveau===2?'#d97706':'#16a34a'}">Niveau ${a.veiligheidsniveau||2}</div>
+</div>
+${a.betekenis?`<div style="font-size:13px;margin-top:8px"><b>Betekenis:</b> ${a.betekenis}</div>`:''}
+${a.oorzaken?`<div style="font-size:13px;margin-top:4px"><b>Oorzaken:</b> ${a.oorzaken}</div>`:''}
+${a.stappenplan?`<div style="font-size:13px;margin-top:4px;white-space:pre-wrap"><b>Stappenplan:</b> ${a.stappenplan}</div>`:''}
+</div>`).join(''):'<div class="empty">Nog geen artikelen. Zolang hier niets in staat, antwoordt de AI later altijd "technische beoordeling noodzakelijk" bij een onbekende foutcode — precies zoals de bedoeling is.</div>';
+return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+<div class="gt" style="margin:0">Technische Kennisbank (${kennisbank.length})</div>
+${kbFormOpen?'':'<button onclick="toggleKbForm()" class="btn btn-p" style="padding:9px 14px">+ Nieuw artikel</button>'}
+</div>
+${form}${lijst}`;
+}
+
+// --- KLANTEN (centraal klantdossier) ---
+let klanten=[],klantenLoaded=false,klantFormOpen=false;
+async function laadKlanten(){
+try{klanten=await fsList('klanten');}catch(e){console.error('Klanten laden mislukt:',e);}
+klantenLoaded=true;
+if(view==='klanten')render();
+}
+function toggleKlantForm(){klantFormOpen=!klantFormOpen;render();}
+async function submitNieuweKlant(){
+const g=id=>document.getElementById(id).value.trim();
+const naam=g('kl-naam');
+if(!naam){alert('Naam is verplicht.');return;}
+const klant={naam,telefoon:g('kl-tel'),email:g('kl-email'),mkgNummer:g('kl-mkg')||'Nog opvragen',adres:g('kl-adres'),aangemaakt:new Date().toISOString()};
+try{await fsCreate('klanten',klant);klantFormOpen=false;await laadKlanten();}
+catch(e){alert('Opslaan mislukt: '+e.message);}
+}
+// Matcht een klant op telefoon/e-mail tegen bestaande Sales-leads (deals) en
+// Support-storingen — puur op basis van al geladen data, geen extra database nodig.
+function gekoppeldeLeads(k){
+return deals.filter(d=>(k.email&&d.email&&d.email.toLowerCase()===k.email.toLowerCase())||(k.telefoon&&d.telefoon&&d.telefoon===k.telefoon));
+}
+function gekoppeldeStoringen(k){
+return storingen.filter(s=>(k.email&&s.email&&s.email.toLowerCase()===k.email.toLowerCase())||(k.telefoon&&s.telefoon&&s.telefoon===k.telefoon));
+}
 function rKlanten(){
-return`<div class="gc">
-<div class="gt">👥 Klanten — komt in fase 2</div>
-<div class="gd">Hier komt straks één centraal dossier per klant: contactgegevens, offertes, orders, supportmeldingen en de volledige WhatsApp/e-mailcommunicatie bij elkaar. Nu nog niet actief.</div>
+if(!klantenLoaded)return'<div class="empty">Klanten laden...</div>';
+if(!storingenLoaded)laadStoringen(); // nodig voor de koppeling hieronder
+const form=klantFormOpen?`<div class="gc" style="margin-bottom:14px">
+<div class="gt">Nieuwe klant</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${stInput('kl-naam','Naam / bedrijf *')}
+${stInput('kl-tel','Telefoon')}
+${stInput('kl-email','E-mail')}
+${stInput('kl-mkg','MKG-nummer')}
+</div>
+<div style="margin-top:10px">${stInput('kl-adres','Adres / plaats')}</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="submitNieuweKlant()" class="btn btn-p" style="padding:10px 16px">Opslaan</button>
+<button onclick="toggleKlantForm()" class="btn" style="padding:10px 16px">Annuleren</button>
+</div>
+</div>`:'';
+const lijst=klanten.length?klanten.map(k=>{
+const leads=gekoppeldeLeads(k),tickets=gekoppeldeStoringen(k);
+return`<div class="gc" style="margin-bottom:12px">
+<div style="font-weight:600;font-size:15px">${k.naam}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:2px">${[k.telefoon,k.email,k.mkgNummer?'MKG '+k.mkgNummer:''].filter(Boolean).join(' · ')}</div>
+${k.adres?`<div style="font-size:12px;color:var(--muted)">${k.adres}</div>`:''}
+<div style="display:flex;gap:16px;margin-top:10px;font-size:12px">
+<span>💼 ${leads.length} sales-dossier(s)</span>
+<span>🔧 ${tickets.length} supportmelding(en)</span>
+</div>
 </div>`;
+}).join(''):'<div class="empty">Nog geen klanten toegevoegd.</div>';
+return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+<div class="gt" style="margin:0">Klanten (${klanten.length})</div>
+${klantFormOpen?'':'<button onclick="toggleKlantForm()" class="btn btn-p" style="padding:9px 14px">+ Nieuwe klant</button>'}
+</div>
+${form}${lijst}`;
 }
 function updateBadge(){
 const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;

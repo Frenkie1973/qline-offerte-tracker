@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Q-Line Offerte Tracker</title>
+<title>Q-Line Sales & Support Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -31,6 +31,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .nav-btn{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:var(--sans);width:100%;text-align:left;transition:all .12s}
 .nav-btn:hover{color:var(--text);background:var(--bg)}
 .nav-btn.active{color:var(--accent);background:var(--accent-bg);font-weight:500}
+.nav-group-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);padding:14px 10px 4px}
 .nav-badge{font-family:var(--mono);font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:20px}
 .sidebar-foot{padding:16px 20px;border-top:1px solid var(--border)}
 .sidebar-hint{font-size:11px;color:var(--hint);line-height:1.7}
@@ -136,15 +137,20 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="logo">
 <div style="display:flex;align-items:center;gap:8px">
 <div style="width:9px;height:24px;background:var(--accent);border-radius:2px;flex-shrink:0"></div>
-<div class="logo-name" style="font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:-.01em;text-transform:uppercase">Q-Line <span style="color:var(--accent)">Tracker</span></div>
+<div class="logo-name" style="font-family:var(--mono);font-weight:700;font-size:17px;letter-spacing:-.01em;text-transform:uppercase">Q-Line <span style="color:var(--accent)">Sales & Support</span></div>
 </div>
-<div class="logo-sub" style="margin-top:5px;text-transform:uppercase;letter-spacing:.08em">Offerte follow-up</div>
+<div class="logo-sub" style="margin-top:5px;text-transform:uppercase;letter-spacing:.08em">Tracker</div>
 </div>
 <nav class="nav">
-<button class="nav-btn active" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
-<button class="nav-btn" onclick="show('pipe')">Pipeline</button>
-<button class="nav-btn" onclick="show('alle')">Alle leads</button>
-<button class="nav-btn" onclick="show('analyse')">Analyse</button>
+<button class="nav-btn active" data-view="dash" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
+<div class="nav-group-label">Sales</div>
+<button class="nav-btn" data-view="pipe" onclick="show('pipe')">Pipeline</button>
+<button class="nav-btn" data-view="alle" onclick="show('alle')">Alle leads</button>
+<button class="nav-btn" data-view="analyse" onclick="show('analyse')">Analyse</button>
+<button class="nav-btn" data-view="offertes" onclick="show('offertes')">Offertes</button>
+<div class="nav-group-label">Support</div>
+<button class="nav-btn" data-view="support" onclick="show('support')">Support</button>
+<button class="nav-btn" data-view="klanten" onclick="show('klanten')">Klanten</button>
 </nav>
 <div class="sidebar-foot">
 <div class="sidebar-hint">Rood = bel vandaag.<br>Oranje = deze week.<br>Elke ochtend checken.</div>
@@ -1488,7 +1494,7 @@ save();renderClog(d.contacts);
 }
 function show(v){
 view=v;
-document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['dash','pipe','alle','analyse'][i]===v));
+document.querySelectorAll('.nav-btn').forEach((b)=>b.classList.toggle('active',b.dataset.view===v));
 render();
 }
 function render(){
@@ -1498,6 +1504,45 @@ if(view==='dash')m.innerHTML=rDash();
 else if(view==='pipe')m.innerHTML=rPipe();
 else if(view==='alle')m.innerHTML=rAlle();
 else if(view==='analyse'){m.innerHTML=rAnalyse();}
+else if(view==='offertes')m.innerHTML=rOffertes();
+else if(view==='support')m.innerHTML=rSupport();
+else if(view==='klanten')m.innerHTML=rKlanten();
+}
+// --- Offertes: overzicht van leads met een gekoppelde interactieve offerte.
+// Hergebruikt puur bestaande data (offerteUrl/offertenr), geen nieuw veld nodig.
+function rOffertes(){
+const metOfferte=deals.filter(d=>d.offerteUrl||d.offertenr);
+if(!metOfferte.length){
+return'<div class="empty">Nog geen offertes gekoppeld. Zodra een lead een offertenummer of offerte-link heeft, verschijnt die hier.</div>';
+}
+const rows=metOfferte.map(d=>{
+const bedrag=d.bedrag?'€'+Number(d.bedrag).toLocaleString('nl-NL'):'—';
+const link=d.offerteUrl?`<a href="${d.offerteUrl}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Open offerte ↗</a>`:'—';
+return`<div class="gc" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+<div>
+<div style="font-weight:600;font-size:14px">${d.klant||'Onbekend'}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:2px">${d.offertenr?'Offertenr '+d.offertenr:''} · ${bedrag} · ${d.status||''}</div>
+</div>
+<div>${link}</div>
+</div>`;
+}).join('');
+return`<div class="gt" style="margin-bottom:14px">Offertes (${metOfferte.length})</div>${rows}`;
+}
+// --- Support en Klanten: placeholders voor fase 2 van de uitbreiding naar
+// Q-Line Sales & Support Tracker. Nog geen eigen database gekoppeld — dat
+// komt in de volgende fase (nieuwe Firestore-database in dit Firebase-project,
+// los van de Inspectie-app).
+function rSupport(){
+return`<div class="gc">
+<div class="gt">🔧 Support — komt in fase 2</div>
+<div class="gd">Hier komen straks alle storingen binnen via WhatsApp en e-mail (support@q-line.com), automatisch herkend door AI, gekoppeld aan het juiste klantdossier, met status, urgentie en een technische kennisbank voor foutcodes. Nu nog niet actief.</div>
+</div>`;
+}
+function rKlanten(){
+return`<div class="gc">
+<div class="gt">👥 Klanten — komt in fase 2</div>
+<div class="gd">Hier komt straks één centraal dossier per klant: contactgegevens, offertes, orders, supportmeldingen en de volledige WhatsApp/e-mailcommunicatie bij elkaar. Nu nog niet actief.</div>
+</div>`;
 }
 function updateBadge(){
 const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;

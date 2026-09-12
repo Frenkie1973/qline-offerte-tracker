@@ -143,6 +143,9 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 </div>
 <nav class="nav">
 <button class="nav-btn active" data-view="dash" onclick="show('dash')">Dashboard <span class="nav-badge" id="badge" style="display:none">0</span></button>
+<div class="nav-group-label">Intake</div>
+<button class="nav-btn" data-view="intake" onclick="show('intake')">Nieuwe intake</button>
+<button class="nav-btn" data-view="onzeker" onclick="show('onzeker')">Te beoordelen <span class="nav-badge" id="onzekerBadge" style="display:none">0</span></button>
 <div class="nav-group-label">Sales</div>
 <button class="nav-btn" data-view="pipe" onclick="show('pipe')">Pipeline</button>
 <button class="nav-btn" data-view="alle" onclick="show('alle')">Alle leads</button>
@@ -1509,6 +1512,8 @@ else if(view==='offertes')m.innerHTML=rOffertes();
 else if(view==='support'){m.innerHTML=rSupport();if(!storingenLoaded)laadStoringen();}
 else if(view==='kennisbank'){m.innerHTML=rKennisbank();if(!kennisbankLoaded)laadKennisbank();}
 else if(view==='klanten'){m.innerHTML=rKlanten();if(!klantenLoaded)laadKlanten();}
+else if(view==='intake'){m.innerHTML=rIntake();if(!klantenLoaded)laadKlanten();if(!storingenLoaded)laadStoringen();if(!intakeLogLoaded)laadIntakeLog();}
+else if(view==='onzeker'){m.innerHTML=rOnzeker();if(!onzekerLoaded)laadOnzekereIntakes();if(!klantenLoaded)laadKlanten();}
 }
 // --- Offertes: overzicht van leads met een gekoppelde interactieve offerte.
 // Hergebruikt puur bestaande data (offerteUrl/offertenr), geen nieuw veld nodig.
@@ -1684,6 +1689,8 @@ return`<div class="gc" style="margin-bottom:12px">
 </div>
 </div>
 ${s.omschrijving?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap">${s.omschrijving}</div>`:''}
+${s.bron?`<div style="font-size:11px;color:var(--hint);margin-top:6px">Bron: ${s.bron}</div>`:''}
+${(s.historie&&s.historie.length>1)?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${s.historie.length} bericht${s.historie.length===1?'':'en'})</summary>${s.historie.map(h=>`<div style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap"><span style="color:var(--hint)">${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''} · ${h.bron||''}</span><br>${h.tekst||''}</div>`).join('')}</details>`:''}
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
 ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}
@@ -1823,6 +1830,273 @@ function updateBadge(){
 const n=deals.filter(d=>['urg','soon'].includes(urg(d))).length;
 const b=document.getElementById('badge');
 b.textContent=n;b.style.display=n?'inline':'none';
+const ob=document.getElementById('onzekerBadge');
+if(ob){const on=onzekereIntakes.filter(i=>i.status==='open').length;ob.textContent=on;ob.style.display=on?'inline':'none';}
+}
+
+// ============================================================
+// FASE 3: Centrale intake + AI-classificatie
+// Eén punt waar binnenkomende berichten (voorlopig handmatig geplakt;
+// straks automatisch vanuit WhatsApp/mail in fase 4/5) worden geclassificeerd
+// door de AI-proxy: NEW_SALES / EXISTING_SALES / NEW_SUPPORT / EXISTING_SUPPORT
+// / OTHER / UNCERTAIN. De AI verzint nooit gegevens — onbekende velden worden
+// altijd "Nog opvragen". Elke classificatie wordt gelogd in intake_log
+// (audit trail); bij twijfel (lage confidence, OTHER of UNCERTAIN) gaat niets
+// automatisch de administratie in, maar komt het in de wachtrij "Te
+// beoordelen" te staan zodat Frank het zelf toewijst.
+// ============================================================
+let intakeLog=[],intakeLogLoaded=false;
+let onzekereIntakes=[],onzekerLoaded=false;
+let laatsteIntakeResultaat=null,intakeBezig=false;
+const INTAKE_DREMPEL=70;
+const INTAKE_LABELS={NEW_SALES:'🆕 Nieuwe sales-aanvraag',EXISTING_SALES:'💼 Bestaand sales-traject',NEW_SUPPORT:'🔧 Nieuwe supportmelding',EXISTING_SUPPORT:'🔧 Bestaande supportmelding',OTHER:'❔ Overig',UNCERTAIN:'⚠️ Onzeker'};
+
+function normTel(t){return(t||'').replace(/[^\d+]/g,'');}
+function matchKlantOpContact(tel,email){
+const nt=normTel(tel),ne=(email||'').toLowerCase().trim();
+return klanten.find(k=>(ne&&k.email&&k.email.toLowerCase().trim()===ne)||(nt&&k.telefoon&&normTel(k.telefoon)===nt))||null;
+}
+function matchOpenLead(tel,email){
+const nt=normTel(tel),ne=(email||'').toLowerCase().trim();
+return deals.find(d=>!['gewonnen','verloren'].includes(d.status)&&((ne&&d.email&&d.email.toLowerCase().trim()===ne)||(nt&&d.telefoon&&normTel(d.telefoon)===nt)))||null;
+}
+function matchOpenStoring(tel,email){
+const nt=normTel(tel),ne=(email||'').toLowerCase().trim();
+return storingen.find(s=>!['opgelost','gesloten'].includes(s.status)&&((ne&&s.email&&s.email.toLowerCase().trim()===ne)||(nt&&s.telefoon&&normTel(s.telefoon)===nt)))||null;
+}
+function parseAiJson(tekst){
+let t=(tekst||'').trim();
+const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+if(fence)t=fence[1].trim();
+const start=t.indexOf('{'),end=t.lastIndexOf('}');
+if(start===-1||end===-1)throw new Error('Geen JSON gevonden in AI-antwoord');
+return JSON.parse(t.slice(start,end+1));
+}
+async function laadIntakeLog(){
+try{intakeLog=await fsList('intake_log');intakeLog.sort((a,b)=>(b.tijdstip||'').localeCompare(a.tijdstip||''));}
+catch(e){console.error('Intake-log laden mislukt:',e);}
+intakeLogLoaded=true;
+if(view==='intake')render();
+}
+async function laadOnzekereIntakes(){
+try{onzekereIntakes=await fsList('intake_uncertain');onzekereIntakes.sort((a,b)=>(b.tijdstip||'').localeCompare(a.tijdstip||''));}
+catch(e){console.error('Onzekere intakes laden mislukt:',e);}
+onzekerLoaded=true;
+updateBadge();
+if(view==='onzeker')render();
+}
+function ikVeld(id,label,placeholder){return`<div><label style="font-size:12px;color:var(--muted)">${label}</label><input id="${id}" placeholder="${placeholder||''}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box"></div>`;}
+async function analyseerIntake(){
+const kanaal=document.getElementById('ik-kanaal').value;
+const tel=document.getElementById('ik-tel').value.trim();
+const email=document.getElementById('ik-email').value.trim();
+const tekst=document.getElementById('ik-tekst').value.trim();
+if(!tekst){alert('Plak eerst het bericht van de klant.');return;}
+if(!klantenLoaded)await laadKlanten();
+if(!storingenLoaded)await laadStoringen();
+const btn=document.getElementById('ikBtn');
+btn.disabled=true;btn.textContent='🤖 Bezig met analyseren...';
+intakeBezig=true;
+const bekendeKlant=matchKlantOpContact(tel,email);
+const lopendeLead=matchOpenLead(tel,email);
+const openStoring=matchOpenStoring(tel,email);
+const prompt=`Je bent het intake-classificatiesysteem van Q-Line Equestrian (paardensystemen: horsewalkers, solariums, hekwerk, stalinrichting). Je analyseert één binnenkomend bericht van een klant (via WhatsApp, e-mail, telefoon of website) en bepaalt wat ermee moet gebeuren.
+
+BELANGRIJKSTE REGEL: verzin NOOIT informatie die niet letterlijk in het bericht staat of hieronder is meegegeven. Is een gegeven niet bekend? Gebruik dan exact de tekst "Nog opvragen". Raad nooit een klantnaam, product, foutcode of ander veld dat niet expliciet genoemd wordt.
+
+REEDS BEKENDE GEGEVENS OVER DEZE AFZENDER (uit onze systemen, dit klopt sowieso):
+- Bekende klant in klantendossier: ${bekendeKlant?'JA — '+bekendeKlant.naam:'NEE, onbekend'}
+- Lopend sales-traject (offerte/lead) bij ons: ${lopendeLead?'JA — '+(lopendeLead.klant||'')+', status: '+lopendeLead.status:'NEE'}
+- Openstaande supportmelding bij ons: ${openStoring?'JA — '+(openStoring.klant||'')+', status: '+openStoring.status:'NEE'}
+
+BINNENKOMEND BERICHT (kanaal: ${kanaal}):
+"""
+${tekst.slice(0,3000)}
+"""
+
+Classificeer dit bericht in PRECIES één van deze categorieën:
+- NEW_SALES: een nieuwe verkoopaanvraag/interesse, en er is geen lopend sales-traject bekend
+- EXISTING_SALES: gaat over een al lopend sales-traject/offerte
+- NEW_SUPPORT: een nieuwe storing/probleem/foutmelding, en er is geen openstaande supportmelding bekend
+- EXISTING_SUPPORT: gaat over een al openstaande supportmelding
+- OTHER: geen van bovenstaande (bijv. algemene vraag, factuur, sollicitatie, spam)
+- UNCERTAIN: je bent niet zeker genoeg, of het bericht is te vaag/onduidelijk om te classificeren
+
+Geef ALLEEN geldige JSON terug, exact in dit formaat, zonder markdown-codeblok eromheen en zonder extra tekst ervoor of erna:
+{"classificatie":"NEW_SALES|EXISTING_SALES|NEW_SUPPORT|EXISTING_SUPPORT|OTHER|UNCERTAIN","confidence":0-100,"reden":"korte uitleg in het Nederlands, max 2 zinnen","klantnaam":"letterlijk genoemde naam of 'Nog opvragen'","product":"letterlijk genoemd product/model of 'Nog opvragen'","foutcode":"letterlijk genoemde foutcode of 'Nog opvragen'","omschrijving":"korte samenvatting van wat de klant zegt, puur gebaseerd op het bericht","urgentie":"laag/normaal/hoog, alleen als dit duidelijk uit het bericht blijkt, anders 'normaal'"}`;
+let ai=null,ruweRespons='',fout=null;
+try{
+const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
+method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,messages:[{role:"user",content:prompt}]})
+});
+const data=await response.json();
+ruweRespons=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
+ai=parseAiJson(ruweRespons);
+}catch(e){fout=e.message;}
+btn.disabled=false;btn.textContent='🤖 Analyseer met AI';
+intakeBezig=false;
+if(!ai){
+alert('AI-analyse mislukt: '+(fout||'onbekende fout')+'. Probeer het nog eens, of verwerk dit bericht handmatig via Support/Alle leads.');
+return;
+}
+await verwerkAiClassificatie({kanaal,tel,email,tekst,ai,ruweRespons,bekendeKlant,lopendeLead,openStoring});
+}
+async function verwerkAiClassificatie(ctx){
+const{kanaal,tel,email,tekst,ai,ruweRespons,bekendeKlant,lopendeLead,openStoring}=ctx;
+const confidence=Number(ai.confidence)||0;
+const classificatie=ai.classificatie||'UNCERTAIN';
+let actie='',aangemaaktType=null,aangemaaktId=null;
+const now=new Date();
+const logBasis={
+tijdstip:now.toISOString(),kanaal,afzenderTelefoon:tel||'Nog opvragen',afzenderEmail:email||'Nog opvragen',
+berichttekst:tekst,aiClassificatie:classificatie,aiConfidence:confidence,aiReden:ai.reden||'',
+aiVelden:JSON.stringify({klantnaam:ai.klantnaam||'Nog opvragen',product:ai.product||'Nog opvragen',foutcode:ai.foutcode||'Nog opvragen',omschrijving:ai.omschrijving||'',urgentie:ai.urgentie||'normaal'}),
+aiRuweRespons:ruweRespons,
+matchBekendeKlant:bekendeKlant?bekendeKlant.id:'',
+matchLopendeLead:lopendeLead?lopendeLead.id:'',
+matchOpenStoring:openStoring?openStoring.id:''
+};
+if(confidence<INTAKE_DREMPEL||classificatie==='UNCERTAIN'||classificatie==='OTHER'){
+try{await fsCreate('intake_uncertain',{...logBasis,status:'open'});}catch(e){}
+actie=classificatie==='OTHER'?'❔ Niet als sales/support herkend — naar "Te beoordelen" gestuurd voor controle':'⚠️ AI was niet zeker genoeg (confidence '+confidence+'%) — naar "Te beoordelen" gestuurd';
+}else if(classificatie==='NEW_SALES'){
+const id=Date.now().toString();
+deals.push({id,klant:(ai.klantnaam&&ai.klantnaam!=='Nog opvragen')?ai.klantnaam:'Nog opvragen',datum:td(),bedrag:'',onderwerp:ai.product&&ai.product!=='Nog opvragen'?ai.product:'',offertenr:'',aanvraagnr:'',status:'nieuw',datumOfferte:'',email:email||'',telefoon:tel||'',contactWay:kanaal,land:'',notitie:'Automatisch aangemaakt vanuit intake ('+kanaal+'). AI-toelichting: '+(ai.reden||''),contacts:[{type:'reactie',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst}],auto:true});
+save();
+aangemaaktType='sales-lead';aangemaaktId=id;
+actie='✅ Nieuwe sales-lead aangemaakt voor '+((ai.klantnaam&&ai.klantnaam!=='Nog opvragen')?ai.klantnaam:'onbekende klant (nog opvragen)');
+}else if(classificatie==='EXISTING_SALES'){
+if(lopendeLead){
+lopendeLead.contacts=lopendeLead.contacts||[];
+lopendeLead.contacts.push({type:'reactie',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:'[via '+kanaal+'] '+tekst});
+save();
+aangemaaktType='sales-lead';aangemaaktId=lopendeLead.id;
+actie='✅ Toegevoegd aan bestaand sales-traject van '+(lopendeLead.klant||'onbekend');
+}else{
+try{await fsCreate('intake_uncertain',{...logBasis,status:'open',opmerking:'AI classificeerde als EXISTING_SALES maar er is geen matchend sales-traject gevonden op telefoon/e-mail — controleer handmatig.'});}catch(e){}
+actie='⚠️ AI dacht bestaand sales-traject, maar geen match gevonden — naar "Te beoordelen" gestuurd';
+}
+}else if(classificatie==='NEW_SUPPORT'){
+const nieuw={klant:(ai.klantnaam&&ai.klantnaam!=='Nog opvragen')?ai.klantnaam:'Nog opvragen',contactpersoon:'',telefoon:tel||'',email:email||'',product:ai.product||'Nog opvragen',model:'',serienummer:'Nog opvragen',omschrijving:(ai.omschrijving||tekst),foutcode:ai.foutcode||'',urgentie:ai.urgentie||'normaal',status:'nieuw',bron:'AI-intake ('+kanaal+')',aangemaakt:now.toISOString(),historie:[{tijdstip:now.toISOString(),tekst,bron:kanaal}]};
+try{
+const doc=await fsCreate('storingen',nieuw);
+aangemaaktType='storing';aangemaaktId=doc.name?doc.name.split('/').pop():'';
+actie='✅ Nieuwe supportmelding aangemaakt voor '+nieuw.klant;
+await laadStoringen();
+}catch(e){actie='❌ Aanmaken supportmelding mislukt: '+e.message;}
+}else if(classificatie==='EXISTING_SUPPORT'){
+if(openStoring){
+try{
+const historie=(openStoring.historie||[]).concat([{tijdstip:now.toISOString(),tekst,bron:kanaal}]);
+await fsUpdate('storingen',openStoring.id,{historie,bijgewerkt:now.toISOString()});
+openStoring.historie=historie;
+aangemaaktType='storing';aangemaaktId=openStoring.id;
+actie='✅ Toegevoegd aan bestaande supportmelding van '+(openStoring.klant||'onbekend');
+}catch(e){actie='❌ Bijwerken supportmelding mislukt: '+e.message;}
+}else{
+try{await fsCreate('intake_uncertain',{...logBasis,status:'open',opmerking:'AI classificeerde als EXISTING_SUPPORT maar er is geen openstaande melding gevonden op telefoon/e-mail — controleer handmatig.'});}catch(e){}
+actie='⚠️ AI dacht bestaande supportmelding, maar geen match gevonden — naar "Te beoordelen" gestuurd';
+}
+}
+logBasis.actieOndernomen=actie;
+logBasis.aangemaaktType=aangemaaktType||'';
+logBasis.aangemaaktId=aangemaaktId||'';
+try{await fsCreate('intake_log',logBasis);}catch(e){console.error('Intake-log opslaan mislukt:',e);}
+laatsteIntakeResultaat={...logBasis,classificatie};
+if(onzekerLoaded)await laadOnzekereIntakes();
+if(intakeLogLoaded)await laadIntakeLog();
+render();
+}
+function rIntake(){
+const resultaat=laatsteIntakeResultaat?`<div class="gc" style="margin-bottom:16px;border-left:4px solid var(--accent)">
+<div style="font-weight:700;font-size:14px">${INTAKE_LABELS[laatsteIntakeResultaat.classificatie]||laatsteIntakeResultaat.classificatie} — ${laatsteIntakeResultaat.aiConfidence}% zeker</div>
+<div style="font-size:13px;color:var(--muted);margin-top:4px">${laatsteIntakeResultaat.aiReden||''}</div>
+<div style="font-size:13px;font-weight:600;margin-top:10px">${laatsteIntakeResultaat.actieOndernomen}</div>
+</div>`:'';
+const recent=intakeLogLoaded&&intakeLog.length?`<div class="gt" style="margin:20px 0 10px">Recent verwerkt</div>${intakeLog.slice(0,8).map(l=>`
+<div class="gc" style="margin-bottom:8px;padding:12px 14px">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+<span style="font-size:13px;font-weight:600">${INTAKE_LABELS[l.aiClassificatie]||l.aiClassificatie}</span>
+<span style="font-size:11px;color:var(--hint)">${l.tijdstip?new Date(l.tijdstip).toLocaleString('nl-NL'):''} · ${l.kanaal||''}</span>
+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">${l.actieOndernomen||''}</div>
+</div>`).join('')}`:'';
+return`<div class="gt" style="margin-bottom:4px">Nieuwe intake verwerken</div>
+<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Plak hier een binnenkomend bericht (WhatsApp, mail, telefoonnotitie of website-aanvraag). De AI herkent of het een nieuwe of bestaande sales-aanvraag of storing is — en verzint nooit gegevens die niet in het bericht staan.</div>
+<div class="gc">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div><label style="font-size:12px;color:var(--muted)">Kanaal</label>
+<select id="ik-kanaal" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px">
+<option value="WhatsApp">WhatsApp</option><option value="E-mail">E-mail</option><option value="Telefoon">Telefoon</option><option value="Website">Website</option><option value="Overig">Overig</option>
+</select></div>
+${ikVeld('ik-tel','Telefoonnummer afzender','06-...')}
+${ikVeld('ik-email','E-mailadres afzender','naam@...')}
+</div>
+<div style="margin-top:10px">${stTextarea('ik-tekst','Berichttekst van de klant')}</div>
+<div style="margin-top:14px">
+<button id="ikBtn" onclick="analyseerIntake()" class="btn btn-p" style="padding:10px 18px">🤖 Analyseer met AI</button>
+</div>
+</div>
+${resultaat}${recent}`;
+}
+function rOnzeker(){
+if(!onzekerLoaded)return'<div class="empty">Wachtrij laden...</div>';
+const open=onzekereIntakes.filter(i=>i.status==='open');
+if(!open.length)return'<div class="gt" style="margin-bottom:14px">Te beoordelen (0)</div><div class="empty">Niets om te beoordelen — alle intakes zijn automatisch verwerkt of al afgehandeld. 👍</div>';
+const kaarten=open.map(i=>{
+let velden={};try{velden=JSON.parse(i.aiVelden||'{}');}catch(e){}
+const klantOpties=klanten.map(k=>`<option value="${k.id}">${k.naam}</option>`).join('');
+return`<div class="gc" style="margin-bottom:14px">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+<span style="font-weight:700;font-size:14px">${INTAKE_LABELS[i.aiClassificatie]||i.aiClassificatie} · ${i.aiConfidence}% zeker</span>
+<span style="font-size:11px;color:var(--hint)">${i.tijdstip?new Date(i.tijdstip).toLocaleString('nl-NL'):''} · ${i.kanaal||''}</span>
+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">AI-toelichting: ${i.aiReden||'—'}${i.opmerking?' · '+i.opmerking:''}</div>
+<div style="font-size:13px;background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap">${i.berichttekst||''}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:8px">${[i.afzenderTelefoon!=='Nog opvragen'?'📞 '+i.afzenderTelefoon:'',i.afzenderEmail!=='Nog opvragen'?'✉️ '+i.afzenderEmail:'',velden.klantnaam&&velden.klantnaam!=='Nog opvragen'?'👤 '+velden.klantnaam:'',velden.foutcode&&velden.foutcode!=='Nog opvragen'?'⚠️ Foutcode '+velden.foutcode:''].filter(Boolean).join(' · ')||'Geen extra gegevens herkend'}</div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+<button onclick="verwerkOnzekerHandmatig('${i.id}','sales')" class="btn btn-p" style="padding:8px 12px;font-size:12px">→ Nieuwe sales-lead</button>
+<button onclick="verwerkOnzekerHandmatig('${i.id}','support')" class="btn btn-p" style="padding:8px 12px;font-size:12px">→ Nieuwe supportmelding</button>
+${klanten.length?`<select id="onz-klant-${i.id}" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:12px"><option value="">Koppel aan klant...</option>${klantOpties}</select>
+<button onclick="verwerkOnzekerHandmatig('${i.id}','koppel')" class="btn" style="padding:8px 12px;font-size:12px">Koppel</button>`:''}
+<button onclick="verwerkOnzekerHandmatig('${i.id}','negeer')" class="btn" style="padding:8px 12px;font-size:12px;margin-left:auto">Negeren</button>
+</div>
+</div>`;
+}).join('');
+return`<div class="gt" style="margin-bottom:14px">Te beoordelen (${open.length})</div>${kaarten}`;
+}
+async function verwerkOnzekerHandmatig(id,actie){
+const item=onzekereIntakes.find(i=>i.id===id);
+if(!item)return;
+let velden={};try{velden=JSON.parse(item.aiVelden||'{}');}catch(e){}
+const now=new Date();
+let resultaat='';
+if(actie==='sales'){
+const newId=Date.now().toString();
+deals.push({id:newId,klant:(velden.klantnaam&&velden.klantnaam!=='Nog opvragen')?velden.klantnaam:'Nog opvragen',datum:td(),bedrag:'',onderwerp:velden.product&&velden.product!=='Nog opvragen'?velden.product:'',offertenr:'',aanvraagnr:'',status:'nieuw',datumOfferte:'',email:item.afzenderEmail!=='Nog opvragen'?item.afzenderEmail:'',telefoon:item.afzenderTelefoon!=='Nog opvragen'?item.afzenderTelefoon:'',contactWay:item.kanaal,land:'',notitie:'Handmatig toegewezen vanuit "Te beoordelen" (was: '+item.aiClassificatie+').',contacts:[{type:'reactie',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:item.berichttekst}],auto:true});
+save();
+resultaat='Handmatig omgezet naar nieuwe sales-lead';
+}else if(actie==='support'){
+const nieuw={klant:(velden.klantnaam&&velden.klantnaam!=='Nog opvragen')?velden.klantnaam:'Nog opvragen',contactpersoon:'',telefoon:item.afzenderTelefoon!=='Nog opvragen'?item.afzenderTelefoon:'',email:item.afzenderEmail!=='Nog opvragen'?item.afzenderEmail:'',product:velden.product||'Nog opvragen',model:'',serienummer:'Nog opvragen',omschrijving:velden.omschrijving||item.berichttekst,foutcode:velden.foutcode||'',urgentie:velden.urgentie||'normaal',status:'nieuw',bron:'Handmatig via Te beoordelen ('+item.kanaal+')',aangemaakt:now.toISOString(),historie:[{tijdstip:now.toISOString(),tekst:item.berichttekst,bron:item.kanaal}]};
+try{await fsCreate('storingen',nieuw);await laadStoringen();resultaat='Handmatig omgezet naar nieuwe supportmelding';}catch(e){alert('Aanmaken mislukt: '+e.message);return;}
+}else if(actie==='koppel'){
+const sel=document.getElementById('onz-klant-'+id);
+const klantId=sel?sel.value:'';
+if(!klantId){alert('Kies eerst een klant om aan te koppelen.');return;}
+const klant=klanten.find(k=>k.id===klantId);
+resultaat='Handmatig gekoppeld aan bestaande klant '+(klant?klant.naam:klantId);
+}else if(actie==='negeer'){
+resultaat='Genegeerd — geen actie ondernomen';
+}
+try{
+await fsUpdate('intake_uncertain',id,{status:'afgehandeld',handmatigeActie:actie,handmatigResultaat:resultaat,afgehandeldOp:now.toISOString()});
+item.status='afgehandeld';
+}catch(e){console.error('Bijwerken wachtrij-item mislukt:',e);}
+try{await fsCreate('intake_log',{tijdstip:now.toISOString(),kanaal:item.kanaal,afzenderTelefoon:item.afzenderTelefoon,afzenderEmail:item.afzenderEmail,berichttekst:item.berichttekst,aiClassificatie:item.aiClassificatie,aiConfidence:item.aiConfidence,aiReden:item.aiReden,aiVelden:item.aiVelden,menselijkeActie:actie,actieOndernomen:'(handmatig via Te beoordelen) '+resultaat});}catch(e){}
+if(intakeLogLoaded)await laadIntakeLog();
+updateBadge();
+render();
 }
 function dzHtml(){
 return`<div class="dropzone" id="dz"

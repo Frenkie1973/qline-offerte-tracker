@@ -1647,8 +1647,10 @@ const s=storingen.find(x=>x.id===id);
 if(!s)return;
 const tekstEl=document.getElementById('brf-tekst-'+id);
 const fotoEl=document.getElementById('brf-foto-'+id);
+const richtingEl=document.getElementById('brf-richting-'+id);
 const tekst=tekstEl?tekstEl.value.trim():'';
 const file=fotoEl&&fotoEl.files&&fotoEl.files[0];
+const richting=richtingEl?richtingEl.value:'van_klant';
 if(!tekst&&!file){alert('Vul een bericht in of kies een foto.');return;}
 if(file&&file.size>10*1024*1024){alert('Deze foto is te groot (max 10MB). Kies een kleinere foto.');return;}
 const btn=document.getElementById('brf-btn-'+id);
@@ -1657,10 +1659,10 @@ const nu=new Date();
 try{
 if(file){
 const fotoData=await verkleinAfbeelding(file,700);
-await fsCreate('storing_fotos',{storingId:id,tekst,foto:fotoData,tijdstip:nu.toISOString(),bron:'Handmatig (Frank)'});
+await fsCreate('storing_fotos',{storingId:id,tekst,foto:fotoData,tijdstip:nu.toISOString(),bron:'Handmatig (Frank)',richting});
 await laadStoringFotos();
 }else{
-const historie=[...(s.historie||[]),{tijdstip:nu.toISOString(),tekst,bron:'Handmatig (Frank)'}];
+const historie=[...(s.historie||[]),{tijdstip:nu.toISOString(),tekst,bron:'Handmatig (Frank)',richting}];
 await fsUpdate('storingen',id,{historie});
 s.historie=historie;
 }
@@ -1762,12 +1764,17 @@ const statusOpties=STORING_STATUSSEN.map(st=>`<option value="${st}" ${st===statu
 // Tijdlijn = handmatige/AI-tekstberichten (s.historie) + foto's (eigen collectie
 // storing_fotos, zie laadStoringFotos) samengevoegd en op tijd gesorteerd.
 const fotosVanDeze=storingFotos.filter(f=>f.storingId===s.id);
-const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,foto:null})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,foto:f.foto}))]
+const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,foto:null,richting:h.richting})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,foto:f.foto,richting:f.richting}))]
 .sort((a,b)=>(a.tijdstip||'').localeCompare(b.tijdstip||''));
 const berichtForm=berichtFormOpenId===s.id?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px">
-<label style="font-size:12px;color:var(--muted)">Nieuw bericht (bijv. antwoord van de klant via WhatsApp)</label>
+<label style="font-size:12px;color:var(--muted)">Richting</label>
+<select id="brf-richting-${s.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="van_klant" selected>📥 Klant stuurde dit naar mij</option>
+<option value="naar_klant">📤 Ik stuurde dit naar de klant</option>
+</select>
+<label style="font-size:12px;color:var(--muted);display:block;margin-top:8px">Bericht (bijv. wat er via WhatsApp is gestuurd)</label>
 <textarea id="brf-tekst-${s.id}" rows="2" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box;resize:vertical"></textarea>
-<label style="font-size:12px;color:var(--muted);display:block;margin-top:8px">Foto van de klant (optioneel)</label>
+<label style="font-size:12px;color:var(--muted);display:block;margin-top:8px">Foto (optioneel)</label>
 <input type="file" id="brf-foto-${s.id}" accept="image/*" capture="environment" style="margin-top:4px;display:block">
 <div style="display:flex;gap:8px;margin-top:10px">
 <button id="brf-btn-${s.id}" onclick="voegBerichtToe('${s.id}')" class="btn btn-p" style="padding:9px 14px">Toevoegen</button>
@@ -1788,7 +1795,11 @@ return`<div class="gc" style="margin-bottom:12px">
 </div>
 ${s.omschrijving?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap">${s.omschrijving}</div>`:''}
 ${s.bron?`<div style="font-size:11px;color:var(--hint);margin-top:6px">Bron: ${s.bron}</div>`:''}
-${tijdlijn.length?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${tijdlijn.length} bericht${tijdlijn.length===1?'':'en'})</summary>${tijdlijn.map(h=>`<div style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap"><span style="color:var(--hint)">${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''} · ${h.bron||''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`).join('')}</details>`:''}
+${tijdlijn.length?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${tijdlijn.length} bericht${tijdlijn.length===1?'':'en'})</summary>${tijdlijn.map(h=>{
+const uitgaand=h.richting==='naar_klant';
+const icon=uitgaand?'📤 Naar klant':'📥 Van klant';
+return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><span style="color:var(--hint)">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
+}).join('')}</details>`:''}
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${berichtForm}${salesKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
@@ -2311,7 +2322,7 @@ await laadStoringen();
 }else if(classificatie==='EXISTING_SUPPORT'){
 if(openStoring){
 try{
-const historie=(openStoring.historie||[]).concat([{tijdstip:now.toISOString(),tekst,bron:kanaal}]);
+const historie=(openStoring.historie||[]).concat([{tijdstip:now.toISOString(),tekst,bron:kanaal,richting:'van_klant'}]);
 await fsUpdate('storingen',openStoring.id,{historie,bijgewerkt:now.toISOString()});
 openStoring.historie=historie;
 aangemaaktType='storing';aangemaaktId=openStoring.id;

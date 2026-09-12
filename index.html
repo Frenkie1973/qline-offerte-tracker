@@ -152,7 +152,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <button class="nav-btn" data-view="analyse" onclick="show('analyse')">Analyse</button>
 <button class="nav-btn" data-view="offertes" onclick="show('offertes')">Offertes</button>
 <div class="nav-group-label">Support</div>
-<button class="nav-btn" data-view="support" onclick="show('support')">Support</button>
+<button class="nav-btn" data-view="support" onclick="show('support')">Support <span class="nav-badge" id="supportWachtBadge" style="display:none">0</span></button>
 <button class="nav-btn" data-view="kennisbank" onclick="show('kennisbank')">Kennisbank</button>
 <button class="nav-btn" data-view="kbvoorstellen" onclick="show('kbvoorstellen')">AI-voorstellen <span class="nav-badge" id="kbVoorstelBadge" style="display:none">0</span></button>
 <button class="nav-btn" data-view="klanten" onclick="show('klanten')">Klanten</button>
@@ -461,6 +461,17 @@ if(si){si.textContent='☁ laden...';si.style.color='var(--hint)';}
 const ok=await fbLoad();
 if(ok){render();updateBadge();}
 if(si){si.textContent=ok?'☁ Firebase sync OK':'☁ lokaal (geen sync)';si.style.color=ok?'var(--green)':'var(--hint)';}
+// Laad Support/Kennisbank-gegevens ook meteen op de achtergrond, puur zodat
+// de tellertjes (badges) in het menu al kloppen voordat je die pagina's
+// zelf geopend hebt — bijv. "hoeveel meldingen staan er op wacht op klant".
+// De losse laadFuncties roepen zelf alleen render() aan als je toevallig al
+// op die pagina staat, dus hier expliciet nog een keer updateBadge() erna.
+(async()=>{
+if(!storingenLoaded)await laadStoringen();
+if(!onzekerLoaded)await laadOnzekereIntakes();
+if(!kbVoorstellenLoaded)await laadKbVoorstellen();
+updateBadge();
+})();
 }
 function save(){
 localStorage.setItem(KEY,JSON.stringify(deals));
@@ -2166,6 +2177,8 @@ const ob=document.getElementById('onzekerBadge');
 if(ob){const on=onzekereIntakes.filter(i=>i.status==='open').length;ob.textContent=on;ob.style.display=on?'inline':'none';}
 const kvb=document.getElementById('kbVoorstelBadge');
 if(kvb){const kn=kbVoorstellen.filter(v=>v.status==='open').length;kvb.textContent=kn;kvb.style.display=kn?'inline':'none';}
+const swb=document.getElementById('supportWachtBadge');
+if(swb){const sw=storingen.filter(s=>(s.status||'nieuw')==='wachten_klant').length;swb.textContent=sw;swb.style.display=sw?'inline':'none';}
 }
 
 // ============================================================

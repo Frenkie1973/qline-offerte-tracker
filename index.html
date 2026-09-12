@@ -154,6 +154,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="nav-group-label">Support</div>
 <button class="nav-btn" data-view="support" onclick="show('support')">Support</button>
 <button class="nav-btn" data-view="kennisbank" onclick="show('kennisbank')">Kennisbank</button>
+<button class="nav-btn" data-view="kbvoorstellen" onclick="show('kbvoorstellen')">AI-voorstellen <span class="nav-badge" id="kbVoorstelBadge" style="display:none">0</span></button>
 <button class="nav-btn" data-view="klanten" onclick="show('klanten')">Klanten</button>
 </nav>
 <div class="sidebar-foot">
@@ -1511,6 +1512,7 @@ else if(view==='analyse'){m.innerHTML=rAnalyse();}
 else if(view==='offertes')m.innerHTML=rOffertes();
 else if(view==='support'){m.innerHTML=rSupport();if(!storingenLoaded)laadStoringen();}
 else if(view==='kennisbank'){m.innerHTML=rKennisbank();if(!kennisbankLoaded)laadKennisbank();}
+else if(view==='kbvoorstellen'){m.innerHTML=rKbVoorstellen();if(!kbVoorstellenLoaded)laadKbVoorstellen();}
 else if(view==='klanten'){m.innerHTML=rKlanten();if(!klantenLoaded)laadKlanten();}
 else if(view==='intake'){m.innerHTML=rIntake();if(!klantenLoaded)laadKlanten();if(!storingenLoaded)laadStoringen();if(!intakeLogLoaded)laadIntakeLog();}
 else if(view==='onzeker'){m.innerHTML=rOnzeker();if(!onzekerLoaded)laadOnzekereIntakes();if(!klantenLoaded)laadKlanten();}
@@ -1767,6 +1769,170 @@ ${kbFormOpen?'':'<button onclick="toggleKbForm()" class="btn btn-p" style="paddi
 ${form}${lijst}`;
 }
 
+// ============================================================
+// AI-VOORSTELLEN VOOR DE KENNISBANK
+// Frank wilde de Kennisbank vullen op basis van de handleidingen van de
+// frequentieregelaars (TECO L510 en E510s). De foutcodes hieronder komen
+// woordelijk/vertaald uit die handleidingen (hoofdstuk "Troubleshooting and
+// Fault Diagnostics") — er is niets verzonnen. Ze komen NIET automatisch in
+// de echte Kennisbank: elk voorstel moet Frank hier eerst goedkeuren (of
+// aanpassen/afwijzen), precies zoals bij "Te beoordelen" in Fase 3. Zo blijft
+// de regel "AI verzint nooit gegevens" ook hier overeind, en gaat er nooit
+// ongecontroleerde technische/veiligheidsinformatie live.
+// ============================================================
+let kbVoorstellen=[],kbVoorstellenLoaded=false;
+const SEED_KB_VOORSTELLEN=[
+{model:"TECO L510 / E510s",foutcode:"OU (OV)",betekenis:"Overspanning: de DC-busspanning overschrijdt de grens (230V-klasse 410Vdc / 400V-klasse 820Vdc).",oorzaken:"Afremtijd te kort waardoor energie terugstroomt vanuit de motor; ingangsspanning te hoog; cosfi-correctiecondensatoren in gebruik; te zware remlast; rem-transistor/-weerstand defect; parameters voor snelheidszoeken onjuist.",stappenplan:"1) Verleng de afremtijd. 2) Controleer en verlaag zo nodig de ingangsspanning (evt. AC-smoorspoel). 3) Verwijder eventuele cosfi-correctiecondensatoren. 4) Laat rem-transistor/-weerstand controleren. 5) Controleer de parameters voor snelheidszoeken.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"LU (UV)",betekenis:"Onderspanning: de DC-busspanning is lager dan de ondergrens, of het voorlaadcontact schakelt niet in tijdens bedrijf.",oorzaken:"Ingangsspanning te laag; fasedaling op de ingang; optrektijd te kort; spanningsschommelingen; voorlaadcontact beschadigd; DC-busspanning-terugkoppeling onjuist; regelkaart defect.",stappenplan:"1) Controleer de ingangsspanning en bekabeling. 2) Verleng de optrektijd. 3) Controleer de voeding op schommelingen. 4) Laat voorlaadcontact/regelkaart controleren door een technicus.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"PF",betekenis:"Fasedaling op de ingang (input phase loss): een fase van de voedingsspanning ontbreekt of is onstabiel.",oorzaken:"Abnormale schommeling in de voedingsspanning van het hoofdcircuit.",stappenplan:"1) Controleer de bekabeling van de hoofdvoeding. 2) Controleer de voedingsspanning op alle drie de fasen.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"PF",betekenis:"Let op: bij de E510s betekent PF iets anders dan bij de L510! Hier is het een 'Protection Error': OH1 of OL2 is 3x binnen 5 minuten opgetreden, of een run-commando via digitale ingang/communicatie is niet verwijderd.",oorzaken:"Herhaalde oververhittings-/overbelastingsfouten (OH1/OL2); run-commando vanuit digitale ingang of communicatie blijft actief staan.",stappenplan:"1) Los eerst de onderliggende OH1/OL2-fout op (zie die foutcode). 2) Verwijder het digitale ingangs- of communicatie-runcommando.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"IPL",betekenis:"Fasedaling op de ingang van de aandrijving, of onbalans in de ingangsspanning (actief bij parameter 08-09=1).",oorzaken:"Losse bedrading op de ingangsklem; korte stroomonderbreking; onbalans in de ingangsspanning.",stappenplan:"1) Controleer de ingangsbekabeling en haal schroeven aan. 2) Controleer de voedingsspanning.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"OPL",betekenis:"Fasedaling op de uitgang van de aandrijving naar de motor (actief bij parameter 08-10=1).",oorzaken:"Losse bedrading op de uitgangsklem; motor-nominale stroom is minder dan 10% van de nominale stroom van de aandrijving.",stappenplan:"1) Controleer de uitgangsbekabeling naar de motor en haal schroeven aan. 2) Controleer of het motorvermogen past bij de aandrijving.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"GF",betekenis:"Aardlekfout: de lekstroom naar aarde overschrijdt 50% van de nominale uitgangsstroom (functie 08-23=1).",oorzaken:"Motor beschadigd (isolatiefout); kabelbeschadiging of -slijtage; DCCT-sensor in de aandrijving defect.",stappenplan:"⚠️ Mogelijk gevaarlijke isolatie-/aardingsfout — niet zelf verder testen. 1) Schakel uit en laat motor + bekabeling controleren door een technicus. 2) Meet de isolatieweerstand tussen kabels en aarde. 3) Vervang motor/kabel indien defect.",veiligheidsniveau:3,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"SC",betekenis:"Kortsluiting of aardfout aan de uitgang van de aandrijving.",oorzaken:"Kortsluiting of aardfout (08-23=1); motor beschadigd (isolatie); kabelbeschadiging of -slijtage.",stappenplan:"⚠️ Elektrisch gevaar — niet zelf verder testen. 1) Schakel uit. 2) Laat de motorbekabeling controleren door een technicus voordat opnieuw wordt gestart.",veiligheidsniveau:3,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OC",betekenis:"Overstroom: de uitgangsstroom overschrijdt 200% van de nominale stroom van de aandrijving.",oorzaken:"Optrek-/afremtijd te kort; contactor aan de uitgangszijde; motor/belasting groter dan capaciteit van de aandrijving; kortsluiting of aardfout.",stappenplan:"1) Verleng optrek-/afremtijd. 2) Controleer de motorbekabeling. 3) Koppel de motor los en test de aandrijving apart. 4) Laat bij aanhoudend probleem controleren op kortsluiting/aardfout.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OC-A / OCA",betekenis:"Overstroom tijdens het optrekken (accelereren).",oorzaken:"Optrektijd te kort; contactor aan de uitgangszijde; motor/belasting groter dan capaciteit; kortsluiting tussen wikkeling en motorhuis of tussen draad en aarde; IGBT-module defect.",stappenplan:"1) Verleng de optrektijd. 2) Controleer de motorbekabeling. 3) Controleer of het motorvermogen past bij de aandrijving. 4) Laat bij aanhoudend probleem motor + IGBT-module controleren door een technicus.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OC-C / OCC",betekenis:"Overstroom tijdens bedrijf op vaste snelheid.",oorzaken:"Optrek-/afremtijd te kort; contactor aan de uitgangszijde; motor/belasting groter dan capaciteit; kortsluiting of aardfout.",stappenplan:"1) Verleng optrek-/afremtijd. 2) Controleer de motorbekabeling. 3) Laat bij aanhoudend probleem controleren op kortsluiting/aardfout.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OC-d / OCd",betekenis:"Overstroom tijdens afremmen (deceleratie).",oorzaken:"Afremtijd te kort ingesteld; (bij L510 ook) contactor aan uitgangszijde, motor/belasting te groot, kortsluiting of aardfout.",stappenplan:"1) Verleng de afremtijd. 2) Controleer bij aanhoudend probleem ook de motorbekabeling op kortsluiting.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"OC-S",betekenis:"Overstroom bij het starten van de aandrijving.",oorzaken:"Optrek-/afremtijd te kort; contactor aan uitgangszijde; motor/belasting te groot; kortsluiting of aardfout.",stappenplan:"1) Verleng optrek-/afremtijd. 2) Controleer de motorbekabeling. 3) Koppel de motor los en test de aandrijving apart.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"OU-C",betekenis:"Overspanning tijdens bedrijf of afremmen door te grote belastingstraagheid of een te korte afremtijd.",oorzaken:"Afremtijd te kort of overmatige belastingstraagheid; voedingsspanning schommelt sterk.",stappenplan:"1) Stel een langere afremtijd in. 2) Overweeg een remweerstand en/of remmodule (bij 400V-modellen). 3) Overweeg een smoorspoel aan de voedingszijde.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"LU-C",betekenis:"Onderspanning tijdens bedrijf.",oorzaken:"Voedingsspanning te laag of schommelt sterk.",stappenplan:"1) Verbeter de kwaliteit van de voeding. 2) Overweeg een smoorspoel aan de voedingszijde.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"CL / CLb",betekenis:"Waarschuwing voor overstroom. Bij herhaling (CL of OL2 tot 4x achter elkaar) moet 5 minuten gewacht worden voor reset.",oorzaken:"Beveiligingsniveau voor overstroom bereikt door zware belasting of lange bedrijfstijd.",stappenplan:"1) Wacht minimaal 1 minuut (bij herhaling 5 minuten) voor u opnieuw start. 2) Controleer de belasting en bedrijfstijd. 3) Verminder de belasting indien mogelijk.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510 / E510s",foutcode:"OH / OH-C / OH1",betekenis:"De temperatuur van de koelribben (heatsink) is te hoog. Bij 3x binnen 5 minuten moet 10 minuten gewacht worden voor reset.",oorzaken:"Omgevingstemperatuur te hoog; koelventilator defect; draaggolffrequentie te hoog; belasting te zwaar.",stappenplan:"1) Zorg voor voldoende ventilatie/koeling rond de aandrijving. 2) Controleer of de koelventilator draait en maak deze schoon. 3) Verminder de belasting. 4) Neem contact op met een technicus als de ventilator vervangen of de draaggolffrequentie aangepast moet worden.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510 / E510s",foutcode:"OH4",betekenis:"De motor is oververhit, of de PTC-temperatuursensor van de motor overschrijdt de ingestelde grens.",oorzaken:"Omgevingstemperatuur van de motor te hoog; PTC-ingang overschrijdt de grens (parameter 08-13/08-42); motor te zwaar belast.",stappenplan:"1) Controleer de omgevingstemperatuur van de motor en zorg voor ventilatie. 2) Controleer de bekabeling van de PTC-sensor (MT/GND). 3) Verminder de belasting.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"OH3",betekenis:"Waarschuwing: motor oververhitting (PTC-ingang hoger dan parameter 08-43).",oorzaken:"Functie multifunctie-ingang onjuist ingesteld; bekabeling PTC-sensor onjuist.",stappenplan:"1) Controleer de instelling van de multifunctie-ingang. 2) Controleer de bekabeling.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OL1",betekenis:"Interne motorbeveiliging tegen overbelasting is geactiveerd (curve via parameter 08-05).",oorzaken:"V/f-instelling te hoog waardoor de motor over-exciteert; nominale motorstroom (02-01) onjuist ingesteld; belasting te zwaar.",stappenplan:"1) Controleer de V/f-curve-instelling. 2) Controleer of de nominale motorstroom correct is ingesteld. 3) Verminder de belasting of pas het bedrijfsschema aan.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"OL2",betekenis:"Thermische overbelastingsbeveiliging van de aandrijving zelf is geactiveerd. Bij 4x binnen 5 minuten moet 4 minuten gewacht worden voor reset.",oorzaken:"V/f-instelling te hoog; capaciteit van de aandrijving te klein voor de toepassing; belasting te zwaar.",stappenplan:"1) Controleer de V/f-curve. 2) Verminder de belasting of het bedrijfsschema. 3) Bij structureel probleem: overweeg een aandrijving met hogere capaciteit (overleg leverancier).",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"OT / Ot",betekenis:"Het uitgangskoppel van de aandrijving overschrijdt de ingestelde grens (parameter 08-15) gedurende de ingestelde tijd (08-16).",oorzaken:"Belasting te zwaar.",stappenplan:"1) Controleer de instelling van de koppeldetectie (08-15/08-16). 2) Verminder de belasting of controleer het bedrijfsschema.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"OVSP",betekenis:"Het toerental van de motor wijkt af van de ingestelde snelheid (oversnelheid).",oorzaken:"Werkelijk toerental verschilt van het ingestelde toerental.",stappenplan:"1) Controleer de V/f-curve. 2) Controleer de nominale motorstroom. 3) Verminder de belasting of pas het bedrijfsschema aan.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"CtEr",betekenis:"Fout in de ingangsspanning (input voltage fault).",oorzaken:"Abnormale ingangsspanning, te veel ruis of een storing in de regelkaart.",stappenplan:"1) Controleer het ingangsspanningssignaal en de spanning op de regelkaart. 2) Neem bij aanhoudend probleem contact op met de leverancier.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"HPErr",betekenis:"De ingestelde capaciteit van de aandrijving (parameter 13-00) komt niet overeen met de spanningsklasse van de hardware.",oorzaken:"Verkeerde instelling van parameter 13-00.",stappenplan:"1) Controleer en corrigeer de capaciteitsinstelling (13-00) zodat deze overeenkomt met de hardware.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"Err4",betekenis:"Onverwachte CPU-onderbreking door externe ruis.",oorzaken:"Externe elektrische ruis/interferentie.",stappenplan:"1) Verwijder de storingsbron. 2) Herstart de aandrijving door de voeding uit/aan te schakelen. 3) Neem contact op met de leverancier als dit niet helpt.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"Err1",betekenis:"Bedieningsfout op het keypad, bijv. proberen een parameter te wijzigen tijdens bedrijf terwijl dat niet is toegestaan.",oorzaken:"Parameter gewijzigd tijdens bedrijf terwijl dat niet mag.",stappenplan:"1) Zet de aandrijving eerst stil (STOP) voordat u de parameter wijzigt.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510",foutcode:"Err2",betekenis:"Instelling van parameters valt buiten het toegestane bereik of is onderling tegenstrijdig.",oorzaken:"Parameterwaarden (bijv. 11-08 t/m 11-11, 00-12/00-13) onderling tegenstrijdig ingesteld.",stappenplan:"1) Controleer en corrigeer de genoemde parameters volgens de handleiding. 2) Raadpleeg bij twijfel een technicus.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"Err5",betekenis:"Het is niet toegestaan een parameter te wijzigen tijdens actieve communicatie.",oorzaken:"Besturingscommando verzonden tijdens communicatie; poging tot wijzigen van functies 09-02~09-05 tijdens communicatie.",stappenplan:"1) Geef eerst het enable-commando voordat u via communicatie instelt. 2) Stel de functies 09-02~09-05 in vóór het starten van communicatie.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"Err6 / CE",betekenis:"Communicatie met de aandrijving is mislukt of weggevallen (bijv. Modbus).",oorzaken:"Bekabelingsfout; verkeerde instelling van communicatieparameters; verkeerd protocol; verbinding verbroken of hostcomputer/software gestopt.",stappenplan:"1) Controleer de verbinding en bekabeling. 2) Controleer de communicatie-instellingen (functiegroep 09). 3) Controleer of de hostcomputer/software actief is.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"Err7",betekenis:"Conflict bij het wijzigen van parameters 13-00 t/m 13-08, of de spannings-/stroomdetectiecircuit werkt niet goed.",oorzaken:"Poging tot wijzigen van parameter 13-00/13-08; detectiecircuit werkt niet correct.",stappenplan:"1) Neem contact op met de leverancier als de aandrijving niet gereset kan worden.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"LOC",betekenis:"Parameter is vergrendeld, motorrichting is vergrendeld, of het wachtwoord voor parameters (13-07) is actief.",oorzaken:"Parametervergrendeling (13-06) actief; poging tot omkeren van draairichting terwijl dat vergrendeld is (11-00).",stappenplan:"1) Pas parameter 13-06 aan om de vergrendeling op te heffen. 2) Controleer parameter 11-00 voor de draairichting.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"PdEr / Fb / FBLSS",betekenis:"Het PID-terugkoppelsignaal (feedback) is weggevallen of te laag.",oorzaken:"Terugkoppelkabel gebroken; terugkoppelsensor defect; instelling drukverliesverhouding te hoog (E510s, parameter 23-19).",stappenplan:"1) Controleer de bekabeling van de terugkoppelsensor. 2) Controleer of de sensor correct is geïnstalleerd. 3) Vervang de sensor indien defect.",veiligheidsniveau:2,magKlantZelf:false},
+{model:"TECO L510",foutcode:"StP0",betekenis:"Informatieve status: de aandrijving staat stil omdat de ingestelde frequentie lager is dan 0.1Hz. Dit is geen echte storing.",oorzaken:"Ingestelde frequentie is (bijna) nul.",stappenplan:"1) Controleer of dit verwacht gedrag is. 2) Verhoog zo nodig de ingestelde frequentie/snelheid.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510",foutcode:"StP1",betekenis:"De aandrijving kan niet direct starten bij het inschakelen van de voeding omdat het run-commando al actief is via de externe besturing.",oorzaken:"Externe besturingsmodus actief met direct starten uitgeschakeld (parameter 07-04); run-commando al actief bij inschakelen.",stappenplan:"1) Zet het run-commando (schakelaar/klem) eerst uit, schakel dan pas in. 2) Activeer het run-commando opnieuw.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510",foutcode:"StP2",betekenis:"De stop-toets op het keypad is ingedrukt terwijl de aandrijving in externe besturingsmodus staat.",oorzaken:"Externe besturingsmodus actief, stop-toets op keypad ingedrukt.",stappenplan:"1) Laat het run-contact los en activeer het opnieuw om de aandrijving te herstarten.",veiligheidsniveau:1,magKlantZelf:true},
+{model:"TECO L510 / E510s",foutcode:"E.S. / ES",betekenis:"De externe noodstopingang is geactiveerd; de aandrijving remt af tot stilstand.",oorzaken:"Extern noodstopcircuit geactiveerd (digitale ingang ingesteld als noodstop, parameter 03-00~03-05=14).",stappenplan:"⚠️ Controleer eerst de reden van de noodstop voordat deze wordt opgeheven. 1) Zet het run-commando uit. 2) Hef de externe noodstop pas op als de oorzaak is verholpen en het veilig is.",veiligheidsniveau:3,magKlantZelf:false},
+{model:"TECO L510 / E510s",foutcode:"b.b. / bb1-6",betekenis:"De externe 'base block'-ingang is actief; de aandrijving stopt onmiddellijk (motor draait uit, zonder afremmen).",oorzaken:"Multifunctie digitale ingang voor base block is actief; instelling van de multifunctie-ingang onjuist.",stappenplan:"1) Controleer de instelling van de multifunctie-ingang. 2) Controleer de bekabeling van het betreffende klem (S1-S6).",veiligheidsniveau:3,magKlantZelf:false},
+{model:"TECO E510s",foutcode:"StO1 / StO2 / StO3 / PO",betekenis:"Fout in het veilige-stopcircuit (Safe Torque Off / STO): de veiligheidsklemmen (SF1/SF2 en SG) zijn niet correct aangesloten, of de interne veiligheidsspanning is instabiel.",oorzaken:"Klemmen SF1/SF2 en SG niet aangesloten; bij StO3: voedingsspanning van de transformator in de aandrijving instabiel.",stappenplan:"⚠️ Dit betreft het veiligheidscircuit — niet zelf oplossen. 1) Laat een technicus de SF1/SF2/SG-aansluitingen controleren. 2) Bij StO3: neem contact op met TECO/leverancier, mogelijk moet de vermogenskaart vervangen worden.",veiligheidsniveau:3,magKlantZelf:false}
+];
+async function laadKbVoorstellen(){
+try{kbVoorstellen=await fsList('kennisbank_voorstellen');kbVoorstellen.sort((a,b)=>(a.status==='open'?0:1)-(b.status==='open'?0:1)||(a.foutcode||'').localeCompare(b.foutcode||''));}
+catch(e){console.error('AI-voorstellen laden mislukt:',e);}
+kbVoorstellenLoaded=true;
+if(view==='kbvoorstellen')render();
+}
+async function importeerKbSeed(){
+if(!confirm('Dit importeert '+SEED_KB_VOORSTELLEN.length+' voorgestelde foutcodes (uit de L510/E510s-handleidingen) als concept in "AI-voorstellen". Er gaat nog niets live in de Kennisbank — dat doe je pas per code na controle. Doorgaan?'))return;
+const bestaand=new Set(kbVoorstellen.map(v=>(v.model||'')+'|'+(v.foutcode||'')));
+let n=0;
+for(const item of SEED_KB_VOORSTELLEN){
+const key=item.model+'|'+item.foutcode;
+if(bestaand.has(key))continue;
+try{
+await fsCreate('kennisbank_voorstellen',{product:'Frequentieregelaar',model:item.model,foutcode:item.foutcode,betekenis:item.betekenis,oorzaken:item.oorzaken,stappenplan:item.stappenplan,veiligheidsniveau:item.veiligheidsniveau,magKlantZelf:item.magKlantZelf,bronDocument:item.model.includes('E510s')&&!item.model.includes('L510')?'E510s-handleiding, hfst. Troubleshooting':(item.model.includes('L510')&&!item.model.includes('E510s')?'L510-handleiding, hfst. Troubleshooting':'L510- en E510s-handleiding, hfst. Troubleshooting'),status:'open',aangemaakt:new Date().toISOString()});
+n++;
+}catch(e){console.error('Voorstel opslaan mislukt voor',item.foutcode,e);}
+}
+alert(n+' nieuw(e) voorstel(len) toegevoegd.'+(n<SEED_KB_VOORSTELLEN.length?' ('+(SEED_KB_VOORSTELLEN.length-n)+' stonden al in de lijst.)':''));
+await laadKbVoorstellen();
+}
+async function goedkeurKbVoorstel(id){
+const v=kbVoorstellen.find(x=>x.id===id);
+if(!v)return;
+const g=fld=>{const el=document.getElementById('kbv-'+fld+'-'+id);return el?el.value.trim():'';};
+const artikel={
+product:g('product')||v.product||'',model:g('model')||v.model||'',foutcode:g('foutcode')||v.foutcode||'',
+betekenis:g('betekenis'),oorzaken:g('oorzaken'),stappenplan:g('stappenplan'),
+veiligheidsniveau:Number(g('niveau')||v.veiligheidsniveau||2),
+magKlantZelf:(document.getElementById('kbv-veilig-'+id)?document.getElementById('kbv-veilig-'+id).value:(v.magKlantZelf?'ja':'nee'))==='ja',
+notities:'Overgenomen uit AI-voorstel ('+(v.bronDocument||'handleiding')+').',
+aangemaakt:new Date().toISOString(),goedgekeurdDoor:'Frank'
+};
+try{
+await fsCreate('kennisbank',artikel);
+await fsUpdate('kennisbank_voorstellen',id,{status:'goedgekeurd'});
+v.status='goedgekeurd';
+kennisbankLoaded=false;
+await laadKennisbank();
+render();
+}catch(e){alert('Goedkeuren mislukt: '+e.message);}
+}
+async function afwijzenKbVoorstel(id){
+if(!confirm('Dit voorstel afwijzen? Het komt dan niet in de Kennisbank.'))return;
+try{
+await fsUpdate('kennisbank_voorstellen',id,{status:'afgewezen'});
+const v=kbVoorstellen.find(x=>x.id===id);if(v)v.status='afgewezen';
+render();
+}catch(e){alert('Afwijzen mislukt: '+e.message);}
+}
+function kbvVeld(id,label,val,textarea){
+const safe=(val||'').replace(/</g,'&lt;');
+return textarea?
+`<div><label style="font-size:12px;color:var(--muted)">${label}</label><textarea id="${id}" rows="3" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box;resize:vertical">${safe}</textarea></div>`
+:`<div><label style="font-size:12px;color:var(--muted)">${label}</label><input id="${id}" value="${safe}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box"></div>`;
+}
+function rKbVoorstelKaart(v){
+const open=v.status==='open';
+const niveauKleur=v.veiligheidsniveau===3?'#c0392b':v.veiligheidsniveau===2?'#d97706':'#16a34a';
+const statusLabel=v.status==='goedgekeurd'?'✅ Toegevoegd aan Kennisbank':v.status==='afgewezen'?'❌ Afgewezen':'🟡 Nog te beoordelen';
+return`<div class="gc" style="margin-bottom:12px;${open?'':'opacity:.6'}">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+<div style="font-weight:600;font-size:15px">${v.model||''} — foutcode ${v.foutcode||''}</div>
+<div style="text-align:right">
+<div style="font-size:11px;font-weight:700;color:${niveauKleur}">Niveau ${v.veiligheidsniveau||2}</div>
+<div style="font-size:11px;color:var(--hint)">${statusLabel}</div>
+</div>
+</div>
+${v.bronDocument?`<div style="font-size:11px;color:var(--hint);margin-bottom:8px">Bron: ${v.bronDocument}</div>`:''}
+${open?`
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${kbvVeld('kbv-product-'+v.id,'Product',v.product)}
+${kbvVeld('kbv-model-'+v.id,'Model',v.model)}
+</div>
+<div style="margin-top:10px">${kbvVeld('kbv-foutcode-'+v.id,'Foutcode',v.foutcode)}</div>
+<div style="margin-top:10px">${kbvVeld('kbv-betekenis-'+v.id,'Betekenis',v.betekenis,true)}</div>
+<div style="margin-top:10px">${kbvVeld('kbv-oorzaken-'+v.id,'Waarschijnlijke oorzaken',v.oorzaken,true)}</div>
+<div style="margin-top:10px">${kbvVeld('kbv-stappenplan-'+v.id,'Stappenplan / oplossing',v.stappenplan,true)}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+<div><label style="font-size:12px;color:var(--muted)">Veiligheidsniveau</label>
+<select id="kbv-niveau-${v.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="1" ${v.veiligheidsniveau===1?'selected':''}>1 — klant mag zelf controleren</option>
+<option value="2" ${!v.veiligheidsniveau||v.veiligheidsniveau===2?'selected':''}>2 — technische kennis vereist</option>
+<option value="3" ${v.veiligheidsniveau===3?'selected':''}>3 — veiligheidskritisch, niet naar klant</option>
+</select></div>
+<div><label style="font-size:12px;color:var(--muted)">Mag klant dit zelf uitvoeren?</label>
+<select id="kbv-veilig-${v.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="nee" ${!v.magKlantZelf?'selected':''}>Nee</option><option value="ja" ${v.magKlantZelf?'selected':''}>Ja</option>
+</select></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="goedkeurKbVoorstel('${v.id}')" class="btn btn-p" style="padding:10px 16px">✅ Goedkeuren &amp; toevoegen</button>
+<button onclick="afwijzenKbVoorstel('${v.id}')" class="btn" style="padding:10px 16px">❌ Afwijzen</button>
+</div>`:''}
+</div>`;
+}
+function rKbVoorstellen(){
+if(!kbVoorstellenLoaded)return'<div class="empty">AI-voorstellen laden...</div>';
+const openLijst=kbVoorstellen.filter(v=>v.status==='open');
+const afgehandeld=kbVoorstellen.filter(v=>v.status!=='open');
+const importKnop=`<button onclick="importeerKbSeed()" class="btn btn-p" style="padding:9px 14px">📥 Importeer basis foutcodes TECO L510/E510s</button>`;
+const uitleg=`<div class="empty" style="margin-bottom:14px">Nog geen voorstellen. Klik hieronder om de foutcodes uit de L510- en E510s-handleiding als concept te importeren. Ze komen pas in de echte Kennisbank nadat jij ze hier hebt gecontroleerd en goedgekeurd.</div>`;
+const cards=openLijst.length?openLijst.map(rKbVoorstelKaart).join(''):(kbVoorstellen.length?'<div class="empty">Geen openstaande voorstellen meer.</div>':uitleg);
+const afgehandeldBlok=afgehandeld.length?`<details style="margin-top:16px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Afgehandeld (${afgehandeld.length})</summary>${afgehandeld.map(rKbVoorstelKaart).join('')}</details>`:'';
+return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+<div class="gt" style="margin:0">AI-voorstellen voor de Kennisbank (${openLijst.length} te beoordelen)</div>
+${importKnop}
+</div>
+${cards}${afgehandeldBlok}`;
+}
+
 // --- KLANTEN (centraal klantdossier) ---
 let klanten=[],klantenLoaded=false,klantFormOpen=false;
 async function laadKlanten(){
@@ -1832,6 +1998,8 @@ const b=document.getElementById('badge');
 b.textContent=n;b.style.display=n?'inline':'none';
 const ob=document.getElementById('onzekerBadge');
 if(ob){const on=onzekereIntakes.filter(i=>i.status==='open').length;ob.textContent=on;ob.style.display=on?'inline':'none';}
+const kvb=document.getElementById('kbVoorstelBadge');
+if(kvb){const kn=kbVoorstellen.filter(v=>v.status==='open').length;kvb.textContent=kn;kvb.style.display=kn?'inline':'none';}
 }
 
 // ============================================================

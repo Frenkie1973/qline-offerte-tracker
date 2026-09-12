@@ -1510,7 +1510,7 @@ else if(view==='pipe')m.innerHTML=rPipe();
 else if(view==='alle')m.innerHTML=rAlle();
 else if(view==='analyse'){m.innerHTML=rAnalyse();}
 else if(view==='offertes')m.innerHTML=rOffertes();
-else if(view==='support'){m.innerHTML=rSupport();if(!storingenLoaded)laadStoringen();}
+else if(view==='support'){m.innerHTML=rSupport();if(!storingenLoaded)laadStoringen();if(!storingFotosLoaded)laadStoringFotos();}
 else if(view==='kennisbank'){m.innerHTML=rKennisbank();if(!kennisbankLoaded)laadKennisbank();}
 else if(view==='kbvoorstellen'){m.innerHTML=rKbVoorstellen();if(!kbVoorstellenLoaded)laadKbVoorstellen();}
 else if(view==='klanten'){m.innerHTML=rKlanten();if(!klantenLoaded)laadKlanten();}
@@ -1598,6 +1598,7 @@ return res.json();
 
 // --- SUPPORT (storingen) ---
 let storingen=[],storingenLoaded=false,storingFilter='alle',storingFormOpen=false;
+let storingFotos=[],storingFotosLoaded=false,berichtFormOpenId=null;
 const STORING_STATUSSEN=['nieuw','te_beoordelen','in_behandeling','wachten_klant','wachten_onderdelen','ingepland','technische_beoordeling','opgelost','gesloten'];
 const STORING_LABELS={nieuw:'🔴 Nieuw',te_beoordelen:'🟠 Te beoordelen',in_behandeling:'🟠 In behandeling',wachten_klant:'⏳ Wachten op klant',wachten_onderdelen:'⏳ Wachten op onderdelen',ingepland:'📅 Ingepland',technische_beoordeling:'⚠️ Technische beoordeling nodig',opgelost:'✅ Opgelost',gesloten:'⬛ Gesloten'};
 async function laadStoringen(){
@@ -1606,7 +1607,86 @@ catch(e){console.error('Storingen laden mislukt:',e);}
 storingenLoaded=true;
 if(view==='support')render();
 }
+// Foto's bij een supportmelding staan in een eigen collectie (storing_fotos),
+// niet in het storingen-document zelf: Firestore mag geïndexeerde velden niet
+// groter dan ~1500 bytes maken, en een foto (als tekst/base64) is al snel
+// groter. Voor deze collectie is indexering van het veld "foto" uitgezet via
+// de Firestore-console, zodat opslaan van foto's altijd blijft werken.
+async function laadStoringFotos(){
+try{storingFotos=await fsList('storing_fotos');}catch(e){console.error('Storingfotos laden mislukt:',e);}
+storingFotosLoaded=true;
+if(view==='support')render();
+}
 function toggleStoringForm(){storingFormOpen=!storingFormOpen;render();}
+function toggleBerichtForm(id){berichtFormOpenId=(berichtFormOpenId===id?null:id);render();}
+// Verkleint een gekozen foto naar een JPEG van max ~700px breed vóór opslag,
+// zodat een foto van de telefoon van een monteur (vaak enkele MB's) klein
+// genoeg wordt om probleemloos in Firestore op te slaan.
+function verkleinAfbeelding(file,maxBreedte){
+return new Promise((resolve,reject)=>{
+const reader=new FileReader();
+reader.onload=function(e){
+const img=new Image();
+img.onload=function(){
+let w=img.width,h=img.height;
+if(w>maxBreedte){h=Math.round(h*maxBreedte/w);w=maxBreedte;}
+const canvas=document.createElement('canvas');
+canvas.width=w;canvas.height=h;
+canvas.getContext('2d').drawImage(img,0,0,w,h);
+resolve(canvas.toDataURL('image/jpeg',0.55));
+};
+img.onerror=function(){reject(new Error('Kon de foto niet openen.'));};
+img.src=e.target.result;
+};
+reader.onerror=function(){reject(new Error('Kon het bestand niet lezen.'));};
+reader.readAsDataURL(file);
+});
+}
+async function voegBerichtToe(id){
+const s=storingen.find(x=>x.id===id);
+if(!s)return;
+const tekstEl=document.getElementById('brf-tekst-'+id);
+const fotoEl=document.getElementById('brf-foto-'+id);
+const tekst=tekstEl?tekstEl.value.trim():'';
+const file=fotoEl&&fotoEl.files&&fotoEl.files[0];
+if(!tekst&&!file){alert('Vul een bericht in of kies een foto.');return;}
+if(file&&file.size>10*1024*1024){alert('Deze foto is te groot (max 10MB). Kies een kleinere foto.');return;}
+const btn=document.getElementById('brf-btn-'+id);
+if(btn){btn.disabled=true;btn.textContent='Bezig...';}
+const nu=new Date();
+try{
+if(file){
+const fotoData=await verkleinAfbeelding(file,700);
+await fsCreate('storing_fotos',{storingId:id,tekst,foto:fotoData,tijdstip:nu.toISOString(),bron:'Handmatig (Frank)'});
+await laadStoringFotos();
+}else{
+const historie=[...(s.historie||[]),{tijdstip:nu.toISOString(),tekst,bron:'Handmatig (Frank)'}];
+await fsUpdate('storingen',id,{historie});
+s.historie=historie;
+}
+berichtFormOpenId=null;
+render();
+}catch(e){alert('Opslaan mislukt: '+e.message);}
+finally{const b=document.getElementById('brf-btn-'+id);if(b){b.disabled=false;b.textContent='Toevoegen';}}
+}
+// Zet een supportmelding om naar een nieuwe sales-lead. De melding zelf
+// blijft gewoon bestaan (met een verwijzing naar de nieuwe lead) — er wordt
+// niets verwijderd, alleen iets nieuws aangemaakt in Sales.
+async function zetStoringOmNaarSales(id){
+const s=storingen.find(x=>x.id===id);
+if(!s)return;
+if(!confirm('Deze supportmelding omzetten naar een nieuwe sales-lead in de Pipeline?\n\nDe melding blijft ook gewoon bestaan in Support, met een verwijzing naar de nieuwe lead.'))return;
+const newId=Date.now().toString();
+const nu=new Date();
+deals.push({id:newId,klant:s.klant||'Nog opvragen',datum:td(),bedrag:'',onderwerp:s.product||'',offertenr:'',aanvraagnr:'',status:'nieuw',datumOfferte:'',email:s.email||'',telefoon:s.telefoon||'',contactWay:'Support',land:'',notitie:'Omgezet vanuit supportmelding'+(s.foutcode?' (foutcode '+s.foutcode+')':'')+(s.omschrijving?'. Omschrijving: '+s.omschrijving:''),contacts:[],auto:false});
+save();
+try{
+await fsUpdate('storingen',id,{omgezetNaarLeadId:newId,omgezetOp:nu.toISOString()});
+s.omgezetNaarLeadId=newId;s.omgezetOp=nu.toISOString();
+render();
+alert('Nieuwe sales-lead aangemaakt voor '+(s.klant||'onbekende klant')+'. Je vindt hem in Sales > Pipeline.');
+}catch(e){alert('De lead is aangemaakt in Sales, maar de melding zelf bijwerken is mislukt: '+e.message);}
+}
 async function submitNieuweStoring(){
 const g=id=>document.getElementById(id).value.trim();
 const klant=g('st-klant');
@@ -1679,6 +1759,22 @@ const status=s.status||'nieuw';
 const urgKleur=s.urgentie==='hoog'?'#c0392b':s.urgentie==='laag'?'var(--hint)':'#d97706';
 const tijd=s.aangemaakt?new Date(s.aangemaakt).toLocaleString('nl-NL'):'';
 const statusOpties=STORING_STATUSSEN.map(st=>`<option value="${st}" ${st===status?'selected':''}>${STORING_LABELS[st]}</option>`).join('');
+// Tijdlijn = handmatige/AI-tekstberichten (s.historie) + foto's (eigen collectie
+// storing_fotos, zie laadStoringFotos) samengevoegd en op tijd gesorteerd.
+const fotosVanDeze=storingFotos.filter(f=>f.storingId===s.id);
+const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,foto:null})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,foto:f.foto}))]
+.sort((a,b)=>(a.tijdstip||'').localeCompare(b.tijdstip||''));
+const berichtForm=berichtFormOpenId===s.id?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px">
+<label style="font-size:12px;color:var(--muted)">Nieuw bericht (bijv. antwoord van de klant via WhatsApp)</label>
+<textarea id="brf-tekst-${s.id}" rows="2" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box;resize:vertical"></textarea>
+<label style="font-size:12px;color:var(--muted);display:block;margin-top:8px">Foto van de klant (optioneel)</label>
+<input type="file" id="brf-foto-${s.id}" accept="image/*" capture="environment" style="margin-top:4px;display:block">
+<div style="display:flex;gap:8px;margin-top:10px">
+<button id="brf-btn-${s.id}" onclick="voegBerichtToe('${s.id}')" class="btn btn-p" style="padding:9px 14px">Toevoegen</button>
+<button onclick="toggleBerichtForm('${s.id}')" class="btn" style="padding:9px 14px">Annuleren</button>
+</div>
+</div>`:`<button onclick="toggleBerichtForm('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">💬 Bericht/foto toevoegen</button>`;
+const salesKnop=s.omgezetNaarLeadId?`<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:10px">✅ Omgezet naar sales-lead</div>`:`<button onclick="zetStoringOmNaarSales('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">➡️ Omzetten naar sales-lead</button>`;
 return`<div class="gc" style="margin-bottom:12px">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
 <div>
@@ -1692,7 +1788,8 @@ return`<div class="gc" style="margin-bottom:12px">
 </div>
 ${s.omschrijving?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap">${s.omschrijving}</div>`:''}
 ${s.bron?`<div style="font-size:11px;color:var(--hint);margin-top:6px">Bron: ${s.bron}</div>`:''}
-${(s.historie&&s.historie.length>1)?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${s.historie.length} bericht${s.historie.length===1?'':'en'})</summary>${s.historie.map(h=>`<div style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap"><span style="color:var(--hint)">${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''} · ${h.bron||''}</span><br>${h.tekst||''}</div>`).join('')}</details>`:''}
+${tijdlijn.length?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${tijdlijn.length} bericht${tijdlijn.length===1?'':'en'})</summary>${tijdlijn.map(h=>`<div style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap"><span style="color:var(--hint)">${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''} · ${h.bron||''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`).join('')}</details>`:''}
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${berichtForm}${salesKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
 ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}
@@ -1701,13 +1798,33 @@ ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight
 }
 
 // --- KENNISBANK (foutcodes) ---
-let kennisbank=[],kennisbankLoaded=false,kbFormOpen=false;
+let kennisbank=[],kennisbankLoaded=false,kbFormOpen=false,kbEditId=null;
 async function laadKennisbank(){
 try{kennisbank=await fsList('kennisbank');}catch(e){console.error('Kennisbank laden mislukt:',e);}
 kennisbankLoaded=true;
 if(view==='kennisbank')render();
 }
-function toggleKbForm(){kbFormOpen=!kbFormOpen;render();}
+function toggleKbForm(){kbFormOpen=!kbFormOpen;if(kbFormOpen)kbEditId=null;render();}
+function toggleKbEdit(id){kbEditId=(kbEditId===id?null:id);if(kbEditId)kbFormOpen=false;render();}
+async function submitBewerkArtikel(id){
+const g=fld=>{const el=document.getElementById('kbe-'+fld+'-'+id);return el?el.value.trim():'';};
+const product=g('product'),foutcode=g('foutcode');
+if(!product||!foutcode){alert('Product en foutcode zijn verplicht.');return;}
+const artikel={
+product,model:g('model'),foutcode,betekenis:g('betekenis'),
+oorzaken:g('oorzaken'),stappenplan:g('stappenplan'),
+magKlantZelf:(document.getElementById('kbe-veilig-'+id)?document.getElementById('kbe-veilig-'+id).value:'nee')==='ja',
+veiligheidsniveau:Number(document.getElementById('kbe-niveau-'+id)?document.getElementById('kbe-niveau-'+id).value:2),
+notities:g('notities')
+};
+try{
+await fsUpdate('kennisbank',id,artikel);
+const it=kennisbank.find(a=>a.id===id);
+if(it)Object.assign(it,artikel);
+kbEditId=null;
+render();
+}catch(e){alert('Opslaan mislukt: '+e.message);}
+}
 async function submitNieuwArtikel(){
 const g=id=>document.getElementById(id).value.trim();
 const product=g('kb-product'),foutcode=g('kb-foutcode');
@@ -1753,15 +1870,53 @@ ${stInput('kb-betekenis','Betekenis')}
 <button onclick="toggleKbForm()" class="btn" style="padding:10px 16px">Annuleren</button>
 </div>
 </div>`:'';
-const lijst=kennisbank.length?kennisbank.map(a=>`<div class="gc" style="margin-bottom:12px">
+const lijst=kennisbank.length?kennisbank.map(a=>{
+if(kbEditId===a.id){
+return`<div class="gc" style="margin-bottom:12px">
+<div class="gt">Artikel bewerken</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${kbvVeld('kbe-product-'+a.id,'Product *',a.product)}
+${kbvVeld('kbe-model-'+a.id,'Model/hardwareversie',a.model)}
+</div>
+<div style="margin-top:10px">${kbvVeld('kbe-foutcode-'+a.id,'Foutcode *',a.foutcode)}</div>
+<div style="margin-top:10px">${kbvVeld('kbe-betekenis-'+a.id,'Betekenis',a.betekenis,true)}</div>
+<div style="margin-top:10px">${kbvVeld('kbe-oorzaken-'+a.id,'Waarschijnlijke oorzaken',a.oorzaken,true)}</div>
+<div style="margin-top:10px">${kbvVeld('kbe-stappenplan-'+a.id,'Stappenplan / controles / oplossing',a.stappenplan,true)}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+<div><label style="font-size:12px;color:var(--muted)">Veiligheidsniveau</label>
+<select id="kbe-niveau-${a.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="1" ${a.veiligheidsniveau===1?'selected':''}>1 — klant mag zelf controleren</option>
+<option value="2" ${!a.veiligheidsniveau||a.veiligheidsniveau===2?'selected':''}>2 — technische kennis vereist</option>
+<option value="3" ${a.veiligheidsniveau===3?'selected':''}>3 — veiligheidskritisch, niet naar klant</option>
+</select></div>
+<div><label style="font-size:12px;color:var(--muted)">Mag klant dit zelf uitvoeren?</label>
+<select id="kbe-veilig-${a.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;margin-top:4px">
+<option value="nee" ${!a.magKlantZelf?'selected':''}>Nee</option><option value="ja" ${a.magKlantZelf?'selected':''}>Ja</option>
+</select></div>
+</div>
+<div style="margin-top:10px">${kbvVeld('kbe-notities-'+a.id,'Interne technische notities',a.notities,true)}</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="submitBewerkArtikel('${a.id}')" class="btn btn-p" style="padding:10px 16px">Opslaan</button>
+<button onclick="toggleKbEdit('${a.id}')" class="btn" style="padding:10px 16px">Annuleren</button>
+</div>
+</div>`;
+}
+return`<div class="gc" style="margin-bottom:12px">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
 <div style="font-weight:600;font-size:15px">${a.product||''} ${a.model?'· '+a.model:''} — foutcode ${a.foutcode||''}</div>
+<div style="text-align:right">
 <div style="font-size:11px;font-weight:700;color:${a.veiligheidsniveau===3?'#c0392b':a.veiligheidsniveau===2?'#d97706':'#16a34a'}">Niveau ${a.veiligheidsniveau||2}</div>
+</div>
 </div>
 ${a.betekenis?`<div style="font-size:13px;margin-top:8px"><b>Betekenis:</b> ${a.betekenis}</div>`:''}
 ${a.oorzaken?`<div style="font-size:13px;margin-top:4px"><b>Oorzaken:</b> ${a.oorzaken}</div>`:''}
 ${a.stappenplan?`<div style="font-size:13px;margin-top:4px;white-space:pre-wrap"><b>Stappenplan:</b> ${a.stappenplan}</div>`:''}
-</div>`).join(''):'<div class="empty">Nog geen artikelen. Zolang hier niets in staat, antwoordt de AI later altijd "technische beoordeling noodzakelijk" bij een onbekende foutcode — precies zoals de bedoeling is.</div>';
+${a.notities?`<div style="font-size:12px;color:var(--muted);margin-top:6px"><b>Interne notities:</b> ${a.notities}</div>`:''}
+<div style="margin-top:10px">
+<button onclick="toggleKbEdit('${a.id}')" class="btn" style="padding:8px 14px">✏️ Bewerken</button>
+</div>
+</div>`;
+}).join(''):'<div class="empty">Nog geen artikelen. Zolang hier niets in staat, antwoordt de AI later altijd "technische beoordeling noodzakelijk" bij een onbekende foutcode — precies zoals de bedoeling is.</div>';
 return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
 <div class="gt" style="margin:0">Technische Kennisbank (${kennisbank.length})</div>
 ${kbFormOpen?'':'<button onclick="toggleKbForm()" class="btn btn-p" style="padding:9px 14px">+ Nieuw artikel</button>'}

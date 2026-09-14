@@ -1608,7 +1608,7 @@ return res.json();
 }
 
 // --- SUPPORT (storingen) ---
-let storingen=[],storingenLoaded=false,storingFilter='alle',storingFormOpen=false;
+let storingen=[],storingenLoaded=false,storingFilter='alle',storingFormOpen=false,storingEditId=null;
 let storingFotos=[],storingFotosLoaded=false,berichtFormOpenId=null;
 const STORING_STATUSSEN=['nieuw','te_beoordelen','in_behandeling','wachten_klant','wachten_onderdelen','ingepland','technische_beoordeling','opgelost','gesloten'];
 const STORING_LABELS={nieuw:'🔴 Nieuw',te_beoordelen:'🟠 Te beoordelen',in_behandeling:'🟠 In behandeling',wachten_klant:'⏳ Wachten op klant',wachten_onderdelen:'⏳ Wachten op onderdelen',ingepland:'📅 Ingepland',technische_beoordeling:'⚠️ Technische beoordeling nodig',opgelost:'✅ Opgelost',gesloten:'⬛ Gesloten'};
@@ -1707,6 +1707,7 @@ if(!klant){alert('Klantnaam is verplicht.');return;}
 const nieuw={
 klant,contactpersoon:g('st-contact'),telefoon:g('st-tel'),email:g('st-email'),
 product:g('st-product'),model:g('st-model'),serienummer:g('st-serienr')||'Nog opvragen',
+mkgNummer:g('st-mkg')||'Nog opvragen',
 omschrijving:g('st-omschrijving'),foutcode:g('st-foutcode'),
 urgentie:g('st-urgentie')||'normaal',status:'nieuw',bron:'Handmatig',
 aangemaakt:new Date().toISOString()
@@ -1715,6 +1716,25 @@ try{
 await fsCreate('storingen',nieuw);
 storingFormOpen=false;
 await laadStoringen();
+}catch(e){alert('Opslaan mislukt: '+e.message);}
+}
+function toggleStoringEdit(id){storingEditId=(storingEditId===id?null:id);if(storingEditId)storingFormOpen=false;render();}
+async function submitBewerkStoring(id){
+const g=fld=>{const el=document.getElementById('ste-'+fld+'-'+id);return el?el.value.trim():'';};
+const klant=g('klant');
+if(!klant){alert('Klantnaam is verplicht.');return;}
+const wijziging={
+klant,contactpersoon:g('contact'),telefoon:g('tel'),email:g('email'),
+product:g('product'),model:g('model'),serienummer:g('serienr'),
+mkgNummer:g('mkg'),foutcode:g('foutcode'),omschrijving:g('omschrijving'),
+urgentie:(document.getElementById('ste-urgentie-'+id)?document.getElementById('ste-urgentie-'+id).value:'normaal')
+};
+try{
+await fsUpdate('storingen',id,wijziging);
+const it=storingen.find(s=>s.id===id);
+if(it)Object.assign(it,wijziging);
+storingEditId=null;
+render();
 }catch(e){alert('Opslaan mislukt: '+e.message);}
 }
 async function wijzigStoringStatus(id,status){
@@ -1743,6 +1763,7 @@ ${stInput('st-email','E-mail')}
 ${stInput('st-product','Product (bijv. Aquatrainer)')}
 ${stInput('st-model','Model/type')}
 ${stInput('st-serienr','Serienummer')}
+${stInput('st-mkg','MKG-nummer')}
 ${stInput('st-foutcode','Foutcode (indien bekend)')}
 </div>
 <div style="margin-top:10px">${stTextarea('st-omschrijving','Omschrijving probleem')}</div>
@@ -1769,6 +1790,35 @@ ${cards}`;
 function stInput(id,label){return`<div><label style="font-size:12px;color:var(--muted)">${label}</label><input id="${id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box"></div>`;}
 function stTextarea(id,label){return`<div><label style="font-size:12px;color:var(--muted)">${label}</label><textarea id="${id}" rows="3" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px;box-sizing:border-box;resize:vertical"></textarea></div>`;}
 function rStoringKaart(s){
+if(storingEditId===s.id){
+return`<div class="gc" style="margin-bottom:12px">
+<div class="gt">Melding bewerken</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+${kbvVeld('ste-klant-'+s.id,'Klant / bedrijf *',s.klant)}
+${kbvVeld('ste-contact-'+s.id,'Contactpersoon',s.contactpersoon)}
+${kbvVeld('ste-tel-'+s.id,'Telefoon',s.telefoon)}
+${kbvVeld('ste-email-'+s.id,'E-mail',s.email)}
+${kbvVeld('ste-product-'+s.id,'Product',s.product)}
+${kbvVeld('ste-model-'+s.id,'Model/type',s.model)}
+${kbvVeld('ste-serienr-'+s.id,'Serienummer',s.serienummer)}
+${kbvVeld('ste-mkg-'+s.id,'MKG-nummer',s.mkgNummer)}
+${kbvVeld('ste-foutcode-'+s.id,'Foutcode',s.foutcode)}
+</div>
+<div style="margin-top:10px">${kbvVeld('ste-omschrijving-'+s.id,'Omschrijving probleem',s.omschrijving,true)}</div>
+<div style="margin-top:10px;max-width:220px">
+<label style="font-size:12px;color:var(--muted)">Urgentie</label>
+<select id="ste-urgentie-${s.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px">
+<option value="laag" ${s.urgentie==='laag'?'selected':''}>Laag</option>
+<option value="normaal" ${!s.urgentie||s.urgentie==='normaal'?'selected':''}>Normaal</option>
+<option value="hoog" ${s.urgentie==='hoog'?'selected':''}>Hoog</option>
+</select>
+</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onclick="submitBewerkStoring('${s.id}')" class="btn btn-p" style="padding:10px 16px">Opslaan</button>
+<button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:10px 16px">Annuleren</button>
+</div>
+</div>`;
+}
 const status=s.status||'nieuw';
 const urgKleur=s.urgentie==='hoog'?'#c0392b':s.urgentie==='laag'?'var(--hint)':'#d97706';
 const tijd=s.aangemaakt?new Date(s.aangemaakt).toLocaleString('nl-NL'):'';
@@ -1799,6 +1849,7 @@ return`<div class="gc" style="margin-bottom:12px">
 <div>
 <div style="font-weight:600;font-size:15px">${s.klant||'Onbekend'} ${s.contactpersoon?'· '+s.contactpersoon:''}</div>
 <div style="font-size:12px;color:var(--muted);margin-top:2px">${[s.product,s.model,s.serienummer].filter(Boolean).join(' · ')||'Geen product bekend'} ${s.foutcode?'· Foutcode '+s.foutcode:''}</div>
+${(s.mkgNummer&&s.mkgNummer!=='Nog opvragen')?`<div style="font-size:12px;color:var(--muted);margin-top:2px">MKG ${s.mkgNummer}</div>`:''}
 </div>
 <div style="text-align:right">
 <div style="font-size:11px;font-weight:700;color:${urgKleur};text-transform:uppercase">${s.urgentie||'normaal'}</div>
@@ -1812,7 +1863,7 @@ const uitgaand=h.richting==='naar_klant';
 const icon=uitgaand?'📤 Naar klant':'📥 Van klant';
 return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><span style="color:var(--hint)">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
 }).join('')}</details>`:''}
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${berichtForm}${salesKnop}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button>${berichtForm}${salesKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
 ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}

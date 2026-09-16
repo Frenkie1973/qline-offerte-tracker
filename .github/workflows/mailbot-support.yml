@@ -1,0 +1,24 @@
+name: Support-mailbox verwerken
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  process-support-mailbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verwerk nieuwe support-mails
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          FIREBASE_DB_SECRET: ${{ secrets.FIREBASE_DB_SECRET }}
+          FIREBASE_TEAM_EMAIL: ${{ secrets.FIREBASE_TEAM_EMAIL }}
+          FIREBASE_TEAM_PASSWORD: ${{ secrets.FIREBASE_TEAM_PASSWORD }}
+        run: node scripts/mailbotSupport.js

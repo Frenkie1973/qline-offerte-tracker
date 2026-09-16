@@ -1727,6 +1727,7 @@ const wijziging={
 klant,contactpersoon:g('contact'),telefoon:g('tel'),email:g('email'),
 product:g('product'),model:g('model'),serienummer:g('serienr'),
 mkgNummer:g('mkg'),foutcode:g('foutcode'),omschrijving:g('omschrijving'),
+oplossing:g('oplossing'),
 urgentie:(document.getElementById('ste-urgentie-'+id)?document.getElementById('ste-urgentie-'+id).value:'normaal')
 };
 try{
@@ -1736,6 +1737,35 @@ if(it)Object.assign(it,wijziging);
 storingEditId=null;
 render();
 }catch(e){alert('Opslaan mislukt: '+e.message);}
+}
+// Zet een opgelost probleem (omschrijving + oplossing) om naar een voorstel
+// voor de Kennisbank, zodat kennis uit echte supportgevallen — net als bij
+// de handleiding-foutcodes — eerst door Frank gecontroleerd en goedgekeurd
+// wordt voordat hij ergens anders te zien is. Zo "leert" het systeem mee
+// van opgeloste meldingen, zonder dat er ongecontroleerd iets live gaat.
+async function voegToeAanKennisbankVoorstel(id){
+const s=storingen.find(x=>x.id===id);
+if(!s)return;
+if(s.kennisbankVoorstelId){alert('Deze melding staat al als voorstel in "AI-voorstellen".');return;}
+if(!s.omschrijving&&!s.foutcode){alert('Vul eerst een omschrijving of probleem/foutcode in bij deze melding (via Bewerken).');return;}
+if(!s.oplossing){alert('Vul eerst de oplossing in bij deze melding (via Bewerken) — anders valt er nog niets te leren.');return;}
+if(!confirm('Dit probleem + de oplossing als voorstel toevoegen aan "AI-voorstellen"?\n\nHet komt pas echt in de Kennisbank nadat je het daar hebt gecontroleerd en goedgekeurd.'))return;
+try{
+const doc=await fsCreate('kennisbank_voorstellen',{
+product:s.product||'',model:s.model||'',
+foutcode:s.foutcode||(s.omschrijving?s.omschrijving.slice(0,60):'Probleem uit supportmelding'),
+betekenis:s.omschrijving||'',oorzaken:'',stappenplan:s.oplossing,
+veiligheidsniveau:2,magKlantZelf:false,
+bronDocument:'Opgeloste supportmelding van '+(s.klant||'onbekende klant')+(s.aangemaakt?' ('+new Date(s.aangemaakt).toLocaleDateString('nl-NL')+')':''),
+status:'open',aangemaakt:new Date().toISOString()
+});
+const voorstelId=doc.name?doc.name.split('/').pop():'';
+await fsUpdate('storingen',id,{kennisbankVoorstelId:voorstelId});
+s.kennisbankVoorstelId=voorstelId;
+kbVoorstellenLoaded=false;
+render();
+alert('Toegevoegd aan "AI-voorstellen" — ga daar naartoe om het te controleren en goed te keuren.');
+}catch(e){alert('Toevoegen mislukt: '+e.message);}
 }
 async function wijzigStoringStatus(id,status){
 try{
@@ -1764,7 +1794,7 @@ ${stInput('st-product','Product (bijv. Aquatrainer)')}
 ${stInput('st-model','Model/type')}
 ${stInput('st-serienr','Serienummer')}
 ${stInput('st-mkg','MKG-nummer')}
-${stInput('st-foutcode','Foutcode (indien bekend)')}
+${stInput('st-foutcode','Probleem / foutcode (indien bekend)')}
 </div>
 <div style="margin-top:10px">${stTextarea('st-omschrijving','Omschrijving probleem')}</div>
 <div style="margin-top:10px;max-width:220px">
@@ -1802,9 +1832,10 @@ ${kbvVeld('ste-product-'+s.id,'Product',s.product)}
 ${kbvVeld('ste-model-'+s.id,'Model/type',s.model)}
 ${kbvVeld('ste-serienr-'+s.id,'Serienummer',s.serienummer)}
 ${kbvVeld('ste-mkg-'+s.id,'MKG-nummer',s.mkgNummer)}
-${kbvVeld('ste-foutcode-'+s.id,'Foutcode',s.foutcode)}
+${kbvVeld('ste-foutcode-'+s.id,'Probleem / foutcode',s.foutcode)}
 </div>
 <div style="margin-top:10px">${kbvVeld('ste-omschrijving-'+s.id,'Omschrijving probleem',s.omschrijving,true)}</div>
+<div style="margin-top:10px">${kbvVeld('ste-oplossing-'+s.id,'Oplossing (invullen zodra het is opgelost)',s.oplossing,true)}</div>
 <div style="margin-top:10px;max-width:220px">
 <label style="font-size:12px;color:var(--muted)">Urgentie</label>
 <select id="ste-urgentie-${s.id}" style="width:100%;padding:9px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);margin-top:4px">
@@ -1844,11 +1875,12 @@ const berichtForm=berichtFormOpenId===s.id?`<div style="margin-top:10px;padding:
 </div>
 </div>`:`<button onclick="toggleBerichtForm('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">💬 Bericht/foto toevoegen</button>`;
 const salesKnop=s.omgezetNaarLeadId?`<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:10px">✅ Omgezet naar sales-lead</div>`:`<button onclick="zetStoringOmNaarSales('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">➡️ Omzetten naar sales-lead</button>`;
+const kbKnop=s.kennisbankVoorstelId?`<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:10px">✅ Toegevoegd aan AI-voorstellen</div>`:`<button onclick="voegToeAanKennisbankVoorstel('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">📚 Toevoegen aan Kennisbank</button>`;
 return`<div class="gc" style="margin-bottom:12px">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
 <div>
 <div style="font-weight:600;font-size:15px">${s.klant||'Onbekend'} ${s.contactpersoon?'· '+s.contactpersoon:''}</div>
-<div style="font-size:12px;color:var(--muted);margin-top:2px">${[s.product,s.model,s.serienummer].filter(Boolean).join(' · ')||'Geen product bekend'} ${s.foutcode?'· Foutcode '+s.foutcode:''}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:2px">${[s.product,s.model,s.serienummer].filter(Boolean).join(' · ')||'Geen product bekend'} ${s.foutcode?'· Probleem: '+s.foutcode:''}</div>
 ${(s.mkgNummer&&s.mkgNummer!=='Nog opvragen')?`<div style="font-size:12px;color:var(--muted);margin-top:2px">MKG ${s.mkgNummer}</div>`:''}
 </div>
 <div style="text-align:right">
@@ -1857,13 +1889,14 @@ ${(s.mkgNummer&&s.mkgNummer!=='Nog opvragen')?`<div style="font-size:12px;color:
 </div>
 </div>
 ${s.omschrijving?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap">${s.omschrijving}</div>`:''}
+${s.oplossing?`<div style="font-size:13px;color:var(--text);background:#e8f5ea;border-radius:8px;padding:10px 12px;margin-top:8px;white-space:pre-wrap"><b>✅ Oplossing:</b> ${s.oplossing}</div>`:''}
 ${s.bron?`<div style="font-size:11px;color:var(--hint);margin-top:6px">Bron: ${s.bron}</div>`:''}
 ${tijdlijn.length?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${tijdlijn.length} bericht${tijdlijn.length===1?'':'en'})</summary>${tijdlijn.map(h=>{
 const uitgaand=h.richting==='naar_klant';
 const icon=uitgaand?'📤 Naar klant':'📥 Van klant';
 return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><span style="color:var(--hint)">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
 }).join('')}</details>`:''}
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button>${berichtForm}${salesKnop}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button>${berichtForm}${salesKnop}${kbKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
 ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}

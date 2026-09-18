@@ -1499,7 +1499,18 @@ doc.save('Q-Line_order_'+veiligeNaam+'.pdf');
 // de volledige conversatie (historie) op één blad, zodat hij niet los in
 // de app hoeft te kijken tijdens een bezoek. Zelfde opmaak/aanpak als
 // exportGewonnenPDF hierboven, maar dan voor storingen i.p.v. sales-leads.
-function exportStoringPDF(id){
+// Laadt een data-URL-afbeelding even in het geheugen om de echte
+// beeldverhouding (breedte/hoogte) te weten — nodig om een foto in de PDF
+// op de juiste verhouding te tekenen i.p.v. vervormd of op de gok.
+function laadAfbeeldingAfmetingen(dataUrl){
+return new Promise((resolve)=>{
+const img=new Image();
+img.onload=function(){resolve({w:img.naturalWidth,h:img.naturalHeight});};
+img.onerror=function(){resolve(null);};
+img.src=dataUrl;
+});
+}
+async function exportStoringPDF(id){
 const s=storingen.find(x=>x.id===id);
 if(!s){alert('Melding niet gevonden.');return}
 const {jsPDF}=window.jspdf;
@@ -1607,10 +1618,21 @@ doc.line(marginL,y,pageW-marginR,y);
 y+=8;
 // Tijdlijn = tekstberichten (s.historie) + foto's (storing_fotos), net als
 // op het scherm — zo bevat het blad exact dezelfde conversatie die Frank
-// ook in de app ziet.
+// ook in de app ziet. De foto's zelf worden hieronder ook echt in de PDF
+// getekend (niet alleen genoemd), zodat de monteur ze niet los in de app
+// hoeft op te zoeken.
 const fotosVanDeze=storingFotos.filter(f=>f.storingId===s.id);
-const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,richting:h.richting})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:(f.tekst||'')+' (zie foto in de app)',bron:f.bron,richting:f.richting}))]
+const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,richting:h.richting,foto:null})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,richting:f.richting,foto:f.foto}))]
 .sort((a,b)=>(a.tijdstip||'').localeCompare(b.tijdstip||''));
+// Beeldverhouding van elke foto vooraf ophalen — dit moet met await, en
+// kan dus niet meer terwijl de PDF zelf al synchroon getekend wordt.
+for(const h of tijdlijn){
+if(h.foto){
+const afm=await laadAfbeeldingAfmetingen(h.foto);
+h.fotoW=afm?afm.w:null;
+h.fotoH=afm?afm.h:null;
+}
+}
 if(!tijdlijn.length){
 doc.setFont('helvetica','italic');
 doc.setFontSize(10);
@@ -1621,13 +1643,24 @@ y+=8;
 const entryFontPt=9.5,headFontPt=9.5,padTop=5,padBottom=4,padX=3;
 tijdlijn.forEach((h,i)=>{
 const richting=h.richting==='naar_klant'?'Naar klant':'Van klant';
-const tekst=cleanTekst(h.tekst||'(geen tekst)',600);
+const heeftFoto=!!(h.foto&&h.fotoW&&h.fotoH);
+const tekst=h.tekst?cleanTekst(h.tekst,600):(heeftFoto?'':'(geen tekst)');
 doc.setFont('helvetica','normal');
 doc.setFontSize(entryFontPt);
-const lines=doc.splitTextToSize(tekst,contentW-padX*2);
+const lines=tekst?doc.splitTextToSize(tekst,contentW-padX*2):[];
 const headH=lineH(headFontPt);
-const bodyH=lineH(entryFontPt)*lines.length;
-const blockH=padTop+headH+2+bodyH+padBottom;
+const bodyH=lines.length?lineH(entryFontPt)*lines.length:0;
+// Foto max 80mm breed, en max 180mm hoog (bijv. bij een heel hoge/staande
+// foto) — beide grenzen met behoud van de echte beeldverhouding.
+let imgW=0,imgH=0;
+if(heeftFoto){
+imgW=Math.min(80,contentW-padX*2);
+imgH=imgW*(h.fotoH/h.fotoW);
+const maxImgH=180;
+if(imgH>maxImgH){imgW=imgW*(maxImgH/imgH);imgH=maxImgH;}
+}
+const fotoMislukt=h.foto&&!heeftFoto;
+const blockH=padTop+headH+2+bodyH+(bodyH&&imgH?3:0)+imgH+(fotoMislukt?lineH(entryFontPt):0)+padBottom;
 checkPage(blockH);
 doc.setFillColor(245,243,238);
 doc.rect(marginL,y,contentW,blockH,'F');
@@ -1636,12 +1669,23 @@ doc.setFont('helvetica','bold');
 doc.setFontSize(headFontPt);
 doc.setTextColor(20,20,20);
 const wanneer=h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):'';
-doc.text(`${i+1}. ${richting} — ${wanneer}${h.bron?' · '+h.bron:''}`,marginL+padX,ty);
+doc.text(`${i+1}. ${richting} — ${wanneer}${h.bron?' · '+h.bron:''}${h.foto?' · 📷 Foto':''}`,marginL+padX,ty);
 ty+=headH*0.6+2;
+if(lines.length){
 doc.setFont('helvetica','normal');
 doc.setFontSize(entryFontPt);
 doc.setTextColor(60,60,60);
 doc.text(lines,marginL+padX,ty);
+ty+=bodyH+(imgH?3:0);
+}
+if(imgH){
+try{doc.addImage(h.foto,'JPEG',marginL+padX,ty,imgW,imgH);}catch(e){console.error('Foto kon niet in de PDF gezet worden:',e);}
+}else if(fotoMislukt){
+doc.setFont('helvetica','italic');
+doc.setFontSize(entryFontPt);
+doc.setTextColor(120,120,120);
+doc.text('(foto kon niet worden geladen — zie de app)',marginL+padX,ty);
+}
 y+=blockH+4;
 });
 if(s.oplossing){

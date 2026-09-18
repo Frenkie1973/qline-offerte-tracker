@@ -1495,6 +1495,184 @@ doc.text('Q-Line Equestrian B.V. — gegenereerd op '+new Date().toLocaleDateStr
 const veiligeNaam=d.klant.replace(/[^a-z0-9]+/gi,'_').slice(0,40);
 doc.save('Q-Line_order_'+veiligeNaam+'.pdf');
 }
+// Werkorder-PDF voor de monteur bij een supportmelding: alle gegevens +
+// de volledige conversatie (historie) op één blad, zodat hij niet los in
+// de app hoeft te kijken tijdens een bezoek. Zelfde opmaak/aanpak als
+// exportGewonnenPDF hierboven, maar dan voor storingen i.p.v. sales-leads.
+function exportStoringPDF(id){
+const s=storingen.find(x=>x.id===id);
+if(!s){alert('Melding niet gevonden.');return}
+const {jsPDF}=window.jspdf;
+function stripEmoji(t){
+if(!t)return t;
+return String(t)
+.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}️‍]/gu,'')
+.replace(/[ \t]{2,}/g,' ')
+.trim();
+}
+function cleanTekst(t,maxLen){
+let out=stripEmoji(t)||'';
+if(out.length>maxLen)out=out.slice(0,maxLen).trim()+'…';
+return out;
+}
+const doc=new jsPDF({unit:'mm',format:'a4'});
+const pageW=210,pageH=297,marginL=18,marginR=18,marginBottom=20,contentW=pageW-marginL-marginR;
+function lineH(fontPt){return fontPt*1.15/72*25.4;}
+let y=20;
+function checkPage(extra){
+if(y+extra>pageH-marginBottom){doc.addPage();y=20;return true;}
+return false;
+}
+doc.setFillColor(20,20,20);
+doc.rect(0,0,pageW,14,'F');
+doc.setTextColor(255,255,255);
+doc.setFont('helvetica','bold');
+doc.setFontSize(12);
+doc.text('Q-LINE',marginL,9.5);
+doc.setFont('helvetica','normal');
+doc.setFontSize(8);
+doc.text('WERKORDER VOOR MONTEUR',pageW-marginR,9.5,{align:'right'});
+y=28;
+doc.setTextColor(20,20,20);
+doc.setFont('helvetica','bold');
+doc.setFontSize(17);
+const titleLines=doc.splitTextToSize('Werkorder — '+(s.klant||'Onbekende klant'),contentW);
+doc.text(titleLines,marginL,y);
+y+=lineH(17)*titleLines.length+2;
+doc.setDrawColor(200,60,50);
+doc.setLineWidth(0.8);
+doc.line(marginL,y,marginL+30,y);
+y+=11;
+doc.setFont('helvetica','bold');
+doc.setFontSize(12);
+checkPage(8);
+doc.text('Gegevens',marginL,y);
+y+=7;
+const veldFontPt=10;
+const veld=(label,val)=>{
+if(!val)return;
+const labelText=label+': ';
+doc.setFont('helvetica','bold');
+doc.setFontSize(veldFontPt);
+const labelW=doc.getTextWidth(labelText);
+doc.setFont('helvetica','normal');
+const lines=doc.splitTextToSize(String(val),Math.max(contentW-labelW,30));
+const blockH=lineH(veldFontPt)*lines.length;
+checkPage(blockH+2);
+doc.setFont('helvetica','bold');
+doc.setTextColor(20,20,20);
+doc.text(labelText,marginL,y);
+doc.setFont('helvetica','normal');
+doc.setTextColor(50,50,50);
+doc.text(lines,marginL+labelW,y);
+y+=blockH+2.5;
+};
+veld('Klant',stripEmoji(s.klant));
+veld('Contactpersoon',stripEmoji(s.contactpersoon));
+veld('Telefoon',stripEmoji(s.telefoon));
+veld('E-mail',stripEmoji(s.email));
+veld('Product',stripEmoji(s.product));
+veld('Model/type',stripEmoji(s.model));
+veld('Serienummer',stripEmoji(s.serienummer));
+veld('MKG-nummer',stripEmoji(s.mkgNummer));
+veld('Probleem/foutcode',stripEmoji(s.foutcode));
+veld('Urgentie',s.urgentie?s.urgentie.charAt(0).toUpperCase()+s.urgentie.slice(1):'');
+veld('Status',STORING_LABELS[s.status]||s.status);
+const omschrijvingSchoon=s.omschrijving?cleanTekst(s.omschrijving,1500):'';
+if(omschrijvingSchoon){
+checkPage(10);
+doc.setFont('helvetica','bold');
+doc.setFontSize(veldFontPt);
+doc.setTextColor(20,20,20);
+doc.text('Omschrijving probleem:',marginL,y);
+y+=lineH(veldFontPt)+1.5;
+doc.setFont('helvetica','normal');
+doc.setTextColor(50,50,50);
+const lines=doc.splitTextToSize(omschrijvingSchoon,contentW-4);
+const h=lineH(veldFontPt)*lines.length;
+checkPage(h);
+doc.text(lines,marginL+2,y);
+y+=h+2.5;
+}
+y+=6;
+checkPage(16);
+doc.setFont('helvetica','bold');
+doc.setFontSize(12);
+doc.setTextColor(20,20,20);
+doc.text('Volledige conversatie (chronologisch)',marginL,y);
+y+=4;
+doc.setDrawColor(220,220,220);
+doc.setLineWidth(0.3);
+doc.line(marginL,y,pageW-marginR,y);
+y+=8;
+// Tijdlijn = tekstberichten (s.historie) + foto's (storing_fotos), net als
+// op het scherm — zo bevat het blad exact dezelfde conversatie die Frank
+// ook in de app ziet.
+const fotosVanDeze=storingFotos.filter(f=>f.storingId===s.id);
+const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,richting:h.richting})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:(f.tekst||'')+' (zie foto in de app)',bron:f.bron,richting:f.richting}))]
+.sort((a,b)=>(a.tijdstip||'').localeCompare(b.tijdstip||''));
+if(!tijdlijn.length){
+doc.setFont('helvetica','italic');
+doc.setFontSize(10);
+doc.setTextColor(120,120,120);
+doc.text('Geen berichten geregistreerd.',marginL,y);
+y+=8;
+}
+const entryFontPt=9.5,headFontPt=9.5,padTop=5,padBottom=4,padX=3;
+tijdlijn.forEach((h,i)=>{
+const richting=h.richting==='naar_klant'?'Naar klant':'Van klant';
+const tekst=cleanTekst(h.tekst||'(geen tekst)',600);
+doc.setFont('helvetica','normal');
+doc.setFontSize(entryFontPt);
+const lines=doc.splitTextToSize(tekst,contentW-padX*2);
+const headH=lineH(headFontPt);
+const bodyH=lineH(entryFontPt)*lines.length;
+const blockH=padTop+headH+2+bodyH+padBottom;
+checkPage(blockH);
+doc.setFillColor(245,243,238);
+doc.rect(marginL,y,contentW,blockH,'F');
+let ty=y+padTop+headH*0.7;
+doc.setFont('helvetica','bold');
+doc.setFontSize(headFontPt);
+doc.setTextColor(20,20,20);
+const wanneer=h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):'';
+doc.text(`${i+1}. ${richting} — ${wanneer}${h.bron?' · '+h.bron:''}`,marginL+padX,ty);
+ty+=headH*0.6+2;
+doc.setFont('helvetica','normal');
+doc.setFontSize(entryFontPt);
+doc.setTextColor(60,60,60);
+doc.text(lines,marginL+padX,ty);
+y+=blockH+4;
+});
+if(s.oplossing){
+y+=4;
+doc.setFont('helvetica','bold');
+doc.setFontSize(11);
+const oplLines=doc.splitTextToSize(stripEmoji(s.oplossing),contentW-8);
+const oplH=padTop+lineH(11)+2+lineH(entryFontPt)*oplLines.length+padBottom;
+checkPage(oplH);
+doc.setFillColor(232,245,234);
+doc.rect(marginL,y,contentW,oplH,'F');
+doc.setTextColor(20,20,20);
+doc.text('Reeds bekende oplossing:',marginL+4,y+padTop+lineH(11)*0.7);
+doc.setFont('helvetica','normal');
+doc.setFontSize(entryFontPt);
+doc.setTextColor(40,80,40);
+doc.text(oplLines,marginL+4,y+padTop+lineH(11)+2+lineH(entryFontPt)*0.7);
+y+=oplH+4;
+}
+const pageCount=doc.internal.getNumberOfPages();
+for(let p=1;p<=pageCount;p++){
+doc.setPage(p);
+doc.setFont('helvetica','normal');
+doc.setFontSize(8);
+doc.setTextColor(150,150,150);
+doc.text('Q-Line Equestrian B.V. — gegenereerd op '+new Date().toLocaleDateString('nl-NL')+' — pagina '+p+' van '+pageCount,marginL,pageH-8);
+}
+const veiligeNaamS=(s.klant||'onbekend').replace(/[^a-z0-9]+/gi,'_').slice(0,40);
+const mkgDeel=(s.mkgNummer&&s.mkgNummer!=='Nog opvragen')?('_MKG'+s.mkgNummer.replace(/[^a-z0-9]+/gi,'')):'';
+doc.save('Q-Line_werkorder_'+veiligeNaamS+mkgDeel+'.pdf');
+}
 function mailKlant(){
 const d=deals.find(x=>x.id===editId);
 if(!d||!d.email){alert('Geen e-mailadres bekend voor deze klant.');return}
@@ -1915,7 +2093,7 @@ const uitgaand=h.richting==='naar_klant';
 const icon=uitgaand?'📤 Naar klant':'📥 Van klant';
 return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><span style="color:var(--hint)">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
 }).join('')}</details>`:''}
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button>${berichtForm}${salesKnop}${kbKnop}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button><button onclick="exportStoringPDF('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">🖨️ Werkorder PDF voor monteur</button>${berichtForm}${salesKnop}${kbKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
 <select onchange="wijzigStoringStatus('${s.id}',this.value)" style="padding:8px;border:1px solid var(--border2);border-radius:8px;font-family:var(--sans);font-size:13px">${statusOpties}</select>
 ${s.telefoon?`<a href="tel:${s.telefoon}" style="color:var(--accent);font-weight:600;font-size:13px">📞 ${s.telefoon}</a>`:''}

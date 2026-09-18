@@ -1897,6 +1897,22 @@ render();
 alert('Nieuwe sales-lead aangemaakt voor '+(s.klant||'onbekende klant')+'. Je vindt hem in Sales > Pipeline.');
 }catch(e){alert('De lead is aangemaakt in Sales, maar de melding zelf bijwerken is mislukt: '+e.message);}
 }
+// Verwijdert één los bericht uit de geschiedenis van een supportmelding —
+// bijv. als er per ongeluk een gesprek bij de verkeerde klant is
+// opgeslagen. Werkt hetzelfde als het bestaande kruisje bij een Sales-lead
+// (deleteContact), maar dan voor storingen.historie in Firestore.
+async function verwijderHistorieRegel(storingId,idx){
+const s=storingen.find(x=>x.id===storingId);
+if(!s||!s.historie||!s.historie[idx])return;
+if(!confirm('Dit ene bericht definitief verwijderen uit de geschiedenis van deze melding?\n\n"'+String(s.historie[idx].tekst||'').slice(0,80)+'"'))return;
+const nieuweHistorie=s.historie.slice();
+nieuweHistorie.splice(idx,1);
+try{
+await fsUpdate('storingen',storingId,{historie:nieuweHistorie});
+s.historie=nieuweHistorie;
+render();
+}catch(e){alert('Verwijderen mislukt: '+e.message);}
+}
 async function submitNieuweStoring(){
 const g=id=>document.getElementById(id).value.trim();
 const klant=g('st-klant');
@@ -2054,7 +2070,12 @@ const statusOpties=STORING_STATUSSEN.map(st=>`<option value="${st}" ${st===statu
 // Tijdlijn = handmatige/AI-tekstberichten (s.historie) + foto's (eigen collectie
 // storing_fotos, zie laadStoringFotos) samengevoegd en op tijd gesorteerd.
 const fotosVanDeze=storingFotos.filter(f=>f.storingId===s.id);
-const tijdlijn=[...(s.historie||[]).map(h=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,foto:null,richting:h.richting})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,foto:f.foto,richting:f.richting}))]
+// historieIdx onthoudt de originele plek in s.historie, zodat een los bericht
+// (bijv. per ongeluk bij de verkeerde klant opgeslagen) precies dát ene
+// item kan verwijderen — ook nadat alles door elkaar op tijd is gesorteerd.
+// Foto's (eigen collectie) krijgen historieIdx null: daar is nog geen
+// verwijder-knop voor.
+const tijdlijn=[...(s.historie||[]).map((h,idx)=>({tijdstip:h.tijdstip,tekst:h.tekst,bron:h.bron,foto:null,richting:h.richting,historieIdx:idx})),...fotosVanDeze.map(f=>({tijdstip:f.tijdstip,tekst:f.tekst,bron:f.bron,foto:f.foto,richting:f.richting,historieIdx:null}))]
 .sort((a,b)=>(a.tijdstip||'').localeCompare(b.tijdstip||''));
 const berichtForm=berichtFormOpenId===s.id?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px">
 <label style="font-size:12px;color:var(--muted)">Richting</label>
@@ -2091,7 +2112,8 @@ ${s.bron?`<div style="font-size:11px;color:var(--hint);margin-top:6px">Bron: ${s
 ${tijdlijn.length?`<details style="margin-top:8px"><summary style="font-size:12px;color:var(--accent);cursor:pointer">📜 Geschiedenis (${tijdlijn.length} bericht${tijdlijn.length===1?'':'en'})</summary>${tijdlijn.map(h=>{
 const uitgaand=h.richting==='naar_klant';
 const icon=uitgaand?'📤 Naar klant':'📥 Van klant';
-return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><span style="color:var(--hint)">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span><br>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
+const delKnop=(h.historieIdx!==null&&h.historieIdx!==undefined)?`<button onclick="verwijderHistorieRegel('${s.id}',${h.historieIdx})" style="background:none;border:none;color:var(--hint);cursor:pointer;font-size:12px;padding:0 4px;flex-shrink:0" title="Dit bericht verwijderen">✕</button>`:'';
+return`<div style="font-size:12px;color:var(--muted);background:${uitgaand?'var(--accent-bg)':'var(--bg)'};border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;max-width:88%;margin-left:${uitgaand?'auto':'0'}"><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--hint);flex:1">${icon} · ${h.tijdstip?new Date(h.tijdstip).toLocaleString('nl-NL'):''}${h.bron?' · '+h.bron:''}</span>${delKnop}</div>${h.tekst||''}${h.foto?`<br><img src="${h.foto}" style="max-width:220px;border-radius:8px;margin-top:6px;display:block">`:''}</div>`;
 }).join('')}</details>`:''}
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button onclick="toggleStoringEdit('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">✏️ Bewerken</button><button onclick="exportStoringPDF('${s.id}')" class="btn" style="padding:8px 14px;margin-top:10px">🖨️ Werkorder PDF voor monteur</button>${berichtForm}${salesKnop}${kbKnop}</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">

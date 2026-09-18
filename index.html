@@ -474,14 +474,33 @@ updateBadge();
 })();
 }
 function save(){
-localStorage.setItem(KEY,JSON.stringify(deals));
 const bkey='qltrk2_backups';
+try{
+localStorage.setItem(KEY,JSON.stringify(deals));
+}catch(e){
+// De opslagruimte van de browser zit vol — dit gebeurde doordat hier tot 10
+// volledige kopieën van alle leads werden bewaard als back-up, wat al snel
+// meerdere MB's is. Ruim die back-ups op en probeer het nog één keer, zodat
+// een volle opslag niet stilletjes elke "opslaan"-actie in de app blokkeert.
+console.error('Lokaal opslaan mislukt (opslag vol), back-ups opruimen en opnieuw proberen:',e);
+try{
+localStorage.removeItem(bkey);
+localStorage.setItem(KEY,JSON.stringify(deals));
+}catch(e2){
+console.error('Lokaal opslaan mislukt, ook na opruimen:',e2);
+alert('Let op: opslaan in deze browser is niet gelukt omdat de opslagruimte vol zit, ook na opruimen. Je wijziging is (indien er internet is) wel naar Firebase gestuurd, maar ververs de pagina zo snel mogelijk en meld dit als het blijft gebeuren.');
+}
+}
 try{
 const backups=JSON.parse(localStorage.getItem(bkey)||'[]');
 backups.unshift({ts:new Date().toISOString(),data:JSON.stringify(deals)});
-if(backups.length>10)backups.length=10;
+if(backups.length>3)backups.length=3;
 localStorage.setItem(bkey,JSON.stringify(backups));
-}catch(e){}
+}catch(e){
+// Back-ups zijn alleen een extra veiligheidsnet — als dit faalt (bijv. opslag
+// alsnog vol) mag dat de rest van het opslaan (Firebase, bestand) niet blokkeren.
+try{localStorage.removeItem(bkey);}catch(e2){}
+}
 if(__fileHandle)doSave();
 fbSave(deals);
 }
@@ -2524,7 +2543,10 @@ resultaat='Genegeerd — geen actie ondernomen';
 try{
 await fsUpdate('intake_uncertain',id,{status:'afgehandeld',handmatigeActie:actie,handmatigResultaat:resultaat,afgehandeldOp:now.toISOString()});
 item.status='afgehandeld';
-}catch(e){console.error('Bijwerken wachtrij-item mislukt:',e);}
+}catch(e){
+console.error('Bijwerken wachtrij-item mislukt:',e);
+alert('Let op: "'+resultaat+'" is gelukt, maar het opruimen van dit item uit "Te beoordelen" is mislukt ('+e.message+'). Vernieuw de pagina (F5) en controleer of het item nog dubbel in de lijst staat.');
+}
 try{await fsCreate('intake_log',{tijdstip:now.toISOString(),kanaal:item.kanaal,afzenderTelefoon:item.afzenderTelefoon,afzenderEmail:item.afzenderEmail,berichttekst:item.berichttekst,aiClassificatie:item.aiClassificatie,aiConfidence:item.aiConfidence,aiReden:item.aiReden,aiVelden:item.aiVelden,menselijkeActie:actie,actieOndernomen:'(handmatig via Te beoordelen) '+resultaat});}catch(e){}
 if(intakeLogLoaded)await laadIntakeLog();
 updateBadge();

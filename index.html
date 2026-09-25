@@ -1728,6 +1728,43 @@ document.getElementById('fnc').value='';
 save();renderClog(d.contacts);
 window.location.href=`mailto:${d.email}?subject=Offerte ${d.offertenr||d.onderwerp||''}`;
 }
+// Dealer-herinnering: geen automatische verzending (dat vereist Graph-
+// rechten die lastig via het Azure-portal te verlenen bleken) — in plaats
+// daarvan zet dit de mail compleet klaar in Franks eigen mailprogramma via
+// een mailto:-link, precies zoals de bestaande "Gemaild"-knoppen al werken.
+// Frank hoeft alleen nog op versturen te klikken.
+function stuurDealerHerinnering(id,e){
+e&&e.stopPropagation();
+const d=deals.find(x=>x.id===id);
+if(!d){alert('Lead niet gevonden.');return}
+if(!d.dealerEmail){
+alert('Vul eerst het e-mailadres van de dealer in bij deze lead (open de lead → "E-mail dealer").');
+openEdit(id);
+return;
+}
+const onderwerp=`Herinnering: ${d.klant}${d.offertenr?' - '+d.offertenr:''}`;
+const bodyRegels=[
+'Beste,',
+'',
+'Even een korte herinnering over onderstaande aanvraag die we eerder hebben doorgegeven:',
+'',
+`Klant: ${d.klant}`,
+`Onderwerp: ${d.onderwerp||d.klant}`,
+d.offertenr?`Offertenummer: ${d.offertenr}`:'',
+d.bedrag?`Bedrag: €${Number(d.bedrag).toLocaleString('nl-NL')}`:'',
+'',
+'Zijn er al ontwikkelingen? Laat het gerust weten zodra er nieuws is.',
+'',
+'Met vriendelijke groet,',
+'Q-Line Equestrian',
+].join('\n');
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst:`Herinnering klaargezet voor dealer (${d.dealerEmail})`});
+d.dealerReminderSentAt=now.toISOString();
+save();
+window.location.href=`mailto:${encodeURIComponent(d.dealerEmail)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(bodyRegels)}`;
+}
 function openContactFromModal(){
 // Save current form data first
 const k=document.getElementById('fk').value.trim();
@@ -2861,11 +2898,16 @@ if(f==='bellen'){gefilterd=actie;filterTitel='Vandaag bellen / opvolgen';}
 else if(f==='reactie'){gefilterd=metReactie;filterTitel='Reactie ontvangen';}
 else if(f==='offerte'){gefilterd=open.filter(d=>d.status==='offerte');filterTitel='Offerte verstuurd';}
 else if(f==='nieuw'){gefilterd=nieuweLeads;filterTitel='Nieuwe leads';}
+// Dealer-leads waar de laatste herinnering 14+ dagen geleden is (of nog
+// nooit is gestuurd) — voor het dagstart-advies hieronder.
+const TWEE_WEKEN_MS=14*24*3600*1000;
+const dealerHerinneringNodig=open.filter(d=>d.status==='dealer'&&d.dealerEmail&&(!d.dealerReminderSentAt||(Date.now()-new Date(d.dealerReminderSentAt).getTime())>=TWEE_WEKEN_MS));
 // Dagstart advies
 const dagAdvies=[];
 if(laat.length)dagAdvies.push(`<span style="color:var(--red);font-weight:600">${laat.length} te laat</span> — pak vandaag de telefoon`);
 if(metReactie.length)dagAdvies.push(`<span style="color:var(--accent);font-weight:600">${metReactie.length} reactie${metReactie.length>1?'s':''}</span> ontvangen — direct opvolgen`);
 if(bk.length&&!laat.length)dagAdvies.push(`<span style="color:var(--orange);font-weight:600">${bk.length} lead${bk.length>1?'s':''}</span> binnenkort opvolgen`);
+if(dealerHerinneringNodig.length)dagAdvies.push(`<span style="color:#1a6090;font-weight:600">${dealerHerinneringNodig.length} dealer-herinnering${dealerHerinneringNodig.length>1?'en':''}</span> te versturen (${dealerHerinneringNodig.map(d=>d.klant).join(', ')})`);
 if(!dagAdvies.length)dagAdvies.push('<span style="color:var(--green);font-weight:600">Alles op schema</span> — geen urgente acties');
 const filterBtns=[
 {k:'alle',l:'Alle leads',n:open.length},
@@ -2976,6 +3018,7 @@ const lastTag=lastContact
 const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs">
 ${d.status==='nieuw'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
 ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''}
+${d.status==='dealer'?`<button class="qb" onclick="stuurDealerHerinnering('${d.id}',event)">📧 Dealer-herinnering</button>`:''}
 <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
 <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
 <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>

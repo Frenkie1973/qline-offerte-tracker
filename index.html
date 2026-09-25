@@ -241,6 +241,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div id="aiVoorstelWrap" style="display:none">
 <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
 <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
+<button class="btn btn-p" style="margin-top:8px" onclick="mailVoorstel()">📧 Open in mailprogramma</button>
 </div>
 </div>
 </div>
@@ -1212,6 +1213,7 @@ box.innerHTML=`
 <div id="aiVoorstelWrap" style="display:none">
 <textarea id="aiVoorstel" rows="8" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;box-sizing:border-box"></textarea>
 <button class="btn" style="margin-top:8px" onclick="kopieerVoorstel()">📋 Kopieer tekst</button>
+<button class="btn btn-p" style="margin-top:8px" onclick="mailVoorstel()">📧 Open in mailprogramma</button>
 </div>
 </div>
 </div>
@@ -3496,6 +3498,25 @@ if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✅ Gekopieerd!'
 const d=deals.find(x=>x.id===editId);
 if(d&&d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;save();}
 });
+}
+// Zelfde principe als de dealer-herinnering: geen automatisch versturen
+// (dat vereist mailrechten die lastig te verlenen bleken), maar de tekst
+// wél direct klaarzetten in Franks eigen mailprogramma via mailto — hij
+// hoeft alleen nog te controleren en op versturen te klikken.
+function mailVoorstel(){
+const d=deals.find(x=>x.id===editId);
+if(!d){alert('Lead niet gevonden.');return}
+if(!d.email){alert('Geen e-mailadres bekend voor deze klant.');return}
+const tekst=document.getElementById('aiVoorstel').value.trim();
+if(!tekst){alert('Genereer eerst een opvolgvoorstel.');return}
+const onderwerp=`Even opvolgen — ${d.offertenr||d.onderwerp||d.klant}`;
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
+if(d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;}
+save();
+renderClog(d.contacts);
+window.location.href=`mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
 }
 async function genereerEersteContactMail(){
 const d=deals.find(x=>x.id===editId);

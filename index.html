@@ -1052,6 +1052,31 @@ footer.innerHTML=`
 function quickBel(id,e){e&&e.stopPropagation();showContactPopup(id,'bel');}
 function quickReactie(id,e){e&&e.stopPropagation();showContactPopup(id,'reactie');}
 function quickMail(id,e){e&&e.stopPropagation();showContactPopup(id);}
+// Snelknop: genereert direct een AI-opvolgmail en zet 'm klaar in Franks
+// mailprogramma — zonder eerst de hele lead te hoeven openen. Gebruikt
+// dezelfde genereerOpvolgTekst() als de knop in het detailscherm.
+async function quickOpvolgMail(id,e){
+e&&e.stopPropagation();
+const d=deals.find(x=>x.id===id);
+if(!d){alert('Lead niet gevonden.');return}
+if(!d.email){alert('Geen e-mailadres bekend voor deze klant — vul dat eerst in.');openEdit(id);return}
+const btn=e&&e.target?e.target.closest('button'):null;
+const origText=btn?btn.textContent:'';
+if(btn){btn.disabled=true;btn.textContent='✨ Bezig...';}
+try{
+const tekst=await genereerOpvolgTekst(d,'');
+const onderwerp=`Even opvolgen — ${d.offertenr||d.onderwerp||d.klant}`;
+if(!d.contacts)d.contacts=[];
+const now=new Date();
+d.contacts.push({type:'mail',datum:now.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}),tijd:now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),tekst});
+save();
+render();
+window.location.href=`mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
+}catch(err){
+alert('Genereren mislukt: '+err.message+'. Probeer het nog eens.');
+if(btn){btn.disabled=false;btn.textContent=origText;}
+}
+}
 function showContactPopup(id,preselect){
 const d=deals.find(x=>x.id===id);
 if(!d)return;
@@ -3021,6 +3046,7 @@ const act=!['gewonnen','verloren','deadend'].includes(d.status)?`<div class="qbs
 ${d.status==='nieuw'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','contact',event)">Contact gelegd</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button>`:''}
 ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',event)">📧 Kwalificatiemail</button><button class="qb" onclick="quick('${d.id}','offerte',event)">Offerte gemaakt</button><button class="qb" onclick="quick('${d.id}','dealer',event)">Naar dealer</button>`:''}
 ${d.status==='dealer'?`<button class="qb" onclick="stuurDealerHerinnering('${d.id}',event)">📧 Dealer-herinnering</button>`:''}
+${['contact','offerte','dealer'].includes(d.status)?`<button class="qb" onclick="quickOpvolgMail('${d.id}',event)">✨📧 Opvolgmail</button>`:''}
 <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
 <button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
 <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
@@ -3419,18 +3445,14 @@ else if(tekst.includes('geen reactie')||tekst.includes('voicemail'))next_action=
 else next_action='Follow-up sturen en concreet om beslissing vragen.';
 return{bonus:Math.max(-40,Math.min(30,bonus)),signalen:signalen.slice(0,3),next_action:next_action};
 }
-async function genereerOpvolgVoorstel(){
-const d=deals.find(x=>x.id===editId);
-if(!d){alert('Sla de lead eerst op voordat je een voorstel genereert.');return}
-const btn=document.getElementById('aiGenBtn');
-const wrap=document.getElementById('aiVoorstelWrap');
-const laatsteMail=document.getElementById('aiLaatsteMail').value.trim();
+// Bouwt de opvolgtekst via AI. Losgetrokken uit genereerOpvolgVoorstel() zodat
+// zowel de knop in het detailscherm als de snelknop in de rij (quickOpvolgMail)
+// dezelfde prompt/logica gebruiken — geen dubbele code.
+async function genereerOpvolgTekst(d,laatsteMail){
 const contacts=d.contacts||[];
 const contactlog=contacts.length
 ? contacts.map(c=>`- [${c.type}, ${c.datum} ${c.tijd||''}] ${c.tekst||c.nota||''}`).join('\n')
 : '(nog geen contactmomenten gelogd)';
-// Tel hoeveel keer Frank al heeft opgevolgd zonder reactie ("outbound streak"),
-// zelfde telling als getAdvies() gebruikt, zodat de AI de toon hierop afstemt.
 let outboundStreak=0;
 for(let i=0;i<contacts.length;i++){
 if(contacts[i].type==='reactie')outboundStreak=0;
@@ -3465,10 +3487,6 @@ Schrijf een kort opvolgbericht (mail of app-bericht, max ~120 woorden) dat:
 - Franks toon aanhoudt: direct, vriendelijk-zakelijk, geen overdreven verkooppraat
 - rekening houdt met de OPVOLG-CONTEXT hierboven qua directheid/toon
 Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
-btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
-const oldLabel=wrap.querySelector('.ai-auto-label');
-if(oldLabel)oldLabel.remove();
-try{
 const response=await fetch("https://qline-ai-proxy.f-timmerhuis.workers.dev",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
@@ -3481,6 +3499,19 @@ messages:[{role:"user",content:prompt}]
 const data=await response.json();
 const tekst=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim();
 if(!tekst)throw new Error('Geen tekst ontvangen');
+return tekst;
+}
+async function genereerOpvolgVoorstel(){
+const d=deals.find(x=>x.id===editId);
+if(!d){alert('Sla de lead eerst op voordat je een voorstel genereert.');return}
+const btn=document.getElementById('aiGenBtn');
+const wrap=document.getElementById('aiVoorstelWrap');
+const laatsteMail=document.getElementById('aiLaatsteMail').value.trim();
+const oldLabel=wrap.querySelector('.ai-auto-label');
+if(oldLabel)oldLabel.remove();
+btn.disabled=true;btn.textContent='✨ Bezig met genereren...';
+try{
+const tekst=await genereerOpvolgTekst(d,laatsteMail);
 document.getElementById('aiVoorstel').value=tekst;
 wrap.style.display='block';
 }catch(e){

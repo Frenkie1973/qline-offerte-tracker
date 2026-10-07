@@ -2914,6 +2914,11 @@ return (d.contacts||[]).some(c=>parseDatum(c.datum)>gisteren);
 }
 const actie=open.filter(d=>urg(d)==='urg'||urg(d)==='soon').sort((a,b)=>sortVal(a)-sortVal(b));
 const metReactie=open.filter(d=>heeftNieuweReactie(d));
+// Teller op de 'Bellen nu'-knop: alleen wie VANDAAG gebeld moet worden
+// (te laat, vandaag gepland of recente klantreactie). De lijst zelf blijft
+// ook de 'binnenkort'-leads tonen.
+const eindeVandaag=new Date();eindeVandaag.setHours(23,59,59,999);
+const vandaagBellen=actie.filter(function(d){return urg(d)==='urg'||(d.nextContact&&new Date(d.nextContact)<=eindeVandaag);});
 const nieuweMails=open.filter(d=>heeftNieuweContact(d)&&!heeftNieuweReactie(d));
 const rest=open.filter(d=>urg(d)==='ok').sort((a,b)=>sortVal(a)-sortVal(b));
 const geenDatum=open.filter(d=>d.status!=='nieuw'&&!d.nextContact);
@@ -2938,7 +2943,7 @@ if(dealerHerinneringNodig.length)dagAdvies.push(`<span style="color:#1a6090;font
 if(!dagAdvies.length)dagAdvies.push('<span style="color:var(--green);font-weight:600">Alles op schema</span> — geen urgente acties');
 const filterBtns=[
 {k:'alle',l:'Alle leads',n:open.length},
-{k:'bellen',l:'📞 Bellen nu',n:actie.length,clr:actie.length?'var(--red)':''},
+{k:'bellen',l:'📞 Bellen nu',n:vandaagBellen.length,clr:vandaagBellen.length?'var(--red)':''},
 {k:'reactie',l:'📩 Reactie ontvangen',n:metReactie.length,clr:metReactie.length?'var(--accent)':''},
 {k:'offerte',l:'📄 Offerte verstuurd',n:open.filter(d=>d.status==='offerte').length},
 {k:'nieuw',l:'🆕 Nieuwe leads',n:nieuweLeads.length},
@@ -3009,9 +3014,13 @@ ${gefilterd!==null?`
 <div class="sh"><div class="sl">${filterTitel}</div><div class="sline"></div><div class="sn">${gefilterd.length}</div></div>
 ${gefilterd.length?tbl(gefilterd):'<div class="empty">Geen leads in deze categorie.</div>'}
 `:`
-${actie.length?`
-<div class="sh"><div class="sl">🔴 Nu opvolgen</div><div class="sline"></div><div class="sn">${actie.length}</div></div>
-${tbl(actie)}
+${vandaagBellen.length?`
+<div class="sh"><div class="sl">🔴 Nu opvolgen — vandaag / te laat</div><div class="sline"></div><div class="sn">${vandaagBellen.length}</div></div>
+${tbl(vandaagBellen)}
+`:''}
+${actie.filter(d=>!vandaagBellen.includes(d)).length?`
+<div class="sh"><div class="sl">🟠 Binnenkort opvolgen</div><div class="sline"></div><div class="sn">${actie.filter(d=>!vandaagBellen.includes(d)).length}</div></div>
+${tbl(actie.filter(d=>!vandaagBellen.includes(d)))}
 `:''}
 ${metReactie.length?`
 <div class="sh"><div class="sl">📩 Reactie ontvangen</div><div class="sline"></div><div class="sn">${metReactie.length}</div></div>

@@ -2926,7 +2926,7 @@ const nieuweLeads=open.filter(d=>d.status==='nieuw').sort((a,b)=>new Date(a.datu
 // Filter toepassen
 let gefilterd=null;
 let filterTitel='';
-if(f==='bellen'){gefilterd=actie;filterTitel='Vandaag bellen / opvolgen';}
+if(f==='bellen'){gefilterd=vandaagBellen;filterTitel='Vandaag bellen / te laat';}
 else if(f==='reactie'){gefilterd=metReactie;filterTitel='Reactie ontvangen';}
 else if(f==='offerte'){gefilterd=open.filter(d=>d.status==='offerte');filterTitel='Offerte verstuurd';}
 else if(f==='nieuw'){gefilterd=nieuweLeads;filterTitel='Nieuwe leads';}
@@ -2988,7 +2988,7 @@ return`<div onclick="show('analyse')" style="cursor:pointer;background:#fff8e6;b
 </div>`;
 })()}
 <div class="kpis">
-<div class="kpi" onclick="window.__dashFilter='bellen';render()" style="cursor:pointer">
+<div class="kpi" onclick="window.__dashFilter='alle';render()" style="cursor:pointer">
 <div class="kpi-l">Actie vereist</div>
 <div class="kpi-n red">${laat.length+bk.length}</div>
 <div class="kpi-s">${laat.length} te laat · ${bk.length} binnenkort</div>

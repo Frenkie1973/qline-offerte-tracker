@@ -129,12 +129,22 @@ function extractAanvraagnr(text) {
   return (val && /\d/.test(val) && val.length <= 20) ? val : '';
 }
 
+// Haalt het eerste echte e-mailadres uit een tekst. Nodig omdat de Duitse
+// webshopmails het label "E-Mail-Adresse" gebruiken: het label-zoeken pakte
+// daar "E-Mail" als label en "Adresse hanna@..." als waarde, waardoor het
+// e-mailveld van de lead niet klopte en een latere reactie van dezelfde klant
+// niet herkend werd (dubbele lead, bijv. Rammig).
+function eersteEmail(s) {
+  const m = String(s || '').match(/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i);
+  return m ? m[0].toLowerCase() : '';
+}
+
 function extractStructuredData(bodyText, fromName, fromEmail) {
   const cleanFromName = (fromName || '').replace(/^namens\s+/i, '').trim();
   const klant = extractField(bodyText, ['naam', 'name', 'klant', 'contactpersoon'])
     || extractSignatureName(bodyText)
     || cleanFromName || '';
-  const email = extractField(bodyText, ['e-?mail(?:adres)?', 'email']) || fromEmail || '';
+  const email = eersteEmail(extractField(bodyText, ['e-?mail-?adres(?:se)?', 'e-?mail(?:adres)?', 'email'])) || eersteEmail(fromEmail) || '';
   // "phone\s*number" MOET vóór het losse "phone" staan, anders vangt "phone"
   // alleen "Phone" en komt "number 0612345678" als waarde mee.
   const telefoon = extractField(bodyText, ['telefoon(?:nummer)?', 'tel(?:efoonnr)?', 'phone\\s*number', 'phone', 'mobiel']) || extractPhone(bodyText);
@@ -485,7 +495,7 @@ async function main() {
       if (!d) return false;
       if (GESLOTEN_STATUSSEN.includes(d.status)) return false;
       if (ex.aanvraagnr && d.aanvraagnr && d.aanvraagnr !== ex.aanvraagnr) return false;
-      const dEmail = (d.email || '').toLowerCase().trim();
+      const dEmail = eersteEmail(d.email);
       const dKlant = (d.klant || '').toLowerCase().trim();
       if (emailKey && dEmail && dEmail === emailKey) return true;
       if (klantKey && dKlant && dKlant === klantKey) return true;
@@ -555,7 +565,7 @@ async function main() {
     const ontvangers = (sm.toRecipients || []).map((r) => (r.emailAddress?.address || '').toLowerCase().trim());
     if (!ontvangers.length) continue;
 
-    const doelLead = leadsArr.find((d) => d && d.email && ontvangers.includes(d.email.toLowerCase().trim()));
+    const doelLead = leadsArr.find((d) => d && eersteEmail(d.email) && ontvangers.includes(eersteEmail(d.email)));
     if (!doelLead) continue;
 
     const key = mailKey(sm);

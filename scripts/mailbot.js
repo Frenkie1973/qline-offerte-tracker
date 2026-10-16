@@ -4,6 +4,11 @@
 // Realtime Database, in hetzelfde formaat als het dashboard zelf gebruikt.
 //
 // Draait via GitHub Actions (.github/workflows/mailbot.yml), elke 15 min.
+//
+// Werking: ALLES wat in het Postvak IN van store@ staat (binnengekomen of
+// erin gesleept, laatste 14 dagen) wordt gecontroleerd. Staat de mail nog
+// niet in de leads, dan wordt hij een nieuwe lead, of een reactie bij een
+// openstaande lead van dezelfde klant. Verdwenen leads komen zo vanzelf terug.
 // Benodigde secrets: MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
 
 const MAILBOX = 'store@q-line.com';
@@ -163,41 +168,57 @@ async function getAppToken() {
   return data.access_token;
 }
 
+// Haalt alle pagina's op van een Graph-lijst (volgt @odata.nextLink), zodat
+// er op drukke dagen niets wegvalt achter de eerste 100 resultaten.
+async function graphGetAll(url, token, maxPaginas = 20) {
+  const alle = [];
+  let next = url;
+  let paginas = 0;
+  while (next && paginas < maxPaginas) {
+    const res = await fetch(next, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`Graph-verzoek mislukt: ${res.status} ${await res.text()}`);
+    const data = await res.json();
+    alle.push(...(data.value || []));
+    next = data['@odata.nextLink'] || null;
+    paginas++;
+  }
+  return alle;
+}
+
+// Postvak IN van store@. Er wordt gefilterd op lastModifiedDateTime in plaats
+// van receivedDateTime: een mail die Frank vanuit zijn eigen mailbox naar
+// store@ SLEEPT behoudt namelijk zijn oorspronkelijke ontvangstdatum (kan
+// weken oud zijn), maar krijgt bij het verplaatsen wél een nieuwe
+// lastModifiedDateTime. Zo wordt ook een oude, versleepte mail opgepakt.
 async function fetchNewMessages(token, sinceISO) {
-  const filter = encodeURIComponent(`receivedDateTime gt ${sinceISO}`);
-  const select = 'id,subject,from,receivedDateTime,bodyPreview,body';
+  const filter = encodeURIComponent(`lastModifiedDateTime ge ${sinceISO}`);
+  const select = 'id,internetMessageId,subject,from,receivedDateTime,lastModifiedDateTime,bodyPreview,body';
   // Expliciet de Postvak IN-map, nooit de hele mailbox (die bevat ook de
   // archiefmap "Q-Line store aanvragen" met al afgehandelde mail).
-  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/inbox/messages?$filter=${filter}&$select=${select}&$orderby=receivedDateTime asc&$top=100`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`Mail ophalen mislukt: ${res.status} ${await res.text()}`);
-  const data = await res.json();
-  return data.value || [];
+  const url = `https://graph.microsoft.com/v1.0/users/${MAILBOX}/mailFolders/inbox/messages?$filter=${filter}&$select=${select}&$orderby=lastModifiedDateTime asc&$top=100`;
+  return graphGetAll(url, token);
 }
 
 // Zelfde principe, maar dan voor mail die Frank zelf heeft verstuurd, zodat
-// die ook automatisch als contactmoment gelogd wordt — hij hoeft dat dan
-// niet meer met de hand te doen via "Gebeld/Geappt/Gemaild".
+// die ook automatisch als contactmoment gelogd wordt.
 async function fetchSentMessages(token, sinceISO) {
-  const filter = encodeURIComponent(`sentDateTime gt ${sinceISO}`);
-  const select = 'id,subject,toRecipients,sentDateTime,bodyPreview,body';
+  const filter = encodeURIComponent(`sentDateTime ge ${sinceISO}`);
+  const select = 'id,internetMessageId,subject,toRecipients,sentDateTime,bodyPreview,body';
   const alle = [];
   for (const mailbox of SENT_MAILBOXES) {
     const url = `https://graph.microsoft.com/v1.0/users/${mailbox}/mailFolders/sentitems/messages?$filter=${filter}&$select=${select}&$orderby=sentDateTime asc&$top=100`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) {
-      console.error(`Verzonden mail ophalen mislukt voor ${mailbox}: ${res.status} ${await res.text()}`);
-      continue;
+    try {
+      alle.push(...(await graphGetAll(url, token)));
+    } catch (e) {
+      console.error(`Verzonden mail ophalen mislukt voor ${mailbox}: ${e.message}`);
     }
-    const data = await res.json();
-    alle.push(...(data.value || []));
   }
-  // Dedupe: dezelfde mail kan soms in meerdere mailboxen als "verzonden"
-  // staan (bijv. gedeelde mailbox + eigen postvak); op id ontdubbelen.
+  // Dezelfde mail kan in beide mailboxen als "verzonden" staan -> ontdubbelen.
   const gezien = new Set();
   return alle.filter((m) => {
-    if (gezien.has(m.id)) return false;
-    gezien.add(m.id);
+    const k = m.internetMessageId || m.id;
+    if (gezien.has(k)) return false;
+    gezien.add(k);
     return true;
   });
 }
@@ -285,6 +306,107 @@ Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commenta
   }
 }
 
+
+// ===================================================================
+// ZELFHERSTELLENDE VERWERKING
+// -------------------------------------------------------------------
+// Vroeger hield de bot een lijst "processedIds" bij: een mail die één keer
+// verwerkt was, werd nooit meer bekeken. Probleem: het dashboard slaat bij
+// elke wijziging de VOLLEDIGE leadslijst op. Stond het dashboard al een tijd
+// open (met een oude lijst) en klikte Frank daarna iets aan, dan werden
+// leads die de bot in de tussentijd had toegevoegd overschreven en waren ze
+// weg — terwijl de bot dacht dat ze al verwerkt waren. Zo verdwenen o.a.
+// Kreuzer, Hofmeister en Kühnhauser.
+//
+// Nu kijkt de bot bij ELKE run of een mail ook echt in de leads terug te
+// vinden is (via mailIds, of via de oude "Ontvangen: ..."-vingerafdruk in
+// de notitie). Is hij weg, dan wordt hij gewoon opnieuw verwerkt.
+// ===================================================================
+
+const GESLOTEN_STATUSSEN = ['gewonnen', 'verloren', 'deadend'];
+// Q-Line's eigen mailboxen mogen NOOIT als "klant-e-mail" gebruikt worden om
+// leads te matchen (de webshop toont soms store@ zelf als afzender).
+const EIGEN_ADRESSEN = ['store@q-line.com', 'f.timmerhuis@q-line.com', 'info@q-line.com', 'support@q-line.com'];
+
+function mailKey(m) {
+  return m.internetMessageId || m.id;
+}
+
+// Mails waarvan Frank de lead in het dashboard bewust heeft VERWIJDERD
+// (spam, niet relevant). Het dashboard zet die in /mailbotIgnore, zodat de
+// bot ze niet steeds opnieuw aanmaakt.
+const IGNORE_URL = `${FB_BASE}/mailbotIgnore.json${FB_AUTH_SUFFIX}`;
+function ignoreSleutel(s) {
+  return encodeURIComponent(String(s)).replace(/\./g, '%2E');
+}
+function isGenegeerd(ignore, m) {
+  const vingerafdruk = `Ontvangen: ${new Date(m.receivedDateTime).toLocaleString('nl-NL')}`;
+  return [mailKey(m), m.id, vingerafdruk].some((k) => k && ignore[ignoreSleutel(k)]);
+}
+
+function nlDatum(d) {
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+}
+function nlTijd(d) {
+  return d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+}
+
+function contactSig(c) {
+  return `${c.type || ''}|${c.datum || ''}|${c.tijd || ''}|${String(c.tekst || '').slice(0, 60)}`;
+}
+
+// Is deze inkomende mail al ergens in de leads terug te vinden?
+function inboxMailAlVerwerkt(leadsArr, m) {
+  const key = mailKey(m);
+  const vingerafdruk = `Ontvangen: ${new Date(m.receivedDateTime).toLocaleString('nl-NL')}`;
+  return leadsArr.some((d) => {
+    if (!d) return false;
+    if (Array.isArray(d.mailIds) && (d.mailIds.includes(key) || d.mailIds.includes(m.id))) return true;
+    // Oude leads (van vóór mailIds) herkennen aan de tekst die de bot zelf
+    // in de notitie zette.
+    if (typeof d.notitie === 'string' && d.notitie.includes(vingerafdruk)) return true;
+    return false;
+  });
+}
+
+// Zoekt dezelfde lead terug in een (verse) leadslijst.
+function vindLead(arr, lead) {
+  if (lead.id) return arr.find((x) => x && x.id === lead.id);
+  return arr.find((x) => x && !x.id && x.klant === lead.klant && x.email === lead.email && x.datum === lead.datum);
+}
+
+// Houdt per lead bij wat de bot veranderd heeft, zodat die wijzigingen vlak
+// voor het opslaan op een VERSE kopie van de leads gezet kunnen worden — dan
+// overschrijft de bot op zijn beurt ook geen wijzigingen die Frank in de
+// tussentijd in het dashboard deed.
+const patches = new Map(); // lead-object -> { set:{}, del:Set, contacts:[], mailIds:[] }
+function patchVoor(lead) {
+  if (!patches.has(lead)) patches.set(lead, { set: {}, del: new Set(), contacts: [], mailIds: [] });
+  return patches.get(lead);
+}
+function zetVeld(lead, veld, waarde) {
+  lead[veld] = waarde;
+  const p = patchVoor(lead);
+  p.set[veld] = waarde;
+  p.del.delete(veld);
+}
+function wisVeld(lead, veld) {
+  delete lead[veld];
+  const p = patchVoor(lead);
+  delete p.set[veld];
+  p.del.add(veld);
+}
+function voegContactToe(lead, contact) {
+  lead.contacts = lead.contacts || [];
+  lead.contacts.push(contact);
+  patchVoor(lead).contacts.push(contact);
+}
+function voegMailIdToe(lead, key) {
+  lead.mailIds = lead.mailIds || [];
+  if (!lead.mailIds.includes(key)) lead.mailIds.push(key);
+  patchVoor(lead).mailIds.push(key);
+}
+
 async function main() {
   if (!TENANT_ID || !CLIENT_ID || !CLIENT_SECRET) {
     console.error('Ontbrekende secrets (MS_TENANT_ID / MS_CLIENT_ID / MS_CLIENT_SECRET).');
@@ -295,37 +417,34 @@ async function main() {
     process.exit(1);
   }
 
-  const state = await getJson(STATE_URL, {});
-  // Kijk ALTIJD minstens 7 dagen terug, ongeacht de laatste checktijd.
-  // Reden: als een mail vanuit een ander postvak (bijv. Franks persoonlijke
-  // f.timmerhuis@q-line.com) naar dit Postvak IN wordt gesleept, behoudt
-  // Microsoft Graph de oorspronkelijke ontvangsttijd van vóór het slepen —
-  // die ligt vrijwel altijd vóór het laatste controlemoment, waardoor zo'n
-  // mail bij een filter "sinds laatste check" nooit gevonden zou worden.
-  // Dubbele verwerking van al eerder geziene mail wordt voorkomen via
-  // processedIds hieronder, niet via dit tijdvenster — dus breder terugkijken
-  // is hier veilig.
-  const zevenDagenTerug = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-  const sinceISO = (state.lastCheck && state.lastCheck < zevenDagenTerug) ? state.lastCheck : zevenDagenTerug;
-  const processedIds = new Set(state.processedIds || []);
+  // Postvak IN: alles wat de afgelopen 14 dagen binnenkwam OF erin gesleept
+  // is. Verzonden items: afgelopen 7 dagen.
+  const inboxSinds = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+  const sentSinds = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
 
-  console.log(`Ophalen mails sinds ${sinceISO}...`);
   const token = await getAppToken();
-  const messages = await fetchNewMessages(token, sinceISO);
-  console.log(`${messages.length} mail(s) gevonden.`);
+  console.log(`Ophalen Postvak IN (gewijzigd/binnengekomen sinds ${inboxSinds})...`);
+  const messages = await fetchNewMessages(token, inboxSinds);
+  console.log(`${messages.length} mail(s) in het venster.`);
 
-  const leads = await getJson(LEADS_URL, []);
-  const leadsArr = Array.isArray(leads) ? leads : [];
+  const leadsRuw = await getJson(LEADS_URL, null);
+  if (leadsRuw !== null && !Array.isArray(leadsRuw)) {
+    throw new Error('Leads in Firebase zijn geen lijst — afgebroken om niets te overschrijven.');
+  }
+  const leadsArr = Array.isArray(leadsRuw) ? leadsRuw : [];
+  const nieuweLeads = [];
+  const ignore = (await getJson(IGNORE_URL, {})) || {};
 
-  let latest = sinceISO;
-  let nieuweTeller = 0;
   let samengevoegdTeller = 0;
   let uniekTeller = 0;
+  let overgeslagen = 0;
 
   for (const m of messages) {
-    if (processedIds.has(m.id)) continue;
-    processedIds.add(m.id);
-    if (m.receivedDateTime > latest) latest = m.receivedDateTime;
+    if (inboxMailAlVerwerkt(leadsArr, m) || isGenegeerd(ignore, m)) {
+      overgeslagen++;
+      continue;
+    }
+    const key = mailKey(m);
 
     const fromName = m.from?.emailAddress?.name || '';
     const fromEmail = m.from?.emailAddress?.address || '';
@@ -350,25 +469,20 @@ async function main() {
     ].filter(Boolean).join('\n');
 
     const onderwerp = ex.product || m.subject || 'Mail zonder onderwerp';
-    // Q-Line's eigen mailboxen mogen NOOIT als "klant-e-mail" gebruikt worden om
-    // leads te matchen. De webshop toont soms store@q-line.com zelf als
-    // afzender van een ordermelding — zonder deze uitsluiting werden daardoor
-    // compleet verschillende, losse klantaanvragen allemaal per ongeluk
-    // samengevoegd tot dezelfde (soms al foute) bestaande lead.
-    const EIGEN_ADRESSEN = ['store@q-line.com', 'f.timmerhuis@q-line.com'];
     let emailKey = (ex.email || '').toLowerCase().trim();
     if (EIGEN_ADRESSEN.includes(emailKey)) emailKey = '';
-    const klantKey = (ex.klant || fromEmail || '').toLowerCase().trim();
-    const GESLOTEN_STATUSSEN = ['gewonnen', 'verloren', 'deadend'];
+    // Als het e-mailveld uit de tekst een eigen adres was, val terug op de
+    // echte afzender (bijv. bij een doorgestuurde of versleepte mail).
+    if (!emailKey && fromEmail && !EIGEN_ADRESSEN.includes(fromEmail.toLowerCase())) {
+      emailKey = fromEmail.toLowerCase().trim();
+    }
+    const klantKey = (ex.klant || '').toLowerCase().trim();
 
-    // Zoek een nog openstaande lead (elke actieve status: nieuw, contact,
-    // offerte, dealer — alleen gewonnen/verloren/deadend telt niet mee) van
-    // dezelfde klant, op e-mail óf op naam, zodat een klant waar Frank al
-    // mee bezig is niet als nieuwe losse lead wordt aangemaakt.
-    // Uitzondering: als beide een aanvraagnr hebben en die verschillen, gaat
-    // het gegarandeerd om een andere bestelling — dan nooit samenvoegen, ook
-    // niet als naam/e-mail toevallig overeenkomen.
+    // Openstaande lead van dezelfde klant (op e-mail of naam)? Dan wordt de
+    // mail daar als reactie aan gehangen. Verschillend aanvraagnummer = andere
+    // aanvraag = altijd een nieuwe lead.
     const bestaande = leadsArr.find((d) => {
+      if (!d) return false;
       if (GESLOTEN_STATUSSEN.includes(d.status)) return false;
       if (ex.aanvraagnr && d.aanvraagnr && d.aanvraagnr !== ex.aanvraagnr) return false;
       const dEmail = (d.email || '').toLowerCase().trim();
@@ -379,46 +493,40 @@ async function main() {
     });
 
     if (bestaande) {
-      if (onderwerp && !bestaande.onderwerp.includes(onderwerp)) {
-        bestaande.onderwerp = `${bestaande.onderwerp} + ${onderwerp}`;
+      const huidigOnderwerp = bestaande.onderwerp || '';
+      if (onderwerp && !huidigOnderwerp.includes(onderwerp)) {
+        zetVeld(bestaande, 'onderwerp', huidigOnderwerp ? `${huidigOnderwerp} + ${onderwerp}` : onderwerp);
       }
-      bestaande.notitie = `${bestaande.notitie}\n\n--- Extra aanvraag van dezelfde klant ---\n${notitie}`;
-      bestaande.contacts = bestaande.contacts || [];
+      zetVeld(bestaande, 'notitie', `${bestaande.notitie || ''}\n\n--- Extra aanvraag / reactie van dezelfde klant ---\n${notitie}`);
       const ontvangen = new Date(m.receivedDateTime);
-      bestaande.contacts.push({
+      voegContactToe(bestaande, {
         type: 'reactie',
-        datum: ontvangen.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
-        tijd: ontvangen.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+        datum: nlDatum(ontvangen),
+        tijd: nlTijd(ontvangen),
         tekst: `🤖 Nieuwe mail binnengekomen: ${onderwerp}`,
       });
-      // Alleen vooruit schuiven, nooit terug (bij de eenmalige inbox-inhaalslag
-      // kunnen mails niet-chronologisch verwerkt worden).
-      if (m.receivedDateTime.slice(0, 10) > bestaande.datum) {
-        bestaande.datum = m.receivedDateTime.slice(0, 10);
+      voegMailIdToe(bestaande, key);
+      if (m.receivedDateTime.slice(0, 10) > (bestaande.datum || '')) {
+        zetVeld(bestaande, 'datum', m.receivedDateTime.slice(0, 10));
       }
-      if (!bestaande.telefoon && ex.telefoon) bestaande.telefoon = ex.telefoon;
-      if (!bestaande.land && ex.land) bestaande.land = ex.land;
-      if (!bestaande.contactWay && ex.contactWay) bestaande.contactWay = ex.contactWay;
-      if (!bestaande.aanvraagnr && ex.aanvraagnr) bestaande.aanvraagnr = ex.aanvraagnr;
+      if (!bestaande.telefoon && ex.telefoon) zetVeld(bestaande, 'telefoon', ex.telefoon);
+      if (!bestaande.land && ex.land) zetVeld(bestaande, 'land', ex.land);
+      if (!bestaande.contactWay && ex.contactWay) zetVeld(bestaande, 'contactWay', ex.contactWay);
+      if (!bestaande.aanvraagnr && ex.aanvraagnr) zetVeld(bestaande, 'aanvraagnr', ex.aanvraagnr);
 
-      // Klant reageerde op een bestaande lead -> alvast een concept-antwoord
-      // klaarzetten zodat Frank het meteen ziet staan bij het openen.
-      console.log(`Genereer AI-opvolgvoorstel voor ${bestaande.klant}...`);
+      console.log(`Reactie gekoppeld aan bestaande lead: ${bestaande.klant}. AI-opvolgvoorstel maken...`);
       const voorstel = await genereerAiVoorstel(bestaande, bodyText);
       if (voorstel) {
-        bestaande.aiVoorstel = voorstel;
-        bestaande.aiVoorstelDatum = m.receivedDateTime;
+        zetVeld(bestaande, 'aiVoorstel', voorstel);
+        zetVeld(bestaande, 'aiVoorstelDatum', m.receivedDateTime);
       }
       samengevoegdTeller++;
     } else {
       uniekTeller++;
-      leadsArr.push({
-        // Gegarandeerd uniek: hash van het volledige Graph-ID + teller + random,
-        // in plaats van het bericht-ID af te kappen (dat gaf collisions bij
-        // berichten uit dezelfde mailthread met een gedeeld ID-prefix).
+      const lead = {
         id: `mail_${Date.now().toString(36)}_${uniekTeller}_${Math.random().toString(36).slice(2, 8)}`,
         klant: ex.klant || fromEmail || 'Onbekende afzender',
-        email: ex.email,
+        email: emailKey || ex.email || '',
         telefoon: ex.telefoon,
         land: ex.land,
         contactWay: ex.contactWay,
@@ -428,63 +536,96 @@ async function main() {
         status: 'nieuw',
         notitie,
         contacts: [],
+        mailIds: [key],
         auto: true,
-      });
+      };
+      leadsArr.push(lead);
+      nieuweLeads.push(lead);
+      console.log(`Nieuwe lead: ${lead.klant} — ${onderwerp}`);
     }
-    nieuweTeller++;
   }
 
   // === Verzonden mail (Frank -> klant) automatisch loggen ===
   console.log('Ophalen verzonden mail...');
-  const sentMessages = await fetchSentMessages(token, sinceISO);
+  const sentMessages = await fetchSentMessages(token, sentSinds);
   console.log(`${sentMessages.length} verzonden mail(s) gevonden.`);
   let verzondenGelogd = 0;
 
   for (const sm of sentMessages) {
-    if (processedIds.has(sm.id)) continue;
-    processedIds.add(sm.id);
-    if (sm.sentDateTime > latest) latest = sm.sentDateTime;
-
     const ontvangers = (sm.toRecipients || []).map((r) => (r.emailAddress?.address || '').toLowerCase().trim());
     if (!ontvangers.length) continue;
 
-    // Zoek een lead (ongeacht status, ook al gesloten deals mogen nazorg-mail
-    // gelogd krijgen) waarvan het e-mailadres overeenkomt met een ontvanger.
-    const doelLead = leadsArr.find((d) => ontvangers.includes((d.email || '').toLowerCase().trim()));
+    const doelLead = leadsArr.find((d) => d && d.email && ontvangers.includes(d.email.toLowerCase().trim()));
     if (!doelLead) continue;
 
-    const sentBodyText = sm.body?.contentType === 'html' ? stripHtml(sm.body.content) : (sm.body?.content || sm.bodyPreview || '');
+    const key = mailKey(sm);
     const verzonden = new Date(sm.sentDateTime);
-    doelLead.contacts = doelLead.contacts || [];
-    doelLead.contacts.push({
+    const datum = nlDatum(verzonden);
+    const tijd = nlTijd(verzonden);
+    // Al gelogd? (via mailIds, of een mail-contact op exact dezelfde datum/tijd)
+    if (Array.isArray(doelLead.mailIds) && (doelLead.mailIds.includes(key) || doelLead.mailIds.includes(sm.id))) continue;
+    if ((doelLead.contacts || []).some((c) => c.type === 'mail' && c.datum === datum && c.tijd === tijd)) continue;
+
+    const sentBodyText = sm.body?.contentType === 'html' ? stripHtml(sm.body.content) : (sm.body?.content || sm.bodyPreview || '');
+    voegContactToe(doelLead, {
       type: 'mail',
-      datum: verzonden.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
-      tijd: verzonden.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+      datum,
+      tijd,
       tekst: sentBodyText.slice(0, 800) || sm.subject || 'Mail verstuurd',
     });
-    // Frank heeft zelf gereageerd -> een eventueel klaarstaand AI-voorstel is
-    // niet meer actueel.
-    if (doelLead.aiVoorstel) {
-      delete doelLead.aiVoorstel;
-      delete doelLead.aiVoorstelDatum;
+    voegMailIdToe(doelLead, key);
+    // Frank heeft zelf gereageerd -> klaarstaand AI-voorstel is niet meer actueel,
+    // tenzij dat voorstel van NA deze verzonden mail is.
+    if (doelLead.aiVoorstel && (!doelLead.aiVoorstelDatum || doelLead.aiVoorstelDatum < sm.sentDateTime)) {
+      wisVeld(doelLead, 'aiVoorstel');
+      wisVeld(doelLead, 'aiVoorstelDatum');
     }
     verzondenGelogd++;
-    nieuweTeller++;
   }
 
-  if (verzondenGelogd) {
-    console.log(`${verzondenGelogd} verzonden mail(s) automatisch gelogd bij bestaande leads.`);
-  }
+  console.log(`${overgeslagen} mail(s) waren al verwerkt (staan in de leads of zijn bewust verwijderd).`);
 
-  if (nieuweTeller) {
-    await putJson(LEADS_URL, leadsArr);
-    console.log(`${nieuweTeller} mail(s) verwerkt: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} samengevoegd met bestaande lead, ${verzondenGelogd} verzonden mail(s) gelogd.`);
+  if (!nieuweLeads.length && !patches.size) {
+    console.log('Niets nieuws om op te slaan.');
   } else {
-    console.log('Geen nieuwe leads om toe te voegen.');
+    // Vlak voor het opslaan de leads OPNIEUW ophalen en alleen onze eigen
+    // wijzigingen daarop zetten — zo gaat er niets verloren van wat Frank
+    // ondertussen in het dashboard heeft gedaan.
+    const versRuw = await getJson(LEADS_URL, null);
+    if (versRuw !== null && !Array.isArray(versRuw)) {
+      throw new Error('Leads in Firebase zijn geen lijst — afgebroken om niets te overschrijven.');
+    }
+    if (versRuw === null && leadsArr.length > nieuweLeads.length) {
+      throw new Error('Kon de actuele leads niet opnieuw ophalen — afgebroken om niets te overschrijven.');
+    }
+    const vers = Array.isArray(versRuw) ? versRuw : [];
+
+    for (const [lead, p] of patches) {
+      if (nieuweLeads.includes(lead)) continue; // nieuwe leads gaan hieronder in z'n geheel mee
+      const doel = vindLead(vers, lead);
+      if (!doel) continue; // lead is in de tussentijd in het dashboard verwijderd
+      Object.assign(doel, p.set);
+      for (const veld of p.del) delete doel[veld];
+      if (p.contacts.length) {
+        doel.contacts = doel.contacts || [];
+        const sigs = new Set(doel.contacts.map(contactSig));
+        for (const c of p.contacts) {
+          if (!sigs.has(contactSig(c))) doel.contacts.push(c);
+        }
+      }
+      if (p.mailIds.length) {
+        doel.mailIds = Array.from(new Set([...(doel.mailIds || []), ...p.mailIds]));
+      }
+    }
+    for (const lead of nieuweLeads) {
+      if (!vers.some((x) => x && x.id === lead.id)) vers.push(lead);
+    }
+
+    await putJson(LEADS_URL, vers);
+    console.log(`Opgeslagen: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} reactie(s) gekoppeld aan bestaande lead, ${verzondenGelogd} verzonden mail(s) gelogd.`);
   }
 
-  const trimmedIds = Array.from(processedIds).slice(-500);
-  await putJson(STATE_URL, { lastCheck: latest, processedIds: trimmedIds });
+  await putJson(STATE_URL, { lastCheck: new Date().toISOString() });
   console.log('Klaar.');
 }
 

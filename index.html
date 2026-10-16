@@ -376,9 +376,86 @@ return await _authPromise;
 _authPromise=null;
 }
 }
+// ==== Samenvoegen met Firebase i.p.v. blind overschrijven ====
+// Het dashboard slaat de volledige leadslijst op. Stond de pagina al een tijd
+// open, dan overschreef een klik in het dashboard de leads die de mailbot in
+// de tussentijd had toegevoegd (zo verdwenen o.a. Kreuzer, Hofmeister en
+// Kühnhauser). Daarom wordt vóór elk opslaan eerst de actuele lijst uit
+// Firebase opgehaald en wordt alles wat daar nieuw is, eerst toegevoegd.
+const __verwijderdeLeads=new Set();
+const __verwijderdeContacten=new Set();
+let __forceOverwrite=false;
+function contactSig(c){return (c.type||'')+'|'+(c.datum||'')+'|'+(c.tijd||'')+'|'+String(c.tekst||'').slice(0,60);}
+function mergeRemote(remote){
+if(!Array.isArray(remote))return false;
+let changed=false;
+const lokaal=new Map();
+deals.forEach(function(d){if(d&&d.id)lokaal.set(String(d.id),d);});
+remote.forEach(function(r){
+if(!r||!r.id)return;
+const id=String(r.id);
+if(__verwijderdeLeads.has(id))return;
+const l=lokaal.get(id);
+if(!l){deals.push(r);lokaal.set(id,r);changed=true;return;}
+// Bestaande lead: contactmomenten die de bot heeft toegevoegd erbij zetten.
+const lc=l.contacts||[];
+const sigs=new Set(lc.map(contactSig));
+let extra=false;
+(r.contacts||[]).forEach(function(c){
+const sg=contactSig(c);
+if(!sigs.has(sg)&&!__verwijderdeContacten.has(id+'#'+sg)){lc.push(c);sigs.add(sg);extra=true;}
+});
+if(Array.isArray(r.mailIds)){
+const m=new Set(l.mailIds||[]);const voor=m.size;
+r.mailIds.forEach(function(x){m.add(x);});
+if(m.size!==voor){l.mailIds=Array.from(m);changed=true;}
+}
+if(extra){
+l.contacts=lc;
+if(r.aiVoorstel&&r.aiVoorstelDatum&&r.aiVoorstelDatum!==l.aiVoorstelDatum){l.aiVoorstel=r.aiVoorstel;l.aiVoorstelDatum=r.aiVoorstelDatum;}
+const ln=l.notitie||'';
+if(r.notitie&&r.notitie.length>ln.length&&r.notitie.indexOf(ln)===0)l.notitie=r.notitie;
+const lo=l.onderwerp||'';
+if(r.onderwerp&&r.onderwerp.length>lo.length&&r.onderwerp.indexOf(lo)===0)l.onderwerp=r.onderwerp;
+if(r.datum&&(!l.datum||r.datum>l.datum))l.datum=r.datum;
+changed=true;
+}
+});
+return changed;
+}
+function modalOpen(){const mo=document.getElementById('mo');return !!(mo&&mo.classList.contains('open'));}
+function naMerge(){
+try{localStorage.setItem(KEY,JSON.stringify(deals));}catch(e){}
+if(!modalOpen()){try{render();}catch(e){}}
+try{updateBadge();}catch(e){}
+}
+// Elke minuut (en zodra je het tabblad weer opent) nieuwe leads van de
+// mailbot ophalen, zodat het dashboard nooit lang met een oude lijst werkt.
+async function syncRemote(){
+try{
+let cached=null;
+try{cached=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
+if(!cached||!cached.refreshToken)return; // niet ingelogd: geen loginscherm forceren
+const token=await ensureAuthToken();
+const res=await fetch(`${FB_BASE}?auth=${token}`);
+if(!res.ok)return;
+const remote=await res.json();
+if(mergeRemote(remote))naMerge();
+}catch(e){}
+}
+setInterval(syncRemote,60000);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')syncRemote();});
 async function fbSave(data){
 try{
 const token=await ensureAuthToken();
+if(!__forceOverwrite){
+try{
+const r0=await fetch(`${FB_BASE}?auth=${token}`);
+if(r0.ok){const remote=await r0.json();if(mergeRemote(remote))setTimeout(naMerge,0);}
+}catch(e){}
+}
+__forceOverwrite=false;
+data=deals;
 const res=await fetch(`${FB_BASE}?auth=${token}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
 if(!res.ok){
 // Niet alleen netwerkfouten tellen als mislukt — Firebase antwoordt bij een
@@ -558,7 +635,7 @@ try{
 const data=JSON.parse(e.target.result);
 if(!Array.isArray(data)){alert('Ongeldig backup bestand.');return}
 if(!confirm(`Backup terugzetten? Dit overschrijft ${deals.length} huidige leads met ${data.length} leads uit de backup.`))return;
-deals=data;save();render();
+deals=data;__forceOverwrite=true;save();render();
 alert('Backup teruggezet!');
 }catch(err){alert('Kon backup niet lezen.');}
 };
@@ -1039,8 +1116,28 @@ footer.innerHTML=`
 <button class="btn" onclick="cancelDel()">Annuleer</button>`;
 }
 function confirmDel(){
+const weg=deals.find(x=>x.id===editId);
+if(weg){
+__verwijderdeLeads.add(String(weg.id));
+meldGenegeerdAanMailbot(weg);
+}
 deals=deals.filter(x=>x.id!==editId);
 save();closeMo();render();
+}
+// Bewust verwijderde lead -> mailbot mag de bijbehorende mail(s) niet
+// opnieuw als lead aanmaken.
+async function meldGenegeerdAanMailbot(d){
+try{
+const sleutels=[].concat(d.mailIds||[]);
+const m=String(d.notitie||'').match(/Ontvangen: [^\n]+/g)||[];
+m.forEach(function(x){sleutels.push(x.trim());});
+if(!sleutels.length)return;
+const patch={};
+sleutels.forEach(function(k){patch[encodeURIComponent(String(k)).replace(/\./g,'%2E')]=true;});
+const token=await ensureAuthToken();
+const base=FB_BASE.replace(/leads\.json$/,'mailbotIgnore.json');
+await fetch(`${base}?auth=${token}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+}catch(e){console.error('Kon verwijderde lead niet doorgeven aan mailbot:',e);}
 }
 function cancelDel(){
 const footer=document.querySelector('.mfoot');
@@ -1322,6 +1419,8 @@ return`<div class="clog-entry"><div class="clog-head"><span class="clog-badge" s
 function deleteContact(i){
 const d=deals.find(x=>x.id===editId);
 if(!d||!d.contacts)return;
+const wegC=d.contacts[i];
+if(wegC)__verwijderdeContacten.add(String(d.id)+'#'+contactSig(wegC));
 d.contacts.splice(i,1);
 save();
 renderClog(d.contacts);

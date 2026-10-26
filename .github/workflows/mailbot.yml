@@ -1,8 +1,16 @@
 name: Mailbox verwerken
 
+# Verwerkt BEIDE mailboxen in één run:
+#  1. store@q-line.com   -> sales-leads   (scripts/mailbot.js)
+#  2. support@q-line.com -> supportmeldingen (scripts/mailbotSupport.js)
+# Zo pakt de knop "Check nu op nieuwe mail" in het dashboard ook direct de
+# support-mailbox mee.
+# Draait elk uur op minuut 7 (bewust niet op :00 — GitHub stelt geplande runs
+# op dat drukke moment vaak uit). Handmatig kan altijd via de knop.
+
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '7 * * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -13,10 +21,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Verwerk nieuwe mails
+      - name: Verwerk nieuwe mails (sales)
         env:
           MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
           FIREBASE_DB_SECRET: ${{ secrets.FIREBASE_DB_SECRET }}
         run: node scripts/mailbot.js
+      - name: Verwerk nieuwe support-mails
+        if: always()
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          FIREBASE_DB_SECRET: ${{ secrets.FIREBASE_DB_SECRET }}
+          FIREBASE_TEAM_EMAIL: ${{ secrets.FIREBASE_TEAM_EMAIL }}
+          FIREBASE_TEAM_PASSWORD: ${{ secrets.FIREBASE_TEAM_PASSWORD }}
+        run: node scripts/mailbotSupport.js

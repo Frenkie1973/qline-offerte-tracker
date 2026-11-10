@@ -220,7 +220,7 @@ tr.row td{padding:12px 14px;vertical-align:middle}
 <div class="clog-add">
 <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
 <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt</button>
 </div>
 </div>
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)" id="aiEersteContactBlok">
@@ -1176,6 +1176,7 @@ const onderwerp=opvolgOnderwerp(d);
 // mail uit Verzonden items. Anders telde één mail als twee pogingen.
 if(btn){btn.disabled=false;btn.textContent=origText;}
 window.location.href=`mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
+setTimeout(()=>vraagOpvolgDatum(d.id),400);
 }catch(err){
 alert('Genereren mislukt: '+err.message+'. Probeer het nog eens.');
 if(btn){btn.disabled=false;btn.textContent=origText;}
@@ -1195,9 +1196,9 @@ box.innerHTML=`
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
 <button class="btn" id="btn-bel" onclick="selectType('bel')">📞 Gebeld</button>
 <button class="btn" id="btn-app" onclick="selectType('app')">💬 Geappt</button>
-<button class="btn" id="btn-mail" onclick="selectType('mail')">✉ Gemaild</button>
 <button class="btn" id="btn-reactie" onclick="selectType('reactie')">📩 Reactie ontvangen</button>
 </div>
+<div style="font-size:12px;color:var(--hint)">Mails hoef je niet te loggen: verstuurde en ontvangen mails worden automatisch uit de mailbox gehaald.</div>
 </div>
 <div class="ff">
 <label>Notitie (optioneel)</label>
@@ -1321,7 +1322,7 @@ box.innerHTML=`
 <div class="clog-add">
 <textarea id="fnc" rows="3" placeholder="Wat besproken? Wat gezegd?"></textarea>
 <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end">
-<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt / ✉ Gemaild</button>
+<button class="btn btn-p" style="white-space:nowrap" onclick="openContactFromModal()">📞 Gebeld / 💬 Geappt</button>
 </div>
 </div>
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)" id="aiEersteContactBlok">
@@ -1372,6 +1373,7 @@ if(s==='gewonnen'||s==='verloren'){showWinLossPopup(id,s);return;}
 d.status=s;
 if(s==='offerte'&&!d.datumOfferte)d.datumOfferte=new Date().toISOString().slice(0,10);
 if(s==='deadend'){d.nextContact=null;save();render();}
+else if(s==='offerte'||s==='dealer'){save();vraagOpvolgDatum(id);}
 else{save();showContactPopup(id);}
 }
 function showWinLossPopup(id,status){
@@ -3169,7 +3171,6 @@ ${d.status==='contact'?`<button class="qb" onclick="quickKwalificatie('${d.id}',
 ${d.status==='dealer'?`<button class="qb" onclick="stuurDealerHerinnering('${d.id}',event)">📧 Dealer-herinnering</button>`:''}
 ${['contact','offerte','dealer'].includes(d.status)?`<button class="qb" onclick="quickOpvolgMail('${d.id}',event)">✨📧 Opvolgmail</button>`:''}
 <button class="qb" onclick="quickBel('${d.id}',event)">📞 Gebeld</button>
-<button class="qb" onclick="quickMail('${d.id}',event)">✉ Gemaild</button>
 <button class="qb" onclick="quickReactie('${d.id}',event)">📩 Reactie</button>
 <button class="qb w" onclick="quick('${d.id}','gewonnen',event)">✓ Gewonnen</button>
 <button class="qb l" onclick="quick('${d.id}','verloren',event)">✗ Verloren</button>
@@ -3673,6 +3674,7 @@ const onderwerp=opvolgOnderwerp(d);
 // Geen contactmoment loggen: de mailbot logt de echt verstuurde mail.
 if(d.aiVoorstel){delete d.aiVoorstel;delete d.aiVoorstelDatum;save();}
 window.location.href=`mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
+setTimeout(()=>vraagOpvolgDatum(d.id),400);
 }
 // ===================================================================
 // EERSTE ANTWOORD — beslisregel "kwalificeren waar nodig, direct offreren
@@ -3882,6 +3884,36 @@ if(d.status==='nieuw')d.status='contact';
 save();
 render();
 window.location.href=`mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
+setTimeout(()=>vraagOpvolgDatum(d.id),400);
+}
+// Na het versturen van een mail: alleen vragen wanneer je wilt opvolgen.
+// Eén tik = opgeslagen. De mail zelf logt de mailbot uit Verzonden items.
+function vraagOpvolgDatum(id){
+const d=deals.find(x=>x.id===id);
+if(!d)return;
+const box=document.querySelector('.mbox');
+const knop=(dg,txt)=>`<button class="btn" style="padding:14px 16px;font-size:15px" onclick="zetOpvolgDatum('${id}',${dg})">${txt}</button>`;
+box.innerHTML=`
+<div class="mhead"><div class="mtitle">Wanneer wil je ${esc(d.klant)} opvolgen?</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+${knop(3,'3 dagen')}${knop(7,'1 week')}${knop(14,'2 weken')}${knop(30,'1 maand')}${knop(90,'3 maanden')}
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+<input type="number" id="fu-eigen2" placeholder="Eigen aantal" min="1" style="width:130px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 11px;font-size:15px;color:var(--text);outline:none">
+<span style="font-size:14px;color:var(--muted)">dagen</span>
+<button class="btn" onclick="zetOpvolgDatum('${id}',parseInt(document.getElementById('fu-eigen2').value)||0)">OK</button>
+</div>
+<div style="font-size:12px;color:var(--hint);margin-bottom:12px">De mail zelf wordt automatisch gelogd zodra de mailbot je Verzonden items heeft gelezen.</div>
+<div class="mfoot"><button class="btn" onclick="zetOpvolgDatum('${id}',0)">Geen reminder</button></div>`;
+document.getElementById('mo').classList.add('open');
+}
+function zetOpvolgDatum(id,dagen){
+const d=deals.find(x=>x.id===id);
+if(d&&dagen>0){const dt=new Date();dt.setDate(dt.getDate()+dagen);d.nextContact=dt.toISOString().slice(0,10);save();}
+document.getElementById('mo').classList.remove('open');
+restoreModal();
+editId=null;
+render();
 }
 function kopieerEersteContact(){
 const d=deals.find(x=>x.id===editId);

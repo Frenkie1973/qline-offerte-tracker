@@ -293,6 +293,8 @@ Schrijf een kort antwoord (max ~120 woorden) dat:
 - past bij het land/de taal van de klant (Duitse klant = Duits in de juiste formaliteit; Nederlandse klant = Nederlands)
 - Franks toon aanhoudt: direct, vriendelijk-zakelijk, geen overdreven verkooppraat
 - een concrete volgende stap voorstelt waar mogelijk
+- GEEN vragen stelt die de klant al beantwoord heeft
+- GEEN productspecificaties, prijzen, levertijden, kortingen of toezeggingen verzint die niet in de gegevens hierboven staan
 
 Geef ALLEEN de tekst van het bericht terug, geen aanhef-uitleg of extra commentaar erbij, geen aanhalingstekens eromheen.`;
 

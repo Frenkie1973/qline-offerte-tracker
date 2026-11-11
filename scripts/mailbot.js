@@ -444,7 +444,15 @@ async function main() {
     throw new Error('Leads in Firebase zijn geen lijst — afgebroken om niets te overschrijven.');
   }
   const leadsArr = Array.isArray(leadsRuw) ? leadsRuw : [];
+  // Signaal als er sinds de vorige run leads verdwenen zijn (iemand heeft een
+  // oudere lijst opgeslagen). De bot maakt ze dan opnieuw aan; het dashboard
+  // voegt eventuele dubbelingen daarna samen.
+  const vorigeState = (await getJson(STATE_URL, {})) || {};
+  if (vorigeState.leadCount && leadsArr.length < vorigeState.leadCount - 2) {
+    console.log(`⚠️ WAARSCHUWING: ${vorigeState.leadCount - leadsArr.length} lead(s) verdwenen sinds de vorige run (${vorigeState.leadCount} -> ${leadsArr.length}). Iemand heeft een oudere leadslijst opgeslagen.`);
+  }
   const nieuweLeads = [];
+  let eindAantal = leadsArr.length;
   const ignore = (await getJson(IGNORE_URL, {})) || {};
 
   let samengevoegdTeller = 0;
@@ -634,10 +642,11 @@ async function main() {
     }
 
     await putJson(LEADS_URL, vers);
+    eindAantal = vers.length;
     console.log(`Opgeslagen: ${uniekTeller} nieuwe lead(s), ${samengevoegdTeller} reactie(s) gekoppeld aan bestaande lead, ${verzondenGelogd} verzonden mail(s) gelogd.`);
   }
 
-  await putJson(STATE_URL, { lastCheck: new Date().toISOString() });
+  await putJson(STATE_URL, { lastCheck: new Date().toISOString(), leadCount: eindAantal });
   console.log('Klaar.');
 }
 

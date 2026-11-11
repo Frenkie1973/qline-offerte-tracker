@@ -458,6 +458,59 @@ try{updateBadge();}catch(e){}
 }
 // Elke minuut (en zodra je het tabblad weer opent) nieuwe leads van de
 // mailbot ophalen, zodat het dashboard nooit lang met een oude lijst werkt.
+// ==== Verwijderen en dubbelingen over ALLE apparaten heen ====
+// Probleem: had een ander open dashboard (pc, telefoon, collega) een lead
+// nog in het geheugen, dan zette het die bij opslaan gewoon terug — ook als
+// hij hier verwijderd of samengevoegd was. Daarom:
+// 1. Verwijderde lead-id's staan in Firebase (/leadsVerwijderd) en worden
+//    door ELK dashboard bij laden en opslaan weggefilterd.
+// 2. Leads met dezelfde mail (zelfde mailIds of "Ontvangen:"-regels) worden
+//    bij elk opslaan automatisch samengevoegd tot één lead (oudste blijft).
+const TOMB_URL=FB_BASE.replace(/leads\.json$/,'leadsVerwijderd.json');
+function leadTijd(d){const m=String(d.id||'').match(/^mail_([a-z0-9]+)_/);if(m)return parseInt(m[1],36);const n=parseInt(d.id,10);return isNaN(n)?0:n;}
+function dedupeLeads(){
+const weg=[];
+const sleutel=function(d){const f=mailVingerafdrukken(d).sort().join('|');return f||null;};
+const perId=new Map();const perFp=new Map();
+const volgorde=deals.slice().sort(function(a,b){return leadTijd(a)-leadTijd(b);});
+volgorde.forEach(function(d){
+if(!d||!d.id)return;
+let doel=null;
+(d.mailIds||[]).forEach(function(m){if(!doel&&perId.has(m))doel=perId.get(m);});
+const f=sleutel(d);
+if(!doel&&f&&perFp.has(f))doel=perFp.get(f);
+if(doel&&doel!==d){
+doel.mailIds=Array.from(new Set([...(doel.mailIds||[]),...(d.mailIds||[])]));
+const sg=new Set((doel.contacts||[]).map(contactSig));
+(d.contacts||[]).forEach(function(c){if(!sg.has(contactSig(c))){doel.contacts=doel.contacts||[];doel.contacts.push(c);sg.add(contactSig(c));}});
+if(!doel.aiVoorstel&&d.aiVoorstel){doel.aiVoorstel=d.aiVoorstel;doel.aiVoorstelDatum=d.aiVoorstelDatum;}
+if(!doel.eersteContact&&d.eersteContact)doel.eersteContact=d.eersteContact;
+if(doel.status==='nieuw'&&d.status&&d.status!=='nieuw'){doel.status=d.status;}
+if(!doel.nextContact&&d.nextContact)doel.nextContact=d.nextContact;
+weg.push(String(d.id));
+}else{
+(d.mailIds||[]).forEach(function(m){perId.set(m,d);});
+if(f)perFp.set(f,d);
+}
+});
+if(weg.length){const w=new Set(weg);deals=deals.filter(function(d){return !w.has(String(d.id));});weg.forEach(function(id){__verwijderdeLeads.add(id);});}
+return weg.length;
+}
+async function haalVerwijderd(token){
+try{const r=await fetch(`${TOMB_URL}?auth=${token}`);if(!r.ok)return null;return (await r.json())||{};}catch(e){return null;}
+}
+function pasVerwijderdToe(tomb){
+if(!tomb)return false;
+const voor=deals.length;
+deals=deals.filter(function(d){return !(d&&tomb[String(d.id)]);});
+Object.keys(tomb).forEach(function(id){__verwijderdeLeads.add(id);});
+return deals.length!==voor;
+}
+async function meldVerwijderd(token){
+if(!__verwijderdeLeads.size)return;
+const patch={};__verwijderdeLeads.forEach(function(id){patch[id]=true;});
+try{await fetch(`${TOMB_URL}?auth=${token}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});}catch(e){}
+}
 async function syncRemote(){
 try{
 let cached=null;
@@ -467,7 +520,10 @@ const token=await ensureAuthToken();
 const res=await fetch(`${FB_BASE}?auth=${token}`);
 if(!res.ok)return;
 const remote=await res.json();
-if(mergeRemote(remote))naMerge();
+let anders=mergeRemote(remote);
+if(pasVerwijderdToe(await haalVerwijderd(token)))anders=true;
+if(dedupeLeads()>0){anders=true;save();}
+if(anders)naMerge();
 }catch(e){}
 }
 setInterval(syncRemote,60000);
@@ -482,7 +538,13 @@ if(!__forceOverwrite){
 let remote=null;
 try{const r0=await fetch(`${FB_BASE}?auth=${token}`);if(r0.ok)remote=await r0.json();}catch(e){}
 if(!Array.isArray(remote))throw new Error('Actuele leads niet opgehaald');
-if(mergeRemote(remote))setTimeout(naMerge,0);
+let anders=mergeRemote(remote);
+const tomb=await haalVerwijderd(token);
+if(tomb===null)throw new Error('Verwijderlijst niet opgehaald');
+if(pasVerwijderdToe(tomb))anders=true;
+if(dedupeLeads()>0)anders=true;
+await meldVerwijderd(token);
+if(anders)setTimeout(naMerge,0);
 }
 __forceOverwrite=false;
 data=deals;

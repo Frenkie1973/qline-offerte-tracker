@@ -401,7 +401,17 @@ if(!r||!r.id)return;
 const id=String(r.id);
 if(__verwijderdeLeads.has(id))return;
 const l=lokaal.get(id);
-if(!l){deals.push(r);lokaal.set(id,r);changed=true;return;}
+if(!l){
+// Zelfde mail zit al in een andere lead (bijv. door de mailbot opnieuw
+// aangemaakt nadat de lead even weg was)? Dan niet dubbel toevoegen.
+const dub=zelfdeMailLead(r);
+if(dub){
+dub.mailIds=Array.from(new Set([...(dub.mailIds||[]),...(r.mailIds||[])]));
+const ds=new Set((dub.contacts||[]).map(contactSig));
+(r.contacts||[]).forEach(function(c){if(!ds.has(contactSig(c))){dub.contacts=dub.contacts||[];dub.contacts.push(c);ds.add(contactSig(c));}});
+changed=true;return;
+}
+deals.push(r);lokaal.set(id,r);changed=true;return;}
 // Bestaande lead: contactmomenten die de bot heeft toegevoegd erbij zetten.
 const lc=l.contacts||[];
 const sigs=new Set(lc.map(contactSig));
@@ -427,6 +437,18 @@ changed=true;
 }
 });
 return changed;
+}
+function mailVingerafdrukken(d){return (String(d.notitie||'').match(/Ontvangen: [^\n]+/g)||[]).map(function(x){return x.trim();});}
+function zelfdeMailLead(r){
+const ids=new Set(r.mailIds||[]);
+const fps=mailVingerafdrukken(r);
+if(!ids.size&&!fps.length)return null;
+return deals.find(function(d){
+if(!d||d.id===r.id)return false;
+if((d.mailIds||[]).some(function(m){return ids.has(m);}))return true;
+const n=String(d.notitie||'');
+return fps.length>0&&fps.every(function(f){return n.indexOf(f)!==-1;});
+})||null;
 }
 function modalOpen(){const mo=document.getElementById('mo');return !!(mo&&mo.classList.contains('open'));}
 function naMerge(){
@@ -454,10 +476,13 @@ async function fbSave(data){
 try{
 const token=await ensureAuthToken();
 if(!__forceOverwrite){
-try{
-const r0=await fetch(`${FB_BASE}?auth=${token}`);
-if(r0.ok){const remote=await r0.json();if(mergeRemote(remote))setTimeout(naMerge,0);}
-}catch(e){}
+// Kon de actuele lijst niet worden opgehaald, dan NIET opslaan: anders
+// overschrijft deze (mogelijk verouderde) lijst nieuwe leads in Firebase.
+// De wijziging blijft lokaal staan en gaat mee bij de volgende opslag.
+let remote=null;
+try{const r0=await fetch(`${FB_BASE}?auth=${token}`);if(r0.ok)remote=await r0.json();}catch(e){}
+if(!Array.isArray(remote))throw new Error('Actuele leads niet opgehaald');
+if(mergeRemote(remote))setTimeout(naMerge,0);
 }
 __forceOverwrite=false;
 data=deals;
